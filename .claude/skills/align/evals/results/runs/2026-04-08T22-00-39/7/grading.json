@@ -1,0 +1,30 @@
+{
+  "expectations": [
+    {
+      "text": "The assistant proceeds directly to the big picture WITHOUT performing web searches or GitHub lookups — there is no mention of 'researching', 'looking up', 'searching', or 'let me check' for external resources before presenting the big picture.",
+      "passed": true,
+      "evidence": "The output begins immediately with '# Big Picture' and proceeds directly to explain the refactoring strategy. There are no mentions of researching, looking up, searching, or checking external resources anywhere in the output."
+    },
+    {
+      "text": "The big picture is based on the user's description — it proposes a split strategy, route reorganization, and responsibility boundaries using only internal knowledge of the described codebase.",
+      "passed": true,
+      "evidence": "The output proposes extracting authentication methods into AuthController (/auth/* routes) while keeping profile operations in UserController (/users/* routes), with both sharing UserService. This directly addresses the user's description of splitting an 800-line controller with mixed auth and profile concerns, using no external references."
+    },
+    {
+      "text": "The big picture includes an ASCII diagram showing the controller split and route structure.",
+      "passed": true,
+      "evidence": "The output contains a detailed ASCII diagram showing 'Current State' (single UserController with all routes) versus 'Target State' (AuthController with /auth/* routes and UserController with /users/* routes), including the shared UserService dependency and specific route mappings."
+    },
+    {
+      "text": "The response ends with exactly two confirmation options.",
+      "passed": true,
+      "evidence": "The output ends with exactly two numbered options: '1. ✅ Yes, move to straightforward details' and '2. ✏️ Type a correction'"
+    }
+  ],
+  "summary": {
+    "passed": 4,
+    "failed": 0,
+    "total": 4,
+    "pass_rate": 1
+  }
+}

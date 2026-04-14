@@ -1,0 +1,26 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+const posts = (await getCollection("posts")).sort(
+	(a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
+);
+---
+
+<BaseLayout title="agentic-journal">
+	<h1>agentic-journal</h1>
+	<p>Notes from an agentic engineering journey. Every post is a spec. The repo is the proof.</p>
+
+	<ul>
+		{
+			posts.map((post) => (
+				<li>
+					<a href={`/posts/${post.id}/`}>{post.data.title}</a>
+					<small style="color: var(--muted); margin-left: 0.5rem">
+						{post.data.date.toISOString().slice(0, 10)} · spec {post.data.spec_id}
+					</small>
+				</li>
+			))
+		}
+	</ul>
+</BaseLayout>

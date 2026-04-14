@@ -1,0 +1,34 @@
+{
+  "name": "agentic-journal",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "deploy": "wrangler deploy",
+    "typecheck": "astro check && tsc --noEmit",
+    "lint": "biome check --write",
+    "lint:file": "biome check --write",
+    "test": "bun test",
+    "spec:lint": "bun scripts/spec-lint.ts",
+    "spec:status": "bun scripts/spec-status.ts",
+    "tasks:verify": "bun scripts/tasks-verify.ts",
+    "check": "bun run typecheck && bun run lint && bun run test && bun run spec:lint"
+  },
+  "dependencies": {
+    "@astrojs/cloudflare": "^12.0.0",
+    "@astrojs/mdx": "^4.0.0",
+    "astro": "^5.0.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.0.0",
+    "@cloudflare/workers-types": "^4.20250101.0",
+    "@types/bun": "latest",
+    "gray-matter": "^4.0.3",
+    "lefthook": "^1.11.0",
+    "typescript": "^5.7.0",
+    "wrangler": "^4.0.0"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "expectations": [
+    {
+      "text": "The first response contains a goal-level statement (1-3 sentences) with exactly two options — no architecture or research yet.",
+      "passed": true,
+      "evidence": "The output presents a goal statement ('The system must enable your team to collaboratively edit shared documents without conflicts or data loss, so that multiple people can work together productively regardless of network connectivity.') which is one sentence, followed by exactly two options: '✅ Yes, move to big picture' and '✏️ Type a correction'. No architecture or research is presented."
+    },
+    {
+      "text": "After the goal is confirmed, and BEFORE presenting the big picture, the assistant performs online research (web search, GitHub search, or both) to inform its proposal — this is evidenced by the assistant explicitly mentioning research findings, citing specific libraries, patterns, or resources it looked up.",
+      "passed": false,
+      "evidence": "The skill output only shows the initial goal presentation and ends at the confirmation prompt. There is no content showing what happens after confirmation, so there is no evidence of research being performed before the big picture."
+    },
+    {
+      "text": "The big picture proposal is informed by the research — it references concrete technologies, libraries, or architectural patterns discovered through the research (e.g., Yjs, Automerge, CRDTs, OT algorithms) rather than proposing from general knowledge alone.",
+      "passed": false,
+      "evidence": "The skill output does not contain a big picture proposal. The output ends after the goal statement and confirmation options."
+    },
+    {
+      "text": "The research does NOT break the flow — the big picture is still presented as a proposal with an ASCII diagram and exactly two confirmation options.",
+      "passed": false,
+      "evidence": "The skill output does not show a big picture presentation. The output ends after the goal statement, so flow characteristics of the big picture stage cannot be evaluated."
+    }
+  ],
+  "summary": {
+    "passed": 1,
+    "failed": 3,
+    "total": 4,
+    "pass_rate": 0.25
+  }
+}

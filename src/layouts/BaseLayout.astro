@@ -1,0 +1,52 @@
+---
+interface Props {
+	title: string;
+	description?: string;
+}
+
+const { title, description = "Agentic engineering journal" } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<meta name="description" content={description} />
+		<title>{title}</title>
+		<style is:global>
+			:root {
+				--fg: #111;
+				--bg: #fafafa;
+				--muted: #666;
+				--accent: #0066cc;
+			}
+			* { box-sizing: border-box; }
+			body {
+				font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+				background: var(--bg);
+				color: var(--fg);
+				max-width: 720px;
+				margin: 0 auto;
+				padding: 2rem 1rem;
+				line-height: 1.6;
+			}
+			a { color: var(--accent); }
+			h1, h2, h3 { line-height: 1.2; }
+			code { background: #eee; padding: 0.1em 0.3em; border-radius: 3px; }
+			pre { background: #eee; padding: 1rem; overflow-x: auto; border-radius: 4px; }
+			header, footer { color: var(--muted); font-size: 0.9rem; margin: 2rem 0; }
+		</style>
+	</head>
+	<body>
+		<header>
+			<a href="/">agentic-journal</a>
+		</header>
+		<main>
+			<slot />
+		</main>
+		<footer>
+			built deterministically · <a href="https://github.com/pierre-mike/agentic-journal">source</a>
+		</footer>
+	</body>
+</html>

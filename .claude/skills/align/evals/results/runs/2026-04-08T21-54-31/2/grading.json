@@ -1,0 +1,35 @@
+{
+  "expectations": [
+    {
+      "text": "The response shows a brief index of non-obvious decision titles before presenting any individual decision in detail — the index lists topic names only, with no recommendations or tradeoff analysis.",
+      "passed": true,
+      "evidence": "The output contains a 'Here's what's coming:' section with 4 numbered items that list only decision topics with brief descriptions (e.g., 'Kafka offset commit timing — when to acknowledge messages as processed'). No recommendations or tradeoffs appear in this index section."
+    },
+    {
+      "text": "The response presents only the FIRST non-obvious decision in full detail — it does NOT present the second, third, or subsequent decisions in the same response.",
+      "passed": true,
+      "evidence": "Only 'Decision 1: Kafka Offset Commit Timing' is presented in full detail with recommended option, alternatives, and rationale. Decisions 2, 3, and 4 (micro-batch window size, failure handling strategy, deduplication approach) are listed in the index but not detailed in the response body."
+    },
+    {
+      "text": "The first decision presented includes a clearly marked recommended option (with ⭐ or 'Recommended' label) that includes a specific rationale for why it is preferred.",
+      "passed": true,
+      "evidence": "The recommended option is marked with '⭐ Recommended: Commit after Snowflake write completes (at-least-once delivery)' and includes a 'Why this approach:' section with four specific rationale points: guarantees no data loss, simple to implement, duplicates are acceptable, and Snowflake writes are idempotent."
+    },
+    {
+      "text": "The first decision presented includes at least one alternative option (marked with ❌ or 'Alternative' label) with a specific reason why it was not recommended.",
+      "passed": true,
+      "evidence": "Under '❌ Alternatives considered', two alternatives are presented: 'Commit before Snowflake write' with the specific reason 'Unacceptable for data warehouse — missing records breaks analytics', and 'Exactly-once with transaction coordinator' with the reason 'Massive complexity increase (distributed transactions, 2PC) for marginal benefit'."
+    },
+    {
+      "text": "The response ends with exactly two options: one to accept and proceed, one to type a correction.",
+      "passed": true,
+      "evidence": "The response ends with exactly two numbered options: '1. ✅ Accept and move to decision 2' and '2. ✏️ Type a correction'."
+    }
+  ],
+  "summary": {
+    "passed": 5,
+    "failed": 0,
+    "total": 5,
+    "pass_rate": 1
+  }
+}

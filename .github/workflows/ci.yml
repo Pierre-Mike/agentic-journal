@@ -1,0 +1,25 @@
+name: CI
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - name: Typecheck
+        run: bun run typecheck
+      - name: Biome
+        run: bun run lint -- --no-errors-on-unmatched
+      - name: Spec lint
+        run: bun run spec:lint
+      - name: Tasks verify
+        run: bun run tasks:verify
+      - name: Build
+        run: bun run build

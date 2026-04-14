@@ -1,0 +1,22 @@
+name: On spec change
+on:
+  push:
+    paths:
+      - "specs/**"
+  pull_request:
+    paths:
+      - "specs/**"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - name: Spec lint
+        run: bun run spec:lint
+      - name: Spec status
+        run: bun run spec:status

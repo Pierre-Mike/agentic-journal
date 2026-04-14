@@ -1,0 +1,30 @@
+{
+  "expectations": [
+    {
+      "text": "The assistant performs online research on the WhatsApp Business API — specifically its rate limiting, integration patterns, or best practices — BEFORE re-presenting the corrected big picture. This is evidenced by the assistant explicitly mentioning what it found about WhatsApp API constraints.",
+      "passed": true,
+      "evidence": "The output begins with '🔍 I looked into WhatsApp Business API rate limits before updating the big picture. Key findings:' followed by specific research findings about tiered daily limits (250-1K to unlimited), throughput limits (80-1K MPS), and dynamic pacing. Sources are cited at the bottom including WhatsApp Business Platform documentation and developer guides."
+    },
+    {
+      "text": "The response re-presents the FULL corrected big picture (not just a delta of what changed) — including the original channels plus WhatsApp, with the fanout pattern updated to account for WhatsApp's rate-limiting.",
+      "passed": true,
+      "evidence": "The 'Updated Big Picture' section presents the complete architecture including all four channels (email, SMS, push, WhatsApp), the full fanout-on-write pattern, the complete flow from API to delivery, and specifically describes WhatsApp's rate limiting requirements ('Workers enforce both throughput (80-1K MPS per phone) and tiered daily limits')."
+    },
+    {
+      "text": "The corrected big picture includes an ASCII diagram that shows WhatsApp as part of the architecture.",
+      "passed": true,
+      "evidence": "The ASCII diagram shows WhatsApp Queue and WhatsApp Workers alongside the other three channels (Email, SMS, Push), and includes a dedicated 'Rate Limit Tracker (MPS + daily cap)' component connected to the WhatsApp Workers."
+    },
+    {
+      "text": "The response ends with exactly two options: one to confirm the corrected big picture, one to type a further correction.",
+      "passed": true,
+      "evidence": "The output ends with exactly two numbered options: '1. ✅ Yes, move to straightforward details' (confirmation) and '2. ✏️ Type a correction' (further correction)."
+    }
+  ],
+  "summary": {
+    "passed": 4,
+    "failed": 0,
+    "total": 4,
+    "pass_rate": 1
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "expectations": [
+    {
+      "text": "The assistant performs online research on the WhatsApp Business API — specifically its rate limiting, integration patterns, or best practices — BEFORE re-presenting the corrected big picture. This is evidenced by the assistant explicitly mentioning what it found about WhatsApp API constraints.",
+      "passed": false,
+      "evidence": "The output mentions WhatsApp rate limiting ('strict and complex throttling rules', 'token-bucket rate limiting') but provides no evidence of research being performed. There is no explicit statement about researching WhatsApp API constraints, no mention of specific rate limits, quotas, API documentation findings, or any indication the assistant looked up external information. The references are surface-level general knowledge, not research-informed depth with specific findings."
+    },
+    {
+      "text": "The response re-presents the FULL corrected big picture (not just a delta of what changed) — including the original channels plus WhatsApp, with the fanout pattern updated to account for WhatsApp's rate-limiting.",
+      "passed": true,
+      "evidence": "The output presents a complete big picture including all four channels (email, SMS, push, WhatsApp), the SNS fanout pattern, all four queues, all worker types, and specifically mentions WhatsApp rate limiting with 'WhatsApp workers implement token-bucket rate limiting to stay within API quotas.' This is a full re-presentation, not just a delta."
+    },
+    {
+      "text": "The corrected big picture includes an ASCII diagram that shows WhatsApp as part of the architecture.",
+      "passed": true,
+      "evidence": "The ASCII diagram shows 'WhatsApp Queue' and 'WhatsApp Workers' as part of the architecture, with the notification event fanning out to four channels including WhatsApp, clearly integrated into the visual representation."
+    },
+    {
+      "text": "The response ends with exactly two options: one to confirm the corrected big picture, one to type a further correction.",
+      "passed": true,
+      "evidence": "The output ends with: '1. ✅ Accept and move to straightforward details' and '2. ✏️ Type a correction' — exactly two options as required."
+    }
+  ],
+  "summary": {
+    "passed": 3,
+    "failed": 1,
+    "total": 4,
+    "pass_rate": 0.75
+  }
+}

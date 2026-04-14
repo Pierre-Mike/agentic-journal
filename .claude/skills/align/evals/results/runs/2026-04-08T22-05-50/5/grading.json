@@ -1,0 +1,30 @@
+{
+  "expectations": [
+    {
+      "text": "BEFORE presenting the big picture, the assistant performs online research (web search, GitHub search, or both) to inform its proposal — this is evidenced by the assistant explicitly mentioning it researched, looked up, or searched for information about collaborative editing technologies, libraries, or patterns.",
+      "passed": true,
+      "evidence": "The output begins with '🔍 I looked into collaborative editing approaches before proposing the big picture. Key findings:' which explicitly states research was performed. The response also includes a Sources section with 6 URLs to real articles about CRDTs, Yjs, and collaborative editing."
+    },
+    {
+      "text": "The big picture proposal is informed by the research — it references concrete technologies, libraries, or architectural patterns discovered through the research (e.g., Yjs, Automerge, CRDTs, OT algorithms) with specific details that go beyond surface-level general knowledge.",
+      "passed": true,
+      "evidence": "The proposal references specific technologies: Yjs as 'the dominant Node.js CRDT library in 2026', CRDTs vs Operational Transform comparison, IndexedDB, PostgreSQL, WebSocket architecture. It includes detailed reasoning like 'CRDTs are easier to implement correctly, work better for offline support, and don't require a central server to resolve conflicts' and architectural patterns like separating document sync from ephemeral presence data."
+    },
+    {
+      "text": "The big picture includes an ASCII diagram showing the high-level architecture.",
+      "passed": true,
+      "evidence": "An ASCII diagram is present showing Client A, Client B, and Node.js Server boxes with their internal components (Yjs Doc, IndexedDB, Database), WebSocket connections between them, and annotations about document updates, cursor positions, and offline/reconnect behavior."
+    },
+    {
+      "text": "The response ends with exactly two confirmation options.",
+      "passed": true,
+      "evidence": "The response ends with exactly two options: '1. ✅ Yes, move to straightforward details' and '2. ✏️ Type a correction' before the Sources section."
+    }
+  ],
+  "summary": {
+    "passed": 4,
+    "failed": 0,
+    "total": 4,
+    "pass_rate": 1
+  }
+}

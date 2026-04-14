@@ -1,0 +1,30 @@
+{
+  "expectations": [
+    {
+      "text": "The first response contains a goal-level statement (1-3 sentences) with exactly two options.",
+      "passed": true,
+      "evidence": "The output contains a goal statement: 'The refactoring must separate authentication concerns from user profile management so that each controller has a single, clear responsibility and the codebase becomes easier to maintain and extend.' This is 1 sentence. It's followed by exactly two options: '1. ✅ Yes, move to big picture' and '2. ✏️ Type a correction'."
+    },
+    {
+      "text": "After the goal is confirmed, the assistant proceeds directly to the big picture WITHOUT performing web searches or GitHub lookups — no mention of 'researching', 'looking up', or 'searching' for external resources.",
+      "passed": false,
+      "evidence": "The output stops at the goal confirmation step and does not show what happens after the goal is confirmed. There is no demonstration of proceeding to the big picture phase."
+    },
+    {
+      "text": "The big picture is based on the codebase context and the user's description — it proposes a split strategy, route reorganization, and responsibility boundaries using only internal knowledge.",
+      "passed": false,
+      "evidence": "No big picture section is present in the output. The output only contains the goal statement and confirmation options."
+    },
+    {
+      "text": "The big picture includes an ASCII diagram and ends with exactly two confirmation options.",
+      "passed": false,
+      "evidence": "No big picture, ASCII diagram, or subsequent confirmation options are present. The output contains only the initial goal presentation."
+    }
+  ],
+  "summary": {
+    "passed": 1,
+    "failed": 3,
+    "total": 4,
+    "pass_rate": 0.25
+  }
+}

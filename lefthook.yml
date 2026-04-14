@@ -1,0 +1,18 @@
+pre-commit:
+  parallel: true
+  commands:
+    biome:
+      glob: "*.{ts,tsx,js,jsx,astro,json,md,mdx}"
+      run: bun run lint {staged_files}
+      stage_fixed: true
+    typecheck:
+      glob: "*.{ts,tsx,astro}"
+      run: bun run typecheck
+    spec-lint:
+      glob: "specs/**/*.md"
+      run: bun run spec:lint
+    secret-scan:
+      run: |
+        if command -v gitleaks >/dev/null 2>&1; then
+          gitleaks protect --staged --redact
+        fi

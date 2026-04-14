@@ -1,0 +1,39 @@
+{
+	"permissions": {
+		"allow": [
+			"Bash(bun:*)",
+			"Bash(gh:*)",
+			"Bash(git add:*)",
+			"Bash(git commit:*)",
+			"Bash(git push origin HEAD:*)",
+			"Bash(git status)",
+			"Bash(git diff:*)",
+			"Bash(git log:*)",
+			"Bash(wrangler:*)",
+			"Bash(astro:*)"
+		],
+		"deny": [
+			"Bash(*--no-verify*)",
+			"Bash(*git push*--force*)",
+			"Bash(*git push*origin main*)",
+			"Bash(rm -rf*)",
+			"Bash(git reset --hard*)",
+			"Bash(gh repo delete:*)",
+			"Bash(find * -delete*)"
+		]
+	},
+	"hooks": {
+		"PreToolUse": [
+			{
+				"matcher": "Write|Edit",
+				"hooks": [{ "type": "command", "command": "bun .claude/hooks.ts" }]
+			}
+		],
+		"PostToolUse": [
+			{
+				"matcher": "Write|Edit",
+				"hooks": [{ "type": "command", "command": "bun .claude/hooks.ts" }]
+			}
+		]
+	}
+}

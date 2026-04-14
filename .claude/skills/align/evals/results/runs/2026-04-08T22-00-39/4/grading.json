@@ -1,0 +1,25 @@
+{
+  "expectations": [
+    {
+      "text": "The response includes an ASCII diagram or structured visual (using box-drawing characters or ASCII art) that anchors the secrets management group before listing the individual decisions within it.",
+      "passed": true,
+      "evidence": "The output contains an ASCII diagram using box-drawing characters (├──, └──, ↓) showing the flow from 'GitHub Repository Secrets' through 'CI/CD Workflow' to 'Deployment Targets'. This diagram appears before the 'Decisions:' section, anchoring the secrets management group."
+    },
+    {
+      "text": "The decisions listed are stated as straightforward assumed defaults (one-line statements of the decided approach) — they do NOT include ⭐/❌ tradeoff analysis or multiple competing options.",
+      "passed": true,
+      "evidence": "All six decisions (Storage, Naming, Access, Shared secrets, Rotation, Local dev) are presented as single-line statements of the chosen approach. No ⭐/❌ symbols appear, no tradeoffs are analyzed, and no competing options are presented. Example: 'Storage: GitHub repository secrets (native, scoped per environment, encrypted at rest)'"
+    },
+    {
+      "text": "The response ends with exactly two options: one to confirm and proceed, one to type a correction.",
+      "passed": true,
+      "evidence": "The output ends with exactly two numbered options: '1. ✅ Accept and move to Group 4 (CI workflow structure)' (confirmation) and '2. ✏️ Type a correction' (correction option)."
+    }
+  ],
+  "summary": {
+    "passed": 3,
+    "failed": 0,
+    "total": 3,
+    "pass_rate": 1
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "expectations": [
+    {
+      "text": "The response contains a goal-level statement (1-3 sentences) about what the task queue system is meant to achieve — it does NOT list or repeat the worker types, retry logic, dead-letter queues, or concurrency settings the user provided.",
+      "passed": true,
+      "evidence": "The output contains a single goal-level sentence: 'The system must reliably execute asynchronous background tasks at scale so that time-intensive operations don't block API responses and can recover automatically from transient failures.' It does not mention worker types (email, PDF, data export), retry counts (3 times), exponential backoff, dead-letter queues, or concurrency:5."
+    },
+    {
+      "text": "The response does NOT contain any architecture decisions, bullet lists of implementation steps, ASCII diagrams, or technical specifics (BullMQ internals, Redis data structures, queue topology, concurrency settings).",
+      "passed": true,
+      "evidence": "The output contains only a heading ('# Goal'), a goal statement, a separator ('---'), and two numbered options. There are no architecture decisions, implementation steps, diagrams, or technical specifics about BullMQ, Redis, queue topology, or concurrency."
+    },
+    {
+      "text": "The response ends with exactly two options: one to accept and proceed, one to provide a free-text correction. There is no third option.",
+      "passed": true,
+      "evidence": "The output ends with exactly two options: '1. ✅ Yes, move to big picture' (accept and proceed) and '2. ✏️ Type a correction' (provide correction). No third option exists."
+    },
+    {
+      "text": "The response does NOT ask an open-ended question such as 'What approach would you like?' or 'What are your requirements?' or 'What drove that choice?'",
+      "passed": true,
+      "evidence": "The output contains no questions at all. It presents a declarative goal statement followed by two action options. No open-ended questions like 'What approach would you like?' or 'What are your requirements?' appear anywhere."
+    }
+  ],
+  "summary": {
+    "passed": 4,
+    "failed": 0,
+    "total": 4,
+    "pass_rate": 1
+  }
+}

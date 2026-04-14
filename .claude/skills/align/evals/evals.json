@@ -1,0 +1,88 @@
+{
+  "skill_name": "align",
+  "evals": [
+    {
+      "id": "1",
+      "prompt": "Align on this system design. I want to build a task queue using Redis + BullMQ. Workers process jobs in parallel — 3 worker types: email, PDF generation, and data export. Each has its own queue. Failed jobs retry up to 3 times with exponential backoff. Dead-letter queues for persistent failures. The API exposes POST /jobs to enqueue and GET /jobs/:id for status. Workers run as separate Node.js processes. I'm thinking we use concurrency:5 per worker.",
+      "expected_output": "A goal-level statement (1-3 sentences about what the system achieves) followed by exactly two options: accept and proceed, or type a correction. No architecture, no diagrams, no decisions, no regurgitation of worker types or BullMQ specifics.",
+      "files": [],
+      "expectations": [
+        "The response contains a goal-level statement (1-3 sentences) about what the task queue system is meant to achieve — it does NOT list or repeat the worker types, retry logic, dead-letter queues, or concurrency settings the user provided.",
+        "The response does NOT contain any architecture decisions, bullet lists of implementation steps, ASCII diagrams, or technical specifics (BullMQ internals, Redis data structures, queue topology, concurrency settings).",
+        "The response ends with exactly two options: one to accept and proceed, one to provide a free-text correction. There is no third option.",
+        "The response does NOT ask an open-ended question such as 'What approach would you like?' or 'What are your requirements?' or 'What drove that choice?'"
+      ]
+    },
+    {
+      "id": "2",
+      "prompt": "You are aligning on a data pipeline that ingests events from Kafka, transforms them, and writes to Snowflake. The goal has been confirmed: reduce data latency from batch (daily) to near-real-time (under 5 minutes). Big picture has been confirmed: Kafka consumer → transformation layer → Snowflake loader. Straightforward details have been confirmed. Now start the non-obvious decisions section.",
+      "expected_output": "A brief index showing the titles of all non-obvious decisions (no recommendations yet), followed by only the FIRST decision presented in full with a starred recommended option and at least one rejected alternative, ending with exactly two options.",
+      "files": [],
+      "expectations": [
+        "The response shows a brief index of non-obvious decision titles before presenting any individual decision in detail — the index lists topic names only, with no recommendations or tradeoff analysis.",
+        "The response presents only the FIRST non-obvious decision in full detail — it does NOT present the second, third, or subsequent decisions in the same response.",
+        "The first decision presented includes a clearly marked recommended option (with ⭐ or 'Recommended' label) that includes a specific rationale for why it is preferred.",
+        "The first decision presented includes at least one alternative option (marked with ❌ or 'Alternative' label) with a specific reason why it was not recommended.",
+        "The response ends with exactly two options: one to accept and proceed, one to type a correction."
+      ]
+    },
+    {
+      "id": "3",
+      "prompt": "You are aligning on building a URL shortener service. You just presented the goal as: 'Build a URL shortener with click analytics — shorten URLs and track how many times each link is clicked.' The user responds: 'Quick correction — no analytics needed, just basic shortening. Got it? Let's jump to the big picture.' Respond.",
+      "expected_output": "A full re-presented goal section reflecting the correction (basic shortening, no analytics), followed by exactly two options. Does NOT proceed to big picture — re-presents the corrected goal first even though the user implied readiness to move on.",
+      "files": [],
+      "expectations": [
+        "The response re-presents a full goal statement that reflects the correction: basic URL shortening with no analytics. It is a complete goal section, not just a one-line acknowledgement like 'Got it, dropping analytics.'",
+        "The response does NOT present big picture content — no architecture diagrams, no component lists, no implementation decisions — despite the user saying 'let's jump to the big picture.'",
+        "The response ends with exactly two options: one to accept the corrected goal and proceed to big picture, one to type a further correction."
+      ]
+    },
+    {
+      "id": "4",
+      "prompt": "You are aligning on building a CI/CD pipeline for a Node.js monorepo. The goal and big picture have been confirmed. You have already presented and confirmed Straightforward Details Group 1 (repository structure and branch strategy) and Group 2 (deployment targets and environment config). Now present Group 3: secrets management.",
+      "expected_output": "Group 3 presented with an ASCII diagram anchoring the group, followed by straightforward decisions stated as simple one-line facts (no ⭐/❌ tradeoff analysis), ending with exactly two options.",
+      "files": [],
+      "expectations": [
+        "The response includes an ASCII diagram or structured visual (using box-drawing characters or ASCII art) that anchors the secrets management group before listing the individual decisions within it.",
+        "The decisions listed are stated as straightforward assumed defaults (one-line statements of the decided approach) — they do NOT include ⭐/❌ tradeoff analysis or multiple competing options.",
+        "The response ends with exactly two options: one to confirm and proceed, one to type a correction."
+      ]
+    },
+    {
+      "id": "5",
+      "prompt": "You are aligning on building a real-time collaborative text editor for an internal team (about 50 users). People should be able to edit the same document simultaneously, see each other's cursors, and have offline support. The team is a Node.js shop. The goal has been confirmed: 'Enable the internal team to co-edit documents in real time with cursor presence and offline support, so they can collaborate without version conflicts or manual merging.' Now present the big picture.",
+      "expected_output": "Before presenting the big picture, the assistant should perform web or GitHub research on collaborative editing approaches (CRDTs vs OT, existing libraries like Yjs/Automerge, operational patterns) and explicitly mention what it found. Then present a research-informed big picture with an ASCII diagram and exactly two confirmation options.",
+      "files": [],
+      "expectations": [
+        "BEFORE presenting the big picture, the assistant performs online research (web search, GitHub search, or both) to inform its proposal — this is evidenced by the assistant explicitly mentioning it researched, looked up, or searched for information about collaborative editing technologies, libraries, or patterns.",
+        "The big picture proposal is informed by the research — it references concrete technologies, libraries, or architectural patterns discovered through the research (e.g., Yjs, Automerge, CRDTs, OT algorithms) with specific details that go beyond surface-level general knowledge.",
+        "The big picture includes an ASCII diagram showing the high-level architecture.",
+        "The response ends with exactly two confirmation options."
+      ]
+    },
+    {
+      "id": "6",
+      "prompt": "You are aligning on building an event-driven notification service. The goal has been confirmed: 'Deliver user notifications across email, SMS, and push channels with per-user preferences and delivery guarantees.' You presented the big picture proposing a fanout pattern with SQS queues per channel. The user responds: 'Correction — we actually need to support WhatsApp Business API as a channel too, and I heard their rate limiting is tricky. Update the big picture.'",
+      "expected_output": "Before re-presenting the corrected big picture, the assistant should research the WhatsApp Business API (rate limits, best practices, integration patterns) since the user's correction revealed a knowledge gap. Then re-present the full updated big picture incorporating WhatsApp as a channel with rate-limiting considerations informed by the research.",
+      "files": [],
+      "expectations": [
+        "The assistant performs online research on the WhatsApp Business API — specifically its rate limiting, integration patterns, or best practices — BEFORE re-presenting the corrected big picture. This is evidenced by the assistant explicitly mentioning what it found about WhatsApp API constraints.",
+        "The response re-presents the FULL corrected big picture (not just a delta of what changed) — including the original channels plus WhatsApp, with the fanout pattern updated to account for WhatsApp's rate-limiting.",
+        "The corrected big picture includes an ASCII diagram that shows WhatsApp as part of the architecture.",
+        "The response ends with exactly two options: one to confirm the corrected big picture, one to type a further correction."
+      ]
+    },
+    {
+      "id": "7",
+      "prompt": "You are aligning on refactoring a user service to split authentication logic out of UserController into its own AuthController. Right now login, signup, password reset, and profile update are all in one 800-line controller. Auth routes should move to /auth/* and user profile routes stay at /users/*. The goal has been confirmed: 'Separate authentication concerns from user profile management into dedicated controllers with distinct route namespaces, so the codebase is easier to maintain and auth logic can evolve independently.' Now present the big picture.",
+      "expected_output": "The assistant proceeds directly to the big picture WITHOUT performing web research — this is a purely internal refactoring task where external research adds no value. The big picture proposes a split strategy with an ASCII diagram and two confirmation options.",
+      "files": [],
+      "expectations": [
+        "The assistant proceeds directly to the big picture WITHOUT performing web searches or GitHub lookups — there is no mention of 'researching', 'looking up', 'searching', or 'let me check' for external resources before presenting the big picture.",
+        "The big picture is based on the user's description — it proposes a split strategy, route reorganization, and responsibility boundaries using only internal knowledge of the described codebase.",
+        "The big picture includes an ASCII diagram showing the controller split and route structure.",
+        "The response ends with exactly two confirmation options."
+      ]
+    }
+  ]
+}
