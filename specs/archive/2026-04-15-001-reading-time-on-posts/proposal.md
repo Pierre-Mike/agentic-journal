@@ -1,13 +1,14 @@
 ---
 id: 001-reading-time-on-posts
 title: Reading-time utility shown on each post
-status: active
+status: archived
 kind: code
 gate: src/lib/reading-time.test.ts
-created: 2026-04-15
+created: 2026-04-15T00:00:00.000Z
 owner: main
 depends_on: []
 supersedes: null
+archived: '2026-04-15'
 ---
 
 ## Intent
