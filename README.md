@@ -30,7 +30,8 @@ bun run spec:status           # list active/ready/blocked specs
 bun run spec:complete <slug>  # deterministic closer: tick, archive, commit
 bun run tasks:verify          # verify current spec's gate
 bun run worktree:open <slug>  # open worktree + branch for a spec
-bun run worktree:close <slug> # after PR merged: remove worktree + delete branch
+bun run worktree:close <slug> # after PR merged: remove worktree + delete branch (single)
+bun run sync                  # auto-close all merged spec/* worktrees in one shot
 ```
 
 ## Workflow
@@ -38,7 +39,7 @@ bun run worktree:close <slug> # after PR merged: remove worktree + delete branch
 1. `claude` opens a session on a clean `main`
 2. `/do <intent>` — align, open worktree, write RED spec, work to green, close, push branch, open PR
 3. Human merges the PR on GitHub (CI gates the merge)
-4. `bun run worktree:close <slug>` — remove worktree + local branch
+4. `git pull && bun run sync` — auto-detect every merged `spec/*`, remove its worktree + branch
 
 Run `/retro` periodically — it turns observed repo signal into a new improvement spec via `/do`. That is the feedback loop.
 

@@ -41,7 +41,7 @@ Main always stays clean. All work happens in a worktree on a `spec/<slug>` branc
 1. **Intent** → human types what they want
 2. **`/do <intent>`** → align → open worktree → author RED spec → work to green → `spec:complete` → push branch → open PR
 3. **Human merges the PR** on GitHub (CI gates the merge)
-4. **`bun run worktree:close <slug>`** → remove worktree + delete local branch
+4. **`git pull && bun run sync`** → auto-detects every merged `spec/*` and removes its worktree + branch
 
 For parallel work: invoke `/do` multiple times via the `Agent` tool in a single message. Each dispatch opens its own worktree on its own branch. No file conflicts until merge.
 
