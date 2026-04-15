@@ -1,14 +1,16 @@
 # Skills
 
-All skills used by this repo live here. The repo is standalone — no external skill sources are required.
+All skills used by this repo live here. The repo is standalone — no external skill sources.
 
 ## Vendored
 
 | Skill | Role |
 |---|---|
-| `align` | Author new specs in `specs/active/`. Writes the gate artifact first (TDD), then tasks. |
+| `/do` | End-to-end entry point. Aligns, opens worktree, authors RED spec, works to green, closes, pushes, opens PR. Main stays clean. |
+| `/retro` | Feedback pillar. Retrospective scan of traces + archive + merged PRs → authors an improvement spec via `/do`. |
+| `align` | Shared-understanding interview. Invoked inside `/do` or standalone to explore before committing to a spec. |
 | `expertise` | Persist learnings across sessions into CLAUDE.md / `expertise-refs/`. State lives with the repo. |
-| `ts-axioms` | TypeScript judgement-level invariants beyond what Biome + tsconfig catch — no `as` outside tests, narrow types, exhaustive switches, immutability. |
+| `ts-axioms` | TypeScript judgement-level invariants beyond what Biome + tsconfig catch. |
 
 ## Conventions
 
@@ -19,6 +21,6 @@ All skills used by this repo live here. The repo is standalone — no external s
 ## Adding a skill
 
 1. Create `.claude/skills/<name>/SKILL.md`
-2. Follow the standard skill frontmatter schema (name, description, triggers)
+2. Follow the standard frontmatter schema (name, description)
 3. Document intent in this README
 4. If the skill could be deterministic instead — it should be a script/hook/lint rule, not a skill. Deterministic-first.

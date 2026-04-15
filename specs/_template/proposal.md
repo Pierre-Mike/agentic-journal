@@ -5,7 +5,7 @@ status: active
 kind: code | rule | workflow | writeup
 gate: path/to/gate/artifact
 created: YYYY-MM-DD
-owner: blog-lead
+owner: main
 depends_on: []
 supersedes: null
 ---

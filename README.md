@@ -21,23 +21,26 @@ See `AGENTS.md` for onboarding and `specs/constitution.md` for invariants.
 ## Commands
 
 ```bash
-bun install             # install deps
-bun run dev             # Astro dev server
-bun run build           # build for Cloudflare
-bun run deploy          # deploy to Cloudflare Workers
-bun run check           # full local gate: typecheck + lint + test + spec-lint
-bun run spec:status     # list active/ready/blocked specs
-bun run tasks:verify    # verify current spec's gate
+bun install                   # install deps
+bun run dev                   # Astro dev server
+bun run build                 # build for Cloudflare
+bun run deploy                # deploy to Cloudflare Workers
+bun run check                 # full local gate: typecheck + lint + test + spec-lint
+bun run spec:status           # list active/ready/blocked specs
+bun run spec:complete <slug>  # deterministic closer: tick, archive, commit
+bun run tasks:verify          # verify current spec's gate
+bun run worktree:open <slug>  # open worktree + branch for a spec
+bun run worktree:close <slug> # after PR merged: remove worktree + delete branch
 ```
 
 ## Workflow
 
-1. `claude` opens a session
-2. Invoke the `align` skill to draft a spec in `specs/active/NNN-slug/`
-3. Spec's `gate:` field declares what "done" means (a test file path, a writeup, a lint rule)
-4. Agents work through `tasks.md` until the gate is green
-5. Archive: `bun scripts/spec-archive.ts NNN` → `git mv` to `specs/archive/`
-6. Merge → GitHub Actions deploys to Cloudflare
+1. `claude` opens a session on a clean `main`
+2. `/do <intent>` — align, open worktree, write RED spec, work to green, close, push branch, open PR
+3. Human merges the PR on GitHub (CI gates the merge)
+4. `bun run worktree:close <slug>` — remove worktree + local branch
+
+Run `/retro` periodically — it turns observed repo signal into a new improvement spec via `/do`. That is the feedback loop.
 
 ## Spec kinds
 

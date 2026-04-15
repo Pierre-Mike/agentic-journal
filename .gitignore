@@ -10,3 +10,5 @@ dist
 !.env.example
 .claude/traces
 .claude/sessions
+.claude/dashboard.html
+.agentic/worktrees

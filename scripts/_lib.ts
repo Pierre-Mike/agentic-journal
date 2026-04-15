@@ -63,7 +63,7 @@ export function loadSpec(dir: string): Spec | null {
 			kind: fm.kind,
 			gate: fm.gate,
 			created: fm.created ?? "",
-			owner: fm.owner ?? "blog-lead",
+			owner: fm.owner ?? "main",
 			depends_on: fm.depends_on ?? [],
 			supersedes: fm.supersedes ?? null,
 		},

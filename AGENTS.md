@@ -36,31 +36,38 @@ agentic-journal/
 
 ## Workflow
 
+Main always stays clean. All work happens in a worktree on a `spec/<slug>` branch. PRs are the integration point.
+
 1. **Intent** → human types what they want
-2. **Spec** → invoke `align` skill → writes `specs/active/NNN-slug/` with `gate:`
-3. **Tasks** → ordered checklist in `tasks.md`, each has `agent:`, `depends:`, `file_targets:`
-4. **Execute** → subagent (`blog-lead`) picks next ready task, edits files
-5. **Verify** → `bun run tasks:verify` runs the spec's gate → pass/fail
-6. **Archive** → all tasks checked + gate green → `scripts/spec-archive.ts` moves to `specs/archive/`
-7. **Deploy** → merge to `main` → GitHub Actions builds + deploys to Cloudflare
+2. **`/do <intent>`** → align → open worktree → author RED spec → work to green → `spec:complete` → push branch → open PR
+3. **Human merges the PR** on GitHub (CI gates the merge)
+4. **`bun run worktree:close <slug>`** → remove worktree + delete local branch
 
-## Subagents
+For parallel work: invoke `/do` multiple times via the `Agent` tool in a single message. Each dispatch opens its own worktree on its own branch. No file conflicts until merge.
 
-- `blog-lead` — the only domain subagent (this is a small repo)
+Periodically invoke **`/retro`** — retrospective scan of traces + archive + merged PRs, authors an improvement spec via `/do`.
+
+Only the edits inside `/do`'s work loop are non-deterministic. Everything else (align, spec-lint, verify, tick, archive, commit, push, PR creation) is scripts or ceremonial git.
 
 ## Skills
 
-- `align` — author a spec from intent (writes the gate first)
-- `expertise` — read/write persisted learnings
-- `ts-axioms` — TypeScript invariants
-- `deterministic-first` — classify enforcement layer (hook/lint/test/CI vs skill)
+- **`/do <intent>`** — the only command needed for a change. End-to-end: align, worktree, RED spec, work, close, push, PR.
+- **`/retro`** — feedback pillar. Retrospective scan → improvement spec from traces + archive + PR history.
+- `align` — shared-understanding interview (invoked inside `/do`, or standalone to explore).
+- `expertise` — persist learnings across sessions.
+- `ts-axioms` — TypeScript judgement-level invariants.
+
+No subagents by default. For parallel `/do`, dispatch via the `Agent` tool — each worker runs in its own worktree.
 
 ## What agents MUST NOT do
 
+- Edit files on `main` — all changes happen in a worktree on `spec/<slug>`
 - Write code without an active spec
 - Edit `content/posts/*.mdx` without a spec of kind `writeup` pointing at that file
-- Manually `git mv` a spec between active and archive (use the script)
-- Tick `- [x]` on a task without running `tasks:verify`
+- Manually `git mv` a spec between active and archive (use `spec-complete`)
+- Tick `- [x]` themselves — `spec-complete` does this from git truth
+- Merge PRs — humans merge
+- Close worktrees before the PR is merged
 - Introduce new LLM-powered automation where a script would suffice (deterministic-first)
 
 ## Gate types
