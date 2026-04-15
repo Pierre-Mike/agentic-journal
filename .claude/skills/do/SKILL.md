@@ -110,11 +110,12 @@ The script:
 - Archives the spec folder
 - Commits with a conventional message
 
-### Step 8 — Push + PR
+### Step 8 — Push + PR + auto-merge
 
 ```bash
 git push -u origin spec/<slug>
-gh pr create --title "<kind>(<id>): <title>" --body "$(cat <<'EOF'
+
+PR_URL=$(gh pr create --title "<kind>(<id>): <title>" --body "$(cat <<'EOF'
 ## Summary
 <one sentence of intent from proposal.md>
 
@@ -126,30 +127,65 @@ gh pr create --title "<kind>(<id>): <title>" --body "$(cat <<'EOF'
 ## Changes
 <short bullet list derived from tasks.md>
 EOF
-)"
+)")
+
+# Queue the merge — fires automatically once CI is green
+gh pr merge --auto --squash --delete-branch "$PR_URL"
 ```
 
-### Step 9 — Report
+If auto-merge is not enabled on the repo, `gh pr merge --auto` fails with a clear error. In that case: print the PR URL and skip to Step 10 with a note that auto-merge is unavailable. Do not attempt to merge directly.
 
-Print exactly:
+### Step 9 — Watch CI
 
+Return to the main repo working directory (not the worktree). Then:
+
+```bash
+gh pr checks "$PR_URL" --watch --interval 15 --required
+```
+
+This blocks until all required CI checks resolve. On success → auto-merge fires → branch deleted on remote. On failure → the PR stays open for human triage.
+
+### Step 10 — Report
+
+After CI resolves, print one of:
+
+**On CI green + auto-merged**:
 ```
 /do complete for <id>:
-  branch: spec/<slug>
-  PR: <url>
+  branch: spec/<slug>  ← merged + deleted on remote
+  PR: <url>  ← merged
+  CI: passed (<n> checks)
 
-main remains clean. Merge the PR when ready, then:
-  bun scripts/worktree-close.ts <slug>
+main is ahead of your local. Run:
+  git pull
+The post-merge hook will auto-clean the local worktree.
 ```
 
-Stop. Do not merge the PR. Do not clean up the worktree. Both are deliberate handoffs.
+**On CI red (no auto-merge)**:
+```
+/do paused for <id>:
+  branch: spec/<slug>
+  PR: <url>  ← open, awaiting fix
+  CI: FAILED
+
+failing checks:
+  - <name>: <url>
+  - <name>: <url>
+
+main is unchanged. Investigate the PR, push fixes to spec/<slug>, or close the PR.
+```
+
+Stop after printing the report. Do not pull, do not clean up the worktree — those happen on the user's next `git pull` (post-merge hook runs `sync` automatically).
 
 ## Rules
 
 - **Main is never dirty.** Every file write goes into the worktree. Verify with `git status` from main after /do finishes.
 - **Align is non-optional.** Skipping the interview produces misaligned specs that poison the archive.
 - **Gate first, always.** Write the failing artifact before enumerating tasks.
-- **Never tick, never merge, never close the worktree.** Those transitions are either scripts or human actions.
+- **Never tick manually.** `spec-complete` does it from git truth.
+- **Never merge directly.** Use `gh pr merge --auto` to queue. CI gates the actual merge.
+- **Never close the worktree manually inside `/do`.** The post-merge hook handles cleanup on `git pull`.
+- **Never `git pull` from within `/do`.** Leave that as the user's deliberate next action — they may want to keep working on parallel specs first.
 - **Deterministic-first.** If the user's intent can be a lint/hook/script, prefer `kind: rule` or `kind: workflow`.
 
 ## Parallelism
