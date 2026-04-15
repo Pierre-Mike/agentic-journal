@@ -16,3 +16,8 @@ pre-commit:
         if command -v gitleaks >/dev/null 2>&1; then
           gitleaks protect --staged --redact
         fi
+
+post-merge:
+  commands:
+    sync:
+      run: bun run sync
