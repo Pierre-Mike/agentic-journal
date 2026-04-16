@@ -1,0 +1,291 @@
+{
+  "nodes": [
+    {
+      "id": "group-forward",
+      "type": "group",
+      "x": -932,
+      "y": 155,
+      "width": 1864,
+      "height": 490,
+      "label": "Forward loop",
+      "color": "5"
+    },
+    {
+      "id": "group-feedback",
+      "type": "group",
+      "x": -1007,
+      "y": 625,
+      "width": 1105,
+      "height": 185,
+      "label": "Feedback loop",
+      "color": "6"
+    },
+    {
+      "id": "title",
+      "type": "text",
+      "x": -967,
+      "y": 0,
+      "width": 400,
+      "height": 85,
+      "text": "# Agentic Workflow\n/do forward loop + /retro feedback loop"
+    },
+    {
+      "id": "legend",
+      "type": "text",
+      "x": -542,
+      "y": 0,
+      "width": 250,
+      "height": 135,
+      "text": "**Legend**\nblue = forward loop\npurple = feedback loop\nred = invariant"
+    },
+    {
+      "id": "fwd-1",
+      "type": "text",
+      "x": -892,
+      "y": 215,
+      "width": 250,
+      "height": 85,
+      "text": "**human intent**\n/do <intent>",
+      "color": "5"
+    },
+    {
+      "id": "fwd-2",
+      "type": "text",
+      "x": -542,
+      "y": 215,
+      "width": 250,
+      "height": 85,
+      "text": "**/do**\nskill entrypoint",
+      "color": "5"
+    },
+    {
+      "id": "fwd-3",
+      "type": "text",
+      "x": -192,
+      "y": 215,
+      "width": 250,
+      "height": 85,
+      "text": "**align**\n4-layer interview",
+      "color": "5"
+    },
+    {
+      "id": "fwd-4",
+      "type": "text",
+      "x": 158,
+      "y": 215,
+      "width": 250,
+      "height": 85,
+      "text": "**worktree**\nspec/<slug> branch",
+      "color": "5"
+    },
+    {
+      "id": "fwd-5",
+      "type": "text",
+      "x": 508,
+      "y": 215,
+      "width": 384,
+      "height": 85,
+      "text": "**RED**\nproposal + gate + design + tasks",
+      "color": "5"
+    },
+    {
+      "id": "fwd-6",
+      "type": "text",
+      "x": -892,
+      "y": 520,
+      "width": 250,
+      "height": 85,
+      "text": "**work loop**\nedit -> tasks:verify",
+      "color": "5"
+    },
+    {
+      "id": "fwd-7",
+      "type": "text",
+      "x": -542,
+      "y": 520,
+      "width": 250,
+      "height": 85,
+      "text": "**spec:complete**\narchive + tick boxes",
+      "color": "5"
+    },
+    {
+      "id": "fwd-8",
+      "type": "text",
+      "x": -192,
+      "y": 520,
+      "width": 250,
+      "height": 85,
+      "text": "**gh pr create**\n--auto squash",
+      "color": "5"
+    },
+    {
+      "id": "fwd-9",
+      "type": "text",
+      "x": 158,
+      "y": 520,
+      "width": 250,
+      "height": 85,
+      "text": "**CI + merge**\ngates all kinds",
+      "color": "5"
+    },
+    {
+      "id": "fwd-10",
+      "type": "text",
+      "x": 575,
+      "y": 520,
+      "width": 250,
+      "height": 85,
+      "text": "**git pull -> sync**\nworktree cleanup",
+      "color": "5"
+    },
+    {
+      "id": "fb-a",
+      "type": "text",
+      "x": -967,
+      "y": 685,
+      "width": 400,
+      "height": 85,
+      "text": "**sources**\nspecs/archive + traces + merged PRs",
+      "color": "6"
+    },
+    {
+      "id": "fb-b",
+      "type": "text",
+      "x": -542,
+      "y": 685,
+      "width": 250,
+      "height": 85,
+      "text": "**/retro**\nscan for patterns",
+      "color": "6"
+    },
+    {
+      "id": "fb-c",
+      "type": "text",
+      "x": -192,
+      "y": 685,
+      "width": 250,
+      "height": 85,
+      "text": "**improvement spec**\nkind: writeup or rule",
+      "color": "6"
+    },
+    {
+      "id": "inv-clean",
+      "type": "text",
+      "x": -892,
+      "y": 380,
+      "width": 250,
+      "height": 60,
+      "text": "main stays clean",
+      "color": "1"
+    },
+    {
+      "id": "inv-gate",
+      "type": "text",
+      "x": -542,
+      "y": 380,
+      "width": 250,
+      "height": 60,
+      "text": "gate = verdict",
+      "color": "1"
+    },
+    {
+      "id": "inv-det",
+      "type": "text",
+      "x": -192,
+      "y": 380,
+      "width": 250,
+      "height": 60,
+      "text": "deterministic-first",
+      "color": "1"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-1",
+      "fromNode": "fwd-1",
+      "toNode": "fwd-2",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "edge-2",
+      "fromNode": "fwd-2",
+      "toNode": "fwd-3",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "edge-3",
+      "fromNode": "fwd-3",
+      "toNode": "fwd-4",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "edge-4",
+      "fromNode": "fwd-4",
+      "toNode": "fwd-5",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "edge-5",
+      "fromNode": "fwd-5",
+      "toNode": "fwd-6",
+      "fromSide": "left",
+      "toSide": "right",
+      "label": "RED -> green"
+    },
+    {
+      "id": "edge-6",
+      "fromNode": "fwd-6",
+      "toNode": "fwd-7",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "edge-7",
+      "fromNode": "fwd-7",
+      "toNode": "fwd-8",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "edge-8",
+      "fromNode": "fwd-8",
+      "toNode": "fwd-9",
+      "fromSide": "right",
+      "toSide": "left",
+      "label": "CI gates merge"
+    },
+    {
+      "id": "edge-9",
+      "fromNode": "fwd-9",
+      "toNode": "fwd-10",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "edge-10",
+      "fromNode": "fb-a",
+      "toNode": "fb-b",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "edge-11",
+      "fromNode": "fb-b",
+      "toNode": "fb-c",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "edge-12",
+      "fromNode": "fb-c",
+      "toNode": "fwd-2",
+      "fromSide": "top",
+      "toSide": "bottom",
+      "label": "feeds back into /do"
+    }
+  ]
+}
