@@ -11,4 +11,5 @@ dist
 .claude/traces
 .claude/sessions
 .claude/dashboard.html
+.claude/scheduled_tasks.lock
 .agentic/worktrees
