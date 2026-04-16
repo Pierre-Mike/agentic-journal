@@ -131,8 +131,8 @@ async function test1_aggregateBasics(): Promise<void> {
 			);
 			const topFile = sessA.files_touched_top[0];
 			assertTrue(
-				topFile?.file === "src/a.ts" && topFile?.count === 2,
-				"sess-A top file is src/a.ts count 2",
+				topFile?.file === "src/a.ts" && topFile?.count === 3,
+				"sess-A top file is src/a.ts count 3 (Pre Write, Post Write, Pre Edit)",
 				`got ${JSON.stringify(topFile)}`,
 			);
 			assertTrue(
@@ -143,8 +143,8 @@ async function test1_aggregateBasics(): Promise<void> {
 		}
 		const globalTop = report.files_touched_top[0];
 		assertTrue(
-			globalTop?.file === "src/a.ts" && globalTop?.count === 2,
-			"global top file is src/a.ts count 2",
+			globalTop?.file === "src/a.ts" && globalTop?.count === 3,
+			"global top file is src/a.ts count 3",
 			`got ${JSON.stringify(globalTop)}`,
 		);
 	} finally {

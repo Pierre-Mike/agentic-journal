@@ -40,7 +40,7 @@ supersedes: null
 ## Acceptance criteria
 
 - [ ] `scripts/trace-scan.ts` exists and exports `parseSince`, `aggregate`, `topN`, `loadTraces`, `renderText`, `run`
-- [ ] `scripts/trace-scan.test.ts` exists and exits 0 (`bun scripts/trace-scan.test.ts`)
+- [ ] `scripts/trace-scan.test.ts` exists and passes under `bun test scripts/trace-scan.test.ts`
 - [ ] `scripts/smoke-trace-scan.ts` exists and exits 0 (`bun scripts/smoke-trace-scan.ts`)
 - [ ] `specs/active/005-trace-scan/findings.md` exists (retro audit trail)
 - [ ] `bun run spec:lint` exits 0
