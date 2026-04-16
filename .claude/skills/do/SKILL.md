@@ -39,6 +39,32 @@ From the aligned plan derive:
 
 Confirm these four fields with the user in a single compact message. If any are unclear, ask — do not guess.
 
+After the user confirms, do NOT continue inline. Hand off Steps 3–10 to a background subagent.
+
+### Step 2.5 — Delegate
+
+Everything from Step 3 onward is deterministic, long-running, and does not need the user. Dispatch it to a background subagent so the main session is free.
+
+```
+Agent({
+  subagent_type: "general-purpose",
+  run_in_background: true,
+  description: "do/<slug>",
+  prompt: <self-contained handoff>,
+})
+```
+
+The handoff prompt must be fully self-contained — the subagent has no prior context:
+
+- **Spec fields** — `title`, `kind`, `gate`, `depends_on` (from Step 2)
+- **Aligned plan** — copy-paste the confirmed Goal + Big Picture + Straightforward Details + Non-obvious Decisions text from the align interview, verbatim. Do not summarise.
+- **Procedure** — inline Steps 3 through 10 (below) directly into the prompt. The subagent does NOT reinvoke `/do` — that would spawn a nested align with no user.
+- **Termination** — "exit after printing the Step 10 report. Do not `git pull`. Do not touch `main`."
+
+After dispatch, the main session returns control to the user immediately. When the subagent finishes, its final message (one of /do complete, /do paused, /do escalated) lands as a completion notification. Relay that message to the user verbatim.
+
+The steps below are executed by the background subagent, not the main session.
+
 ### Step 3 — Allocate ID and slug
 
 - Scan `specs/active/` and `specs/archive/`
@@ -185,6 +211,7 @@ Stop after printing the report. Do not pull, do not clean up the worktree — th
 
 - **Main is never dirty.** Every file write goes into the worktree. Verify with `git status` from main after /do finishes.
 - **Align is non-optional.** Skipping the interview produces misaligned specs that poison the archive.
+- **Delegate after alignment.** Once spec fields are confirmed, the main session must dispatch Steps 3–10 to a background subagent via the `Agent` tool (`run_in_background: true`). The user stays unblocked; re-engagement happens through the subagent's completion notification.
 - **Spec first, gate second.** `proposal.md` gets written before any gate artifact — the pre-tool-use write guard blocks edits to protected paths until an active spec targets them.
 - **Never tick manually.** `spec-complete` does it from git truth.
 - **Never merge directly.** Use `gh pr merge --auto` to queue. CI gates the actual merge.

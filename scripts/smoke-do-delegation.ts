@@ -31,7 +31,7 @@ const checks: Check[] = [
 	},
 	{
 		name: "Rules block contains delegation rule",
-		test: (b) => /\*\*Delegate after alignment\*\*/.test(b),
+		test: (b) => /\*\*Delegate after alignment\.?\*\*/.test(b),
 	},
 ];
 
