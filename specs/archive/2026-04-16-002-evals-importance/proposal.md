@@ -1,13 +1,14 @@
 ---
 id: 002-evals-importance
 title: Evals are the gate for AI
-status: active
+status: archived
 kind: writeup
 gate: content/posts/evals-importance.mdx
-created: 2026-04-16
+created: 2026-04-16T00:00:00.000Z
 owner: main
 depends_on: []
 supersedes: null
+archived: '2026-04-16'
 ---
 
 ## Intent
