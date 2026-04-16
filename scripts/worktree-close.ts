@@ -27,12 +27,49 @@ async function sh(
 	return { ok: (await proc.exited) === 0, out: out.trim() };
 }
 
-async function listMergedSpecBranches(): Promise<string[]> {
-	const merged = await sh(["git", "branch", "--merged", "main"], { silent: true });
-	return merged.out
+async function listSpecBranches(): Promise<string[]> {
+	const all = await sh(["git", "branch", "--list", "spec/*", "--format=%(refname:short)"], {
+		silent: true,
+	});
+	return all.out
 		.split("\n")
-		.map((b) => b.trim().replace(/^\*\s*/, ""))
-		.filter((b) => b.startsWith("spec/"));
+		.map((b) => b.trim())
+		.filter(Boolean);
+}
+
+/**
+ * A branch is "merged" if either:
+ *   - it is an ancestor of main (classic merge), or
+ *   - GitHub reports a merged PR with this branch as head (covers squash/rebase merges).
+ */
+async function isMerged(branch: string): Promise<boolean> {
+	const ancestry = await sh(["git", "branch", "--merged", "main"], { silent: true });
+	const ancestorBranches = ancestry.out.split("\n").map((b) => b.trim().replace(/^\*\s*/, ""));
+	if (ancestorBranches.includes(branch)) return true;
+
+	const pr = await sh(
+		[
+			"gh",
+			"pr",
+			"list",
+			"--state",
+			"merged",
+			"--head",
+			branch,
+			"--json",
+			"number",
+			"-q",
+			".[0].number",
+		],
+		{ silent: true },
+	);
+	return pr.ok && pr.out.length > 0;
+}
+
+async function listMergedSpecBranches(): Promise<string[]> {
+	const specs = await listSpecBranches();
+	const results = await Promise.all(specs.map(async (b) => ((await isMerged(b)) ? b : null)));
+	return results.filter((b): b is string => b !== null);
 }
 
 async function closeOne(slug: string, repoRoot: string): Promise<{ ok: boolean; reason?: string }> {
@@ -51,9 +88,7 @@ async function closeOne(slug: string, repoRoot: string): Promise<{ ok: boolean; 
 		return { ok: false, reason: "worktree has uncommitted changes" };
 	}
 
-	const merged = await sh(["git", "branch", "--merged", "main"], { silent: true });
-	const mergedBranches = merged.out.split("\n").map((b) => b.trim().replace(/^\*\s*/, ""));
-	if (!mergedBranches.includes(branch)) {
+	if (!(await isMerged(branch))) {
 		return { ok: false, reason: `branch '${branch}' not merged into main` };
 	}
 
@@ -62,7 +97,9 @@ async function closeOne(slug: string, repoRoot: string): Promise<{ ok: boolean; 
 		return { ok: false, reason: "git worktree remove failed" };
 	}
 
-	const deleteBranch = await sh(["git", "branch", "-d", branch]);
+	// -D (force) because squash/rebase merges leave the local branch non-ancestor
+	// of main even though the PR is merged. isMerged() already verified that.
+	const deleteBranch = await sh(["git", "branch", "-D", branch]);
 	if (!deleteBranch.ok) {
 		return { ok: false, reason: `worktree removed but branch '${branch}' deletion failed` };
 	}
