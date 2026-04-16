@@ -1,13 +1,14 @@
 ---
 id: 005-workflow-canvas
 title: Canvas explaining the agentic workflow
-status: active
+status: archived
 kind: workflow
 gate: scripts/gates/canvas-valid.ts
-created: 2026-04-16
+created: 2026-04-16T00:00:00.000Z
 owner: main
 depends_on: []
 supersedes: null
+archived: '2026-04-16'
 ---
 
 ## Intent
