@@ -16,7 +16,7 @@ jobs:
       - name: Typecheck
         run: bun run typecheck
       - name: Biome
-        run: bun run lint -- --no-errors-on-unmatched
+        run: bun run lint:ci
       - name: Spec lint
         run: bun run spec:lint
       - name: Tasks verify

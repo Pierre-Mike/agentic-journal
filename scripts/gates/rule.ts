@@ -12,7 +12,9 @@ export async function checkRule(paths: string[]): Promise<{ pass: boolean; messa
 		if (!existsSync(abs)) {
 			return { pass: false, message: `rule artifact missing at ${path}` };
 		}
-		const mod = (await import(abs)) as { default?: () => Promise<{ pass: boolean; message: string }> };
+		const mod = (await import(abs)) as {
+			default?: () => Promise<{ pass: boolean; message: string }>;
+		};
 		if (!mod.default) {
 			return { pass: false, message: `${path} has no default export` };
 		}

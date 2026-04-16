@@ -1,6 +1,6 @@
 {
-  "triggers": [
-    "Align on a design or technical approach before implementation. Use when the user says 'align on', 'let's align', 'align with me', or invokes the skill with a file or folder path. Covers system design, feature planning, refactoring strategy, migration planning, or any task where discovering a wrong assumption during implementation would be costly.",
-    "Synchronize mental models before writing code. Use when the user wants to confirm an approach, validate a plan, or walk through a design decision-by-decision before committing to implementation. Triggers on phrases like 'before we start', 'let's get aligned', 'walk me through the approach', or 'confirm the design'."
-  ]
+	"triggers": [
+		"Align on a design or technical approach before implementation. Use when the user says 'align on', 'let's align', 'align with me', or invokes the skill with a file or folder path. Covers system design, feature planning, refactoring strategy, migration planning, or any task where discovering a wrong assumption during implementation would be costly.",
+		"Synchronize mental models before writing code. Use when the user wants to confirm an approach, validate a plan, or walk through a design decision-by-decision before committing to implementation. Triggers on phrases like 'before we start', 'let's get aligned', 'walk me through the approach', or 'confirm the design'."
+	]
 }

@@ -6,7 +6,7 @@
 
 import { enforcePreToolUse } from "./hooks/enforce";
 import { emitTrace } from "./hooks/observe";
-import { isToolEvent, type HookEvent, type ToolEvent } from "./hooks/types";
+import { type HookEvent, isToolEvent, type ToolEvent } from "./hooks/types";
 import { verifyPostToolUse } from "./hooks/verify";
 
 const input = await Bun.stdin.text();

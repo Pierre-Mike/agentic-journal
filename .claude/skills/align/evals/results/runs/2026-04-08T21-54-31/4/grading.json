@@ -1,25 +1,25 @@
 {
-  "expectations": [
-    {
-      "text": "The response includes an ASCII diagram or structured visual (using box-drawing characters or ASCII art) that anchors the secrets management group before listing the individual decisions within it.",
-      "passed": true,
-      "evidence": "The output contains a clear ASCII diagram at the top using box-drawing characters (┌─┐└┘) titled 'Secrets Management Flow' showing the flow between Developer Local, CI/CD Platform, and Cloud Provider, with arrows and structured layout. This appears before the bulleted decisions list."
-    },
-    {
-      "text": "The decisions listed are stated as straightforward assumed defaults (one-line statements of the decided approach) — they do NOT include ⭐/❌ tradeoff analysis or multiple competing options.",
-      "passed": true,
-      "evidence": "All six decisions are presented as declarative statements of the chosen approach: 'Build-time secrets stored in GitHub Secrets', 'Deploy-time secrets stored in GitHub Secrets', 'Runtime secrets stored in AWS Secrets Manager', etc. None include ⭐/❌ symbols, competing options, or tradeoff analysis."
-    },
-    {
-      "text": "The response ends with exactly two options: one to confirm and proceed, one to type a correction.",
-      "passed": true,
-      "evidence": "The output ends with exactly two numbered options: '1. ✅ Accept and move to Group 4 (CI workflow structure)' and '2. ✏️ Type a correction'"
-    }
-  ],
-  "summary": {
-    "passed": 3,
-    "failed": 0,
-    "total": 3,
-    "pass_rate": 1
-  }
+	"expectations": [
+		{
+			"text": "The response includes an ASCII diagram or structured visual (using box-drawing characters or ASCII art) that anchors the secrets management group before listing the individual decisions within it.",
+			"passed": true,
+			"evidence": "The output contains a clear ASCII diagram at the top using box-drawing characters (┌─┐└┘) titled 'Secrets Management Flow' showing the flow between Developer Local, CI/CD Platform, and Cloud Provider, with arrows and structured layout. This appears before the bulleted decisions list."
+		},
+		{
+			"text": "The decisions listed are stated as straightforward assumed defaults (one-line statements of the decided approach) — they do NOT include ⭐/❌ tradeoff analysis or multiple competing options.",
+			"passed": true,
+			"evidence": "All six decisions are presented as declarative statements of the chosen approach: 'Build-time secrets stored in GitHub Secrets', 'Deploy-time secrets stored in GitHub Secrets', 'Runtime secrets stored in AWS Secrets Manager', etc. None include ⭐/❌ symbols, competing options, or tradeoff analysis."
+		},
+		{
+			"text": "The response ends with exactly two options: one to confirm and proceed, one to type a correction.",
+			"passed": true,
+			"evidence": "The output ends with exactly two numbered options: '1. ✅ Accept and move to Group 4 (CI workflow structure)' and '2. ✏️ Type a correction'"
+		}
+	],
+	"summary": {
+		"passed": 3,
+		"failed": 0,
+		"total": 3,
+		"pass_rate": 1
+	}
 }

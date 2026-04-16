@@ -1,30 +1,30 @@
 {
-  "expectations": [
-    {
-      "text": "BEFORE presenting the big picture, the assistant performs online research (web search, GitHub search, or both) to inform its proposal — this is evidenced by the assistant explicitly mentioning it researched, looked up, or searched for information about collaborative editing technologies, libraries, or patterns.",
-      "passed": false,
-      "evidence": "The output contains no explicit mention of research. It jumps directly into the big picture presentation without any statement like 'I searched for...', 'I looked up...', or 'I researched...'. There is no visible research phase before the proposal."
-    },
-    {
-      "text": "The big picture proposal is informed by the research — it references concrete technologies, libraries, or architectural patterns discovered through the research (e.g., Yjs, Automerge, CRDTs, OT algorithms) with specific details that go beyond surface-level general knowledge.",
-      "passed": true,
-      "evidence": "The output references Yjs (a specific CRDT library) with the y-websocket provider, and describes specific built-in capabilities like 'operational transformation, conflict resolution, and cursor/presence awareness are built in'. This level of specificity (naming the exact provider component and its features) indicates research-informed depth beyond surface-level knowledge of 'use CRDTs'."
-    },
-    {
-      "text": "The big picture includes an ASCII diagram showing the high-level architecture.",
-      "passed": true,
-      "evidence": "The output includes a detailed ASCII diagram showing Browser Clients (with Editor UI, CRDT doc, IndexedDB), WebSocket connections, Node.js Server components, and Persistence layer, followed by a numbered flow description."
-    },
-    {
-      "text": "The response ends with exactly two confirmation options.",
-      "passed": true,
-      "evidence": "The response ends with exactly two options: '1. ✅ Yes, move to straightforward details' and '2. ✏️ Type a correction'."
-    }
-  ],
-  "summary": {
-    "passed": 3,
-    "failed": 1,
-    "total": 4,
-    "pass_rate": 0.75
-  }
+	"expectations": [
+		{
+			"text": "BEFORE presenting the big picture, the assistant performs online research (web search, GitHub search, or both) to inform its proposal — this is evidenced by the assistant explicitly mentioning it researched, looked up, or searched for information about collaborative editing technologies, libraries, or patterns.",
+			"passed": false,
+			"evidence": "The output contains no explicit mention of research. It jumps directly into the big picture presentation without any statement like 'I searched for...', 'I looked up...', or 'I researched...'. There is no visible research phase before the proposal."
+		},
+		{
+			"text": "The big picture proposal is informed by the research — it references concrete technologies, libraries, or architectural patterns discovered through the research (e.g., Yjs, Automerge, CRDTs, OT algorithms) with specific details that go beyond surface-level general knowledge.",
+			"passed": true,
+			"evidence": "The output references Yjs (a specific CRDT library) with the y-websocket provider, and describes specific built-in capabilities like 'operational transformation, conflict resolution, and cursor/presence awareness are built in'. This level of specificity (naming the exact provider component and its features) indicates research-informed depth beyond surface-level knowledge of 'use CRDTs'."
+		},
+		{
+			"text": "The big picture includes an ASCII diagram showing the high-level architecture.",
+			"passed": true,
+			"evidence": "The output includes a detailed ASCII diagram showing Browser Clients (with Editor UI, CRDT doc, IndexedDB), WebSocket connections, Node.js Server components, and Persistence layer, followed by a numbered flow description."
+		},
+		{
+			"text": "The response ends with exactly two confirmation options.",
+			"passed": true,
+			"evidence": "The response ends with exactly two options: '1. ✅ Yes, move to straightforward details' and '2. ✏️ Type a correction'."
+		}
+	],
+	"summary": {
+		"passed": 3,
+		"failed": 1,
+		"total": 4,
+		"pass_rate": 0.75
+	}
 }

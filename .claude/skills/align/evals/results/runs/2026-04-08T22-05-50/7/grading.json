@@ -1,30 +1,30 @@
 {
-  "expectations": [
-    {
-      "text": "The assistant proceeds directly to the big picture WITHOUT performing web searches or GitHub lookups — there is no mention of 'researching', 'looking up', 'searching', or 'let me check' for external resources before presenting the big picture.",
-      "passed": true,
-      "evidence": "The output begins immediately with '# 🎯 Big Picture' and presents the split strategy. There is no mention of researching, looking up, searching, or checking external resources anywhere in the output."
-    },
-    {
-      "text": "The big picture is based on the user's description — it proposes a split strategy, route reorganization, and responsibility boundaries using only internal knowledge of the described codebase.",
-      "passed": true,
-      "evidence": "The output proposes splitting UserController into AuthController and UserController, reorganizes routes from /users/* to /auth/* for authentication operations, and defines clear boundaries: AuthController handles 'authentication flows' and 'token/session management' while UserController handles 'profile CRUD'. All details reference the 800-line controller and operations mentioned in the eval prompt."
-    },
-    {
-      "text": "The big picture includes an ASCII diagram showing the controller split and route structure.",
-      "passed": true,
-      "evidence": "The output contains two ASCII diagrams: 'Current state' showing all routes pointing to the monolithic UserController, and 'Target state' showing the split between AuthController (/auth/* routes) and UserController (/users/* routes)."
-    },
-    {
-      "text": "The response ends with exactly two confirmation options.",
-      "passed": true,
-      "evidence": "The output ends with exactly two numbered options: '1. ✅ Yes, move to straightforward details' and '2. ✏️ Type a correction'."
-    }
-  ],
-  "summary": {
-    "passed": 4,
-    "failed": 0,
-    "total": 4,
-    "pass_rate": 1
-  }
+	"expectations": [
+		{
+			"text": "The assistant proceeds directly to the big picture WITHOUT performing web searches or GitHub lookups — there is no mention of 'researching', 'looking up', 'searching', or 'let me check' for external resources before presenting the big picture.",
+			"passed": true,
+			"evidence": "The output begins immediately with '# 🎯 Big Picture' and presents the split strategy. There is no mention of researching, looking up, searching, or checking external resources anywhere in the output."
+		},
+		{
+			"text": "The big picture is based on the user's description — it proposes a split strategy, route reorganization, and responsibility boundaries using only internal knowledge of the described codebase.",
+			"passed": true,
+			"evidence": "The output proposes splitting UserController into AuthController and UserController, reorganizes routes from /users/* to /auth/* for authentication operations, and defines clear boundaries: AuthController handles 'authentication flows' and 'token/session management' while UserController handles 'profile CRUD'. All details reference the 800-line controller and operations mentioned in the eval prompt."
+		},
+		{
+			"text": "The big picture includes an ASCII diagram showing the controller split and route structure.",
+			"passed": true,
+			"evidence": "The output contains two ASCII diagrams: 'Current state' showing all routes pointing to the monolithic UserController, and 'Target state' showing the split between AuthController (/auth/* routes) and UserController (/users/* routes)."
+		},
+		{
+			"text": "The response ends with exactly two confirmation options.",
+			"passed": true,
+			"evidence": "The output ends with exactly two numbered options: '1. ✅ Yes, move to straightforward details' and '2. ✏️ Type a correction'."
+		}
+	],
+	"summary": {
+		"passed": 4,
+		"failed": 0,
+		"total": 4,
+		"pass_rate": 1
+	}
 }

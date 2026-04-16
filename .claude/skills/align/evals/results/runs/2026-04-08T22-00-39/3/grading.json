@@ -1,25 +1,25 @@
 {
-  "expectations": [
-    {
-      "text": "The response re-presents a full goal statement that reflects the correction: basic URL shortening with no analytics. It is a complete goal section, not just a one-line acknowledgement like 'Got it, dropping analytics.'",
-      "passed": true,
-      "evidence": "The output contains a full goal section labeled '🎯 **Updated Goal**' with a complete statement: 'Build a URL shortener that converts long URLs into short, shareable links.' This is a proper re-presentation that incorporates the correction (no analytics), not just an acknowledgement."
-    },
-    {
-      "text": "The response does NOT present big picture content — no architecture diagrams, no component lists, no implementation decisions — despite the user saying 'let's jump to the big picture.'",
-      "passed": true,
-      "evidence": "The output contains only the updated goal statement and confirmation options. There are no architecture diagrams, component lists, or implementation decisions present. The skill correctly re-confirmed the corrected goal instead of jumping ahead, following the flow protocol that corrections trigger re-presentation."
-    },
-    {
-      "text": "The response ends with exactly two options: one to accept the corrected goal and proceed to big picture, one to type a further correction.",
-      "passed": true,
-      "evidence": "The output ends with exactly two numbered options: '1. ✅ Yes, move to big picture' (acceptance option) and '2. ✏️ Type a correction' (correction option)."
-    }
-  ],
-  "summary": {
-    "passed": 3,
-    "failed": 0,
-    "total": 3,
-    "pass_rate": 1
-  }
+	"expectations": [
+		{
+			"text": "The response re-presents a full goal statement that reflects the correction: basic URL shortening with no analytics. It is a complete goal section, not just a one-line acknowledgement like 'Got it, dropping analytics.'",
+			"passed": true,
+			"evidence": "The output contains a full goal section labeled '🎯 **Updated Goal**' with a complete statement: 'Build a URL shortener that converts long URLs into short, shareable links.' This is a proper re-presentation that incorporates the correction (no analytics), not just an acknowledgement."
+		},
+		{
+			"text": "The response does NOT present big picture content — no architecture diagrams, no component lists, no implementation decisions — despite the user saying 'let's jump to the big picture.'",
+			"passed": true,
+			"evidence": "The output contains only the updated goal statement and confirmation options. There are no architecture diagrams, component lists, or implementation decisions present. The skill correctly re-confirmed the corrected goal instead of jumping ahead, following the flow protocol that corrections trigger re-presentation."
+		},
+		{
+			"text": "The response ends with exactly two options: one to accept the corrected goal and proceed to big picture, one to type a further correction.",
+			"passed": true,
+			"evidence": "The output ends with exactly two numbered options: '1. ✅ Yes, move to big picture' (acceptance option) and '2. ✏️ Type a correction' (correction option)."
+		}
+	],
+	"summary": {
+		"passed": 3,
+		"failed": 0,
+		"total": 3,
+		"pass_rate": 1
+	}
 }

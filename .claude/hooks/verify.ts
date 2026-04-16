@@ -11,10 +11,9 @@ import { run, type ToolEvent } from "./types";
 const LINTABLE = /\.(ts|tsx|js|jsx|astro|json|md|mdx)$/;
 
 export async function verifyPostToolUse(event: ToolEvent): Promise<void> {
-	const filePath =
-		((event.tool_response?.filePath as string) ?? event.tool_input.file_path) as
-			| string
-			| undefined;
+	const filePath = ((event.tool_response?.filePath as string) ?? event.tool_input.file_path) as
+		| string
+		| undefined;
 	if (!filePath) return;
 
 	if (LINTABLE.test(filePath)) {

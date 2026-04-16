@@ -1,4 +1,4 @@
-import { describe, expect, test, mock } from "bun:test";
+import { describe, expect, mock, test } from "bun:test";
 import type { ToolEvent } from "./types";
 
 // Tests mock filesystem reads via the spec-guard module.
@@ -57,8 +57,6 @@ describe("enforcePreToolUse", () => {
 	test("allows content/posts edit when active spec targets file", async () => {
 		mock.module("./spec-guard", () => ({ activeSpecTargetsFile: () => true }));
 		const { enforcePreToolUse } = await import("./enforce");
-		expect(() =>
-			enforcePreToolUse(evt("/repo/content/posts/foo.mdx")),
-		).not.toThrow();
+		expect(() => enforcePreToolUse(evt("/repo/content/posts/foo.mdx"))).not.toThrow();
 	});
 });

@@ -5,7 +5,7 @@
 
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import { listActiveSpecs, listArchivedIds, VALID_KINDS, gatePaths } from "./_lib";
+import { gatePaths, listActiveSpecs, listArchivedIds, VALID_KINDS } from "./_lib";
 
 function main(): void {
 	const errors: string[] = [];
@@ -16,7 +16,9 @@ function main(): void {
 	for (const spec of active) {
 		const fm = spec.frontmatter;
 		if (!VALID_KINDS.includes(fm.kind)) {
-			errors.push(`${spec.slug}: invalid kind '${fm.kind}'. Expected one of ${VALID_KINDS.join(", ")}`);
+			errors.push(
+				`${spec.slug}: invalid kind '${fm.kind}'. Expected one of ${VALID_KINDS.join(", ")}`,
+			);
 		}
 		for (const g of gatePaths(spec)) {
 			if (!existsSync(join(process.cwd(), g))) {

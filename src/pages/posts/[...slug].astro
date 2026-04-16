@@ -1,6 +1,9 @@
 ---
+// biome-ignore-all lint/correctness/noUnusedImports: template-only references in .astro
+// biome-ignore-all lint/correctness/noUnusedVariables: template-only references in .astro
 import { getCollection, render } from "astro:content";
 import BaseLayout from "../../layouts/BaseLayout.astro";
+import { readingTime } from "../../lib/reading-time";
 
 export async function getStaticPaths() {
 	const posts = await getCollection("posts");
@@ -12,13 +15,14 @@ export async function getStaticPaths() {
 
 const { post } = Astro.props;
 const { Content } = await render(post);
+const { minutes } = readingTime(post.body ?? "");
 ---
 
 <BaseLayout title={post.data.title} description={post.data.summary}>
 	<article>
 		<h1>{post.data.title}</h1>
 		<p style="color: var(--muted)">
-			{post.data.date.toISOString().slice(0, 10)} · spec {post.data.spec_id}
+			{post.data.date.toISOString().slice(0, 10)} · spec {post.data.spec_id} · {minutes} min read
 		</p>
 		<Content />
 	</article>
