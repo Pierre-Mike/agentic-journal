@@ -1,22 +1,22 @@
 # Tasks
 
-- [ ] 1. Write RED smoke script with real assertions (fails before fixes)
+- [x] 1. Write RED smoke script with real assertions (fails before fixes)
   - agent: main
   - depends: []
   - file_targets: [scripts/smoke-harness-fixes.ts]
-- [ ] 2. Fix spec-guard to resolve repo root from filePath
+- [x] 2. Fix spec-guard to resolve repo root from filePath
   - agent: main
   - depends: [1]
   - file_targets: [.claude/hooks/spec-guard.ts]
-- [ ] 3. Fix spec-complete to accept slug-only, extract resolveSpec
+- [x] 3. Fix spec-complete to accept slug-only, extract resolveSpec
   - agent: main
   - depends: [1]
   - file_targets: [scripts/spec-complete.ts]
-- [ ] 4. Edit /do skill (order, echo, Rules)
+- [x] 4. Edit /do skill (order, echo, Rules)
   - agent: main
   - depends: []
   - file_targets: [.claude/skills/do/SKILL.md]
-- [ ] 5. Add AGENTS.md clarifier line
+- [x] 5. Add AGENTS.md clarifier line
   - agent: main
   - depends: []
   - file_targets: [AGENTS.md]

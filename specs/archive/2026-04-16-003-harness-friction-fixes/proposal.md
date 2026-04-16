@@ -1,13 +1,14 @@
 ---
 id: 003-harness-friction-fixes
 title: Close /do friction gaps
-status: active
+status: archived
 kind: workflow
 gate: scripts/smoke-harness-fixes.ts
-created: 2026-04-16
+created: 2026-04-16T00:00:00.000Z
 owner: main
 depends_on: []
 supersedes: null
+archived: '2026-04-16'
 ---
 
 ## Intent
