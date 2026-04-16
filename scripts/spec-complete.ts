@@ -9,8 +9,8 @@
  * No LLM, no guessing. Refuses on any precondition failure and prints why.
  */
 
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { basename, join } from "node:path";
 import { loadSpec } from "./_lib";
 
 interface TaskLine {
@@ -22,6 +22,30 @@ interface TaskLine {
 }
 
 const REPO_ROOT = process.cwd();
+
+/**
+ * Resolve a spec directory from either a full id-slug (`002-evals-importance`)
+ * or a bare slug (`evals-importance`). Suffix-match only; ambiguous slugs
+ * return null.
+ */
+export function resolveSpec(arg: string, root: string = REPO_ROOT): string | null {
+	const activeDir = join(root, "specs", "active");
+	if (!existsSync(activeDir)) return null;
+	const direct = join(activeDir, arg);
+	if (existsSync(join(direct, "proposal.md"))) return direct;
+	const suffix = `-${arg}`;
+	const matches = readdirSync(activeDir).filter((name) => {
+		if (name.startsWith("_") || name.startsWith(".")) return false;
+		if (!name.endsWith(suffix)) return false;
+		return existsSync(join(activeDir, name, "proposal.md"));
+	});
+	if (matches.length === 1) {
+		const only = matches[0];
+		if (!only) return null;
+		return join(activeDir, only);
+	}
+	return null;
+}
 
 async function sh(
 	cmd: string[],
@@ -97,16 +121,21 @@ function rewriteTaskLine(raw: string): string {
 }
 
 async function main(): Promise<void> {
-	const slug = process.argv[2];
-	if (!slug) {
+	const arg = process.argv[2];
+	if (!arg) {
 		console.error("usage: bun scripts/spec-complete.ts <slug>");
 		process.exit(1);
 	}
 
-	const specDir = join(REPO_ROOT, "specs", "active", slug);
+	const specDir = resolveSpec(arg);
+	if (!specDir) {
+		console.error(`✖ no active spec matching '${arg}' (tried exact and suffix-match)`);
+		process.exit(1);
+	}
+	const slug = basename(specDir);
 	const spec = loadSpec(specDir);
 	if (!spec) {
-		console.error(`✖ spec not found at specs/active/${slug}`);
+		console.error(`✖ spec at specs/active/${slug} is missing a valid proposal.md`);
 		process.exit(1);
 	}
 
@@ -191,4 +220,6 @@ async function main(): Promise<void> {
 	);
 }
 
-await main();
+if (import.meta.main) {
+	await main();
+}

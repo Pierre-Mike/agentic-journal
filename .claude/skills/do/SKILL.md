@@ -55,11 +55,11 @@ Script creates `.agentic/worktrees/<slug>/` on branch `spec/<slug>` from `main`.
 
 ### Step 5 — Author the spec (RED)
 
-Inside the worktree, write in this order:
+Inside the worktree, write in this order. `proposal.md` comes first because the pre-tool-use write guard only allows edits to protected paths (`content/posts/*.mdx`, `wrangler.toml`) once an active spec targets them.
 
-**5a. Gate artifact (RED)** — failing test file / empty writeup / not-yet-implemented rule / exit-1 smoke. See `specs/constitution.md` §4 for per-kind details.
+**5a. `proposal.md`** — based on `specs/_template/proposal.md`. Fill frontmatter (id, title, status=active, kind, gate, created, owner=main, depends_on, supersedes=null). Body: Intent, Constraints, Acceptance criteria (as `- [ ]`), Context.
 
-**5b. `proposal.md`** — based on `specs/_template/proposal.md`. Fill frontmatter (id, title, status=active, kind, gate, created, owner=main, depends_on, supersedes=null). Body: Intent, Constraints, Acceptance criteria (as `- [ ]`), Context.
+**5b. Gate artifact (RED)** — failing test file / empty writeup / not-yet-implemented rule / exit-1 smoke. See `specs/constitution.md` §4 for per-kind details.
 
 **5c. `design.md`** — Approach, Files touched, Decisions, Out of scope. Skip empty sections.
 
@@ -104,6 +104,8 @@ When every task's `file_targets` are modified AND `bun run tasks:verify` is gree
 bun run spec:complete <slug>
 ```
 
+`<slug>` accepts either the full directory name (`002-evals-importance`) or a bare slug (`evals-importance`). Bare slugs resolve by suffix-match; ambiguous matches error out.
+
 The script:
 - Re-verifies the gate
 - Ticks tasks whose `file_targets` were modified in git
@@ -129,8 +131,10 @@ PR_URL=$(gh pr create --title "<kind>(<id>): <title>" --body "$(cat <<'EOF'
 EOF
 )")
 
-# Queue the merge — fires automatically once CI is green
+# Queue the merge — fires automatically once CI is green.
+# `gh pr merge --auto` exits silently on success; echo so the caller sees it was dispatched.
 gh pr merge --auto --squash --delete-branch "$PR_URL"
+echo "✓ auto-merge queued for $PR_URL"
 ```
 
 If auto-merge is not enabled on the repo, `gh pr merge --auto` fails with a clear error. In that case: print the PR URL and skip to Step 10 with a note that auto-merge is unavailable. Do not attempt to merge directly.
@@ -181,7 +185,7 @@ Stop after printing the report. Do not pull, do not clean up the worktree — th
 
 - **Main is never dirty.** Every file write goes into the worktree. Verify with `git status` from main after /do finishes.
 - **Align is non-optional.** Skipping the interview produces misaligned specs that poison the archive.
-- **Gate first, always.** Write the failing artifact before enumerating tasks.
+- **Spec first, gate second.** `proposal.md` gets written before any gate artifact — the pre-tool-use write guard blocks edits to protected paths until an active spec targets them.
 - **Never tick manually.** `spec-complete` does it from git truth.
 - **Never merge directly.** Use `gh pr merge --auto` to queue. CI gates the actual merge.
 - **Never close the worktree manually inside `/do`.** The post-merge hook handles cleanup on `git pull`.
