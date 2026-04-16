@@ -1,35 +1,35 @@
 {
-  "expectations": [
-    {
-      "text": "The response shows a brief index of non-obvious decision titles before presenting any individual decision in detail — the index lists topic names only, with no recommendations or tradeoff analysis.",
-      "passed": true,
-      "evidence": "The output starts with 'Here's what's coming:' followed by a numbered list of 4 decision topics (Snowflake write batching strategy, Delivery semantics and idempotency, Backpressure and consumer lag handling, Schema evolution and breaking changes). This appears before '## Decision 1' and contains only topic names with no recommendations or analysis."
-    },
-    {
-      "text": "The response presents only the FIRST non-obvious decision in full detail — it does NOT present the second, third, or subsequent decisions in the same response.",
-      "passed": true,
-      "evidence": "Only '## Decision 1: Snowflake write batching strategy' is presented with full detail (problem statement, recommended option, rationale, alternatives). Decisions 2, 3, and 4 are listed in the index but not presented in detail."
-    },
-    {
-      "text": "The first decision presented includes a clearly marked recommended option (with ⭐ or 'Recommended' label) that includes a specific rationale for why it is preferred.",
-      "passed": true,
-      "evidence": "The decision includes '⭐ **Recommended: Adaptive micro-batching with dual triggers**' with a detailed 'Rationale:' section explaining why: 30s time cap ensures latency under 5 minutes, 5K size trigger optimizes for Snowflake bulk loading, time trigger prevents indefinite waiting during low-traffic, and adaptive behavior handles peak/off-peak loads."
-    },
-    {
-      "text": "The first decision presented includes at least one alternative option (marked with ❌ or 'Alternative' label) with a specific reason why it was not recommended.",
-      "passed": true,
-      "evidence": "The decision includes '❌ **Alternatives considered**:' with three alternatives: Fixed small batches (rejected due to poor cost/performance ratio), Fixed time-only (rejected because it wastes Snowflake's bulk loading capabilities), and Size-only (rejected because latency is the primary goal)."
-    },
-    {
-      "text": "The response ends with exactly two options: one to accept and proceed, one to type a correction.",
-      "passed": true,
-      "evidence": "The output ends with exactly two numbered options: '1. ✅ Accept and move to decision 2' and '2. ✏️ Type a correction'"
-    }
-  ],
-  "summary": {
-    "passed": 5,
-    "failed": 0,
-    "total": 5,
-    "pass_rate": 1
-  }
+	"expectations": [
+		{
+			"text": "The response shows a brief index of non-obvious decision titles before presenting any individual decision in detail — the index lists topic names only, with no recommendations or tradeoff analysis.",
+			"passed": true,
+			"evidence": "The output starts with 'Here's what's coming:' followed by a numbered list of 4 decision topics (Snowflake write batching strategy, Delivery semantics and idempotency, Backpressure and consumer lag handling, Schema evolution and breaking changes). This appears before '## Decision 1' and contains only topic names with no recommendations or analysis."
+		},
+		{
+			"text": "The response presents only the FIRST non-obvious decision in full detail — it does NOT present the second, third, or subsequent decisions in the same response.",
+			"passed": true,
+			"evidence": "Only '## Decision 1: Snowflake write batching strategy' is presented with full detail (problem statement, recommended option, rationale, alternatives). Decisions 2, 3, and 4 are listed in the index but not presented in detail."
+		},
+		{
+			"text": "The first decision presented includes a clearly marked recommended option (with ⭐ or 'Recommended' label) that includes a specific rationale for why it is preferred.",
+			"passed": true,
+			"evidence": "The decision includes '⭐ **Recommended: Adaptive micro-batching with dual triggers**' with a detailed 'Rationale:' section explaining why: 30s time cap ensures latency under 5 minutes, 5K size trigger optimizes for Snowflake bulk loading, time trigger prevents indefinite waiting during low-traffic, and adaptive behavior handles peak/off-peak loads."
+		},
+		{
+			"text": "The first decision presented includes at least one alternative option (marked with ❌ or 'Alternative' label) with a specific reason why it was not recommended.",
+			"passed": true,
+			"evidence": "The decision includes '❌ **Alternatives considered**:' with three alternatives: Fixed small batches (rejected due to poor cost/performance ratio), Fixed time-only (rejected because it wastes Snowflake's bulk loading capabilities), and Size-only (rejected because latency is the primary goal)."
+		},
+		{
+			"text": "The response ends with exactly two options: one to accept and proceed, one to type a correction.",
+			"passed": true,
+			"evidence": "The output ends with exactly two numbered options: '1. ✅ Accept and move to decision 2' and '2. ✏️ Type a correction'"
+		}
+	],
+	"summary": {
+		"passed": 5,
+		"failed": 0,
+		"total": 5,
+		"pass_rate": 1
+	}
 }

@@ -1,30 +1,30 @@
 {
-  "expectations": [
-    {
-      "text": "The response contains a goal-level statement (1-3 sentences) about what the task queue system is meant to achieve — it does NOT list or repeat the worker types, retry logic, dead-letter queues, or concurrency settings the user provided.",
-      "passed": true,
-      "evidence": "The output contains exactly one goal-level sentence: 'The system must offload long-running operations to background workers so that the API stays responsive and work completes even when individual attempts fail.' It describes the purpose (offload operations, maintain responsiveness, handle failures) without listing the three worker types, retry count, exponential backoff, dead-letter queues, or concurrency:5 setting."
-    },
-    {
-      "text": "The response does NOT contain any architecture decisions, bullet lists of implementation steps, ASCII diagrams, or technical specifics (BullMQ internals, Redis data structures, queue topology, concurrency settings).",
-      "passed": true,
-      "evidence": "The output contains only a goal statement and two confirmation options. There are no architecture decisions, no bullet lists, no diagrams, and no technical specifics about BullMQ, Redis, queue topology, or concurrency settings."
-    },
-    {
-      "text": "The response ends with exactly two options: one to accept and proceed, one to provide a free-text correction. There is no third option.",
-      "passed": true,
-      "evidence": "The output ends with exactly two numbered options: '1. ✅ Yes, move to big picture' and '2. ✏️ Type a correction'. No third option is present."
-    },
-    {
-      "text": "The response does NOT ask an open-ended question such as 'What approach would you like?' or 'What are your requirements?' or 'What drove that choice?'",
-      "passed": true,
-      "evidence": "The output contains no open-ended questions. It presents a goal statement followed by two confirmation options, with no interrogative prompts."
-    }
-  ],
-  "summary": {
-    "passed": 4,
-    "failed": 0,
-    "total": 4,
-    "pass_rate": 1
-  }
+	"expectations": [
+		{
+			"text": "The response contains a goal-level statement (1-3 sentences) about what the task queue system is meant to achieve — it does NOT list or repeat the worker types, retry logic, dead-letter queues, or concurrency settings the user provided.",
+			"passed": true,
+			"evidence": "The output contains exactly one goal-level sentence: 'The system must offload long-running operations to background workers so that the API stays responsive and work completes even when individual attempts fail.' It describes the purpose (offload operations, maintain responsiveness, handle failures) without listing the three worker types, retry count, exponential backoff, dead-letter queues, or concurrency:5 setting."
+		},
+		{
+			"text": "The response does NOT contain any architecture decisions, bullet lists of implementation steps, ASCII diagrams, or technical specifics (BullMQ internals, Redis data structures, queue topology, concurrency settings).",
+			"passed": true,
+			"evidence": "The output contains only a goal statement and two confirmation options. There are no architecture decisions, no bullet lists, no diagrams, and no technical specifics about BullMQ, Redis, queue topology, or concurrency settings."
+		},
+		{
+			"text": "The response ends with exactly two options: one to accept and proceed, one to provide a free-text correction. There is no third option.",
+			"passed": true,
+			"evidence": "The output ends with exactly two numbered options: '1. ✅ Yes, move to big picture' and '2. ✏️ Type a correction'. No third option is present."
+		},
+		{
+			"text": "The response does NOT ask an open-ended question such as 'What approach would you like?' or 'What are your requirements?' or 'What drove that choice?'",
+			"passed": true,
+			"evidence": "The output contains no open-ended questions. It presents a goal statement followed by two confirmation options, with no interrogative prompts."
+		}
+	],
+	"summary": {
+		"passed": 4,
+		"failed": 0,
+		"total": 4,
+		"pass_rate": 1
+	}
 }

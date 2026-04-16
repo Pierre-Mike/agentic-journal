@@ -1,25 +1,25 @@
 {
-  "expectations": [
-    {
-      "text": "The response includes an ASCII diagram or structured visual (using box-drawing characters or ASCII art) that anchors the secrets management group before listing the individual decisions within it.",
-      "passed": true,
-      "evidence": "The output begins with an ASCII diagram using box-drawing characters (┌─┐│└┘) showing GitHub Repository → GitHub Secrets (per environment) → CI Workflow → Deployed Application, with the secrets organized by PROD_*, STAGING_*, DEV_* prefixes. This visual appears before the **Decisions:** section."
-    },
-    {
-      "text": "The decisions listed are stated as straightforward assumed defaults (one-line statements of the decided approach) — they do NOT include ⭐/❌ tradeoff analysis or multiple competing options.",
-      "passed": true,
-      "evidence": "All five decision bullets are declarative statements of the approach: 'GitHub Secrets store...', 'CI workflow injects...', '.env.example documents...', 'No actual secret values...', 'Secrets rotation handled...'. None include ⭐/❌ symbols, tradeoff analysis, or competing options."
-    },
-    {
-      "text": "The response ends with exactly two options: one to confirm and proceed, one to type a correction.",
-      "passed": true,
-      "evidence": "The output ends with exactly two numbered options: '1. ✅ Accept and move to Group 4 (build and test pipeline)' and '2. ✏️ Type a correction'"
-    }
-  ],
-  "summary": {
-    "passed": 3,
-    "failed": 0,
-    "total": 3,
-    "pass_rate": 1
-  }
+	"expectations": [
+		{
+			"text": "The response includes an ASCII diagram or structured visual (using box-drawing characters or ASCII art) that anchors the secrets management group before listing the individual decisions within it.",
+			"passed": true,
+			"evidence": "The output begins with an ASCII diagram using box-drawing characters (┌─┐│└┘) showing GitHub Repository → GitHub Secrets (per environment) → CI Workflow → Deployed Application, with the secrets organized by PROD_*, STAGING_*, DEV_* prefixes. This visual appears before the **Decisions:** section."
+		},
+		{
+			"text": "The decisions listed are stated as straightforward assumed defaults (one-line statements of the decided approach) — they do NOT include ⭐/❌ tradeoff analysis or multiple competing options.",
+			"passed": true,
+			"evidence": "All five decision bullets are declarative statements of the approach: 'GitHub Secrets store...', 'CI workflow injects...', '.env.example documents...', 'No actual secret values...', 'Secrets rotation handled...'. None include ⭐/❌ symbols, tradeoff analysis, or competing options."
+		},
+		{
+			"text": "The response ends with exactly two options: one to confirm and proceed, one to type a correction.",
+			"passed": true,
+			"evidence": "The output ends with exactly two numbered options: '1. ✅ Accept and move to Group 4 (build and test pipeline)' and '2. ✏️ Type a correction'"
+		}
+	],
+	"summary": {
+		"passed": 3,
+		"failed": 0,
+		"total": 3,
+		"pass_rate": 1
+	}
 }

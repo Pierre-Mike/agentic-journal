@@ -1,30 +1,30 @@
 {
-  "expectations": [
-    {
-      "text": "The assistant performs online research on the WhatsApp Business API — specifically its rate limiting, integration patterns, or best practices — BEFORE re-presenting the corrected big picture. This is evidenced by the assistant explicitly mentioning what it found about WhatsApp API constraints.",
-      "passed": false,
-      "evidence": "The output presents WhatsApp-specific knowledge (tiered rate limits, 24-hour messaging windows, token bucket throttler) but contains no explicit statement that research was performed, no mention of what was found during research, and no indication that the assistant looked up external information before presenting the corrected big picture. The knowledge is simply incorporated without showing the research step."
-    },
-    {
-      "text": "The response re-presents the FULL corrected big picture (not just a delta of what changed) — including the original channels plus WhatsApp, with the fanout pattern updated to account for WhatsApp's rate-limiting.",
-      "passed": true,
-      "evidence": "The output presents the complete architecture: fanout pattern from Event Ingestion to four channel-specific SQS queues (email, SMS, push, WhatsApp), with workers for each channel, user preferences in DynamoDB, retry logic, DLQ handling, and specific mention of WhatsApp worker's token bucket throttling for rate limits."
-    },
-    {
-      "text": "The corrected big picture includes an ASCII diagram that shows WhatsApp as part of the architecture.",
-      "passed": true,
-      "evidence": "The output contains an ASCII diagram showing Event Ingestion → fanout → four queues (Email Queue, SMS Queue, Push Queue, WhatsApp Queue) → four workers (Email Worker, SMS Worker, Push Worker, WhatsApp Worker with '(throttled)' notation) → Provider APIs (explicitly listing WhatsApp Business API)."
-    },
-    {
-      "text": "The response ends with exactly two options: one to confirm the corrected big picture, one to type a further correction.",
-      "passed": true,
-      "evidence": "The response ends with exactly two numbered options: '1. ✅ Accept and move to straightforward details' (confirmation) and '2. ✏️ Type a correction' (further correction)."
-    }
-  ],
-  "summary": {
-    "passed": 3,
-    "failed": 1,
-    "total": 4,
-    "pass_rate": 0.75
-  }
+	"expectations": [
+		{
+			"text": "The assistant performs online research on the WhatsApp Business API — specifically its rate limiting, integration patterns, or best practices — BEFORE re-presenting the corrected big picture. This is evidenced by the assistant explicitly mentioning what it found about WhatsApp API constraints.",
+			"passed": false,
+			"evidence": "The output presents WhatsApp-specific knowledge (tiered rate limits, 24-hour messaging windows, token bucket throttler) but contains no explicit statement that research was performed, no mention of what was found during research, and no indication that the assistant looked up external information before presenting the corrected big picture. The knowledge is simply incorporated without showing the research step."
+		},
+		{
+			"text": "The response re-presents the FULL corrected big picture (not just a delta of what changed) — including the original channels plus WhatsApp, with the fanout pattern updated to account for WhatsApp's rate-limiting.",
+			"passed": true,
+			"evidence": "The output presents the complete architecture: fanout pattern from Event Ingestion to four channel-specific SQS queues (email, SMS, push, WhatsApp), with workers for each channel, user preferences in DynamoDB, retry logic, DLQ handling, and specific mention of WhatsApp worker's token bucket throttling for rate limits."
+		},
+		{
+			"text": "The corrected big picture includes an ASCII diagram that shows WhatsApp as part of the architecture.",
+			"passed": true,
+			"evidence": "The output contains an ASCII diagram showing Event Ingestion → fanout → four queues (Email Queue, SMS Queue, Push Queue, WhatsApp Queue) → four workers (Email Worker, SMS Worker, Push Worker, WhatsApp Worker with '(throttled)' notation) → Provider APIs (explicitly listing WhatsApp Business API)."
+		},
+		{
+			"text": "The response ends with exactly two options: one to confirm the corrected big picture, one to type a further correction.",
+			"passed": true,
+			"evidence": "The response ends with exactly two numbered options: '1. ✅ Accept and move to straightforward details' (confirmation) and '2. ✏️ Type a correction' (further correction)."
+		}
+	],
+	"summary": {
+		"passed": 3,
+		"failed": 1,
+		"total": 4,
+		"pass_rate": 0.75
+	}
 }

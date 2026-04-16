@@ -1,34 +1,34 @@
 {
-  "pass_rate": 0.7407407407407407,
-  "timestamp": "2026-04-08T21-54-31",
-  "results": [
-    {
-      "id": "1",
-      "pass_rate": 1
-    },
-    {
-      "id": "2",
-      "pass_rate": 1
-    },
-    {
-      "id": "3",
-      "pass_rate": 1
-    },
-    {
-      "id": "4",
-      "pass_rate": 1
-    },
-    {
-      "id": "5",
-      "pass_rate": 0.25
-    },
-    {
-      "id": "6",
-      "pass_rate": 0.75
-    },
-    {
-      "id": "7",
-      "pass_rate": 0.25
-    }
-  ]
+	"pass_rate": 0.7407407407407407,
+	"timestamp": "2026-04-08T21-54-31",
+	"results": [
+		{
+			"id": "1",
+			"pass_rate": 1
+		},
+		{
+			"id": "2",
+			"pass_rate": 1
+		},
+		{
+			"id": "3",
+			"pass_rate": 1
+		},
+		{
+			"id": "4",
+			"pass_rate": 1
+		},
+		{
+			"id": "5",
+			"pass_rate": 0.25
+		},
+		{
+			"id": "6",
+			"pass_rate": 0.75
+		},
+		{
+			"id": "7",
+			"pass_rate": 0.25
+		}
+	]
 }

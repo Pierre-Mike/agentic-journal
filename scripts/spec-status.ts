@@ -18,7 +18,9 @@ function main(): void {
 	for (const spec of active) {
 		const blockers = unresolvedDeps(spec, archived);
 		const state = isReady(spec, archived) ? "READY" : `BLOCKED-BY: ${blockers.join(", ")}`;
-		console.log(`  [${state}] ${spec.frontmatter.id} — ${spec.frontmatter.title} (${spec.frontmatter.kind})`);
+		console.log(
+			`  [${state}] ${spec.frontmatter.id} — ${spec.frontmatter.title} (${spec.frontmatter.kind})`,
+		);
 	}
 }
 

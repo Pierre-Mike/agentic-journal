@@ -4,9 +4,9 @@
  */
 
 import { gatePaths, listActiveSpecs, type Spec } from "./_lib";
-import { checkCode } from "./gates/test";
 import { checkRule } from "./gates/rule";
 import { checkWorkflow } from "./gates/smoke";
+import { checkCode } from "./gates/test";
 import { checkWriteup } from "./gates/writeup";
 
 interface GateResult {

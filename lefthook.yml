@@ -17,6 +17,18 @@ pre-commit:
           gitleaks protect --staged --redact
         fi
 
+pre-push:
+  parallel: true
+  commands:
+    biome:
+      run: bun run lint:ci
+    typecheck:
+      run: bun run typecheck
+    spec-lint:
+      run: bun run spec:lint
+    tasks-verify:
+      run: bun run tasks:verify
+
 post-merge:
   commands:
     sync:

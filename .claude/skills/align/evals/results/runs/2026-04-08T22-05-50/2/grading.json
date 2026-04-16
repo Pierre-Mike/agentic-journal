@@ -1,35 +1,35 @@
 {
-  "expectations": [
-    {
-      "text": "The response shows a brief index of non-obvious decision titles before presenting any individual decision in detail — the index lists topic names only, with no recommendations or tradeoff analysis.",
-      "passed": true,
-      "evidence": "The output begins with 'Here's what's coming: 1. Snowflake write strategy 2. Kafka offset commit timing 3. Failure handling and retries 4. Exactly-once vs at-least-once semantics' — this is a pure topic list with no recommendations or analysis, followed by a separator before the detailed decision presentation."
-    },
-    {
-      "text": "The response presents only the FIRST non-obvious decision in full detail — it does NOT present the second, third, or subsequent decisions in the same response.",
-      "passed": true,
-      "evidence": "Only 'Decision 1: Snowflake write strategy' is presented in full detail with recommended option, alternatives, and rationale. Decisions 2, 3, and 4 (Kafka offset commit timing, Failure handling, Exactly-once semantics) are listed in the index but never presented in detail."
-    },
-    {
-      "text": "The first decision presented includes a clearly marked recommended option (with ⭐ or 'Recommended' label) that includes a specific rationale for why it is preferred.",
-      "passed": true,
-      "evidence": "The recommended option is marked '⭐ Recommended: Snowpipe Streaming API' and includes a 'Why:' section with five specific reasons: sub-minute latency, no staging files, pay-per-use compute, backpressure handling, and native offset tracking support."
-    },
-    {
-      "text": "The first decision presented includes at least one alternative option (marked with ❌ or 'Alternative' label) with a specific reason why it was not recommended.",
-      "passed": true,
-      "evidence": "The section '❌ Alternatives considered' presents three alternatives: REST API with INSERT batches (rejected because 'transaction overhead makes sub-5-minute infeasible'), Snowpipe with S3 staging (rejected because 'multi-stage delay makes <5 minutes unreliable'), and Bulk COPY (rejected because 'batch mentality defeats the purpose')."
-    },
-    {
-      "text": "The response ends with exactly two options: one to accept and proceed, one to type a correction.",
-      "passed": true,
-      "evidence": "The response concludes with exactly two numbered options: '1. ✅ Accept and move to decision 2' and '2. ✏️ Type a correction'."
-    }
-  ],
-  "summary": {
-    "passed": 5,
-    "failed": 0,
-    "total": 5,
-    "pass_rate": 1
-  }
+	"expectations": [
+		{
+			"text": "The response shows a brief index of non-obvious decision titles before presenting any individual decision in detail — the index lists topic names only, with no recommendations or tradeoff analysis.",
+			"passed": true,
+			"evidence": "The output begins with 'Here's what's coming: 1. Snowflake write strategy 2. Kafka offset commit timing 3. Failure handling and retries 4. Exactly-once vs at-least-once semantics' — this is a pure topic list with no recommendations or analysis, followed by a separator before the detailed decision presentation."
+		},
+		{
+			"text": "The response presents only the FIRST non-obvious decision in full detail — it does NOT present the second, third, or subsequent decisions in the same response.",
+			"passed": true,
+			"evidence": "Only 'Decision 1: Snowflake write strategy' is presented in full detail with recommended option, alternatives, and rationale. Decisions 2, 3, and 4 (Kafka offset commit timing, Failure handling, Exactly-once semantics) are listed in the index but never presented in detail."
+		},
+		{
+			"text": "The first decision presented includes a clearly marked recommended option (with ⭐ or 'Recommended' label) that includes a specific rationale for why it is preferred.",
+			"passed": true,
+			"evidence": "The recommended option is marked '⭐ Recommended: Snowpipe Streaming API' and includes a 'Why:' section with five specific reasons: sub-minute latency, no staging files, pay-per-use compute, backpressure handling, and native offset tracking support."
+		},
+		{
+			"text": "The first decision presented includes at least one alternative option (marked with ❌ or 'Alternative' label) with a specific reason why it was not recommended.",
+			"passed": true,
+			"evidence": "The section '❌ Alternatives considered' presents three alternatives: REST API with INSERT batches (rejected because 'transaction overhead makes sub-5-minute infeasible'), Snowpipe with S3 staging (rejected because 'multi-stage delay makes <5 minutes unreliable'), and Bulk COPY (rejected because 'batch mentality defeats the purpose')."
+		},
+		{
+			"text": "The response ends with exactly two options: one to accept and proceed, one to type a correction.",
+			"passed": true,
+			"evidence": "The response concludes with exactly two numbered options: '1. ✅ Accept and move to decision 2' and '2. ✏️ Type a correction'."
+		}
+	],
+	"summary": {
+		"passed": 5,
+		"failed": 0,
+		"total": 5,
+		"pass_rate": 1
+	}
 }
