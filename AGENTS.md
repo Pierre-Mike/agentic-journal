@@ -30,7 +30,7 @@ agentic-journal/
 ├── specs/            # spec surface (constitution, _template, active, archive)
 ├── scripts/          # deterministic state/verification scripts
 ├── content/posts/    # blog posts (MDX) — each is a spec of kind:writeup
-├── src/              # Astro pages, layouts, components
+├── src/              # Astro pages, layouts, components (src/content/ is intentionally empty — posts live at the root content/posts/)
 └── tests/            # global tests (colocated tests preferred for components)
 ```
 
