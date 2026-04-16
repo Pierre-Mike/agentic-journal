@@ -1,13 +1,15 @@
 ---
 id: 004-delegate-do-to-subagent
 title: Delegate /do to background subagent
-status: active
+status: archived
 kind: workflow
 gate: scripts/smoke-do-delegation.ts
-created: 2026-04-16
+created: 2026-04-16T00:00:00.000Z
 owner: main
-depends_on: [003-harness-friction-fixes]
+depends_on:
+  - 003-harness-friction-fixes
 supersedes: null
+archived: '2026-04-16'
 ---
 
 ## Intent
