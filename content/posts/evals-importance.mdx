@@ -1,0 +1,60 @@
+---
+title: "Evals are the gate for AI"
+date: 2026-04-16
+spec_id: 002-evals-importance
+summary: "Without evals, 'better' is vibes. With evals, it's a diff. The same discipline that gives specs their gates gives AI its trust."
+tags: [evals, agentic-engineering]
+required_sections: [Intent, Why, What, How]
+---
+
+## Intent
+
+This post argues that **evaluations are the load-bearing discipline of applied AI**. Prompts, agents, and models become systems you can trust and improve only when a versioned eval stands behind them. Everything else — prompt craft, tool choice, model upgrades — is downstream of whether you can measure "better" as a diff instead of a feeling.
+
+It is also the model-layer version of the same idea this blog already runs on: a spec without a gate is a wish, and a model without an eval is a demo.
+
+## Why
+
+Demos lie. A handful of happy-path traces produces a convincing story, and the story survives contact with exactly no users. The cost of not having evals is not that things go wrong — it is that you cannot *tell* when things go wrong, and so you cannot stop them.
+
+Without evals:
+
+- "The new prompt is better" is an assertion, not a comparison.
+- A model upgrade is a gamble: the vendor's benchmarks are not your task.
+- Agents drift silently — tool-use degrades, retries spike, output shape mutates — and you find out from users.
+- Every prompt edit is unfalsifiable, so prompts accrete defensive cruft nobody dares delete.
+
+With evals, each of those turns into a number that moves. You merge a prompt change the way you merge a refactor: the eval either stayed green or it didn't, and the diff tells you which cases flipped.
+
+## What
+
+An eval is three things, versioned together like code:
+
+1. **A dataset.** Concrete inputs that cover the behavior you care about — happy paths, known failure modes, adversarial edges. Small and pointed beats big and vague.
+2. **A scorer.** A deterministic function from `(input, output)` to a verdict. Exact match, regex, JSON-schema validity, a rubric checked by a judge model — whatever the task admits.
+3. **A run harness.** Something that executes the model over the dataset, collects outputs, applies the scorer, and produces an aggregate score plus a per-case breakdown.
+
+In the smallest form, the whole thing fits on a napkin:
+
+```
+cases = [
+  { input: "...", expected: "..." },
+  { input: "...", expected: "..." },
+]
+
+score = sum(judge(run(input)) == expected for input in cases) / len(cases)
+```
+
+That is not a toy — it is the shape. Everything more elaborate (pick any: Inspect, promptfoo, a 50-line script) is the same three parts with better ergonomics. The mechanics beat the brand.
+
+## How
+
+Start crude. Earn complexity.
+
+- **Crude is acceptable.** Ten cases and a regex are infinitely better than zero cases and opinions. The first eval's job is to catch the most embarrassing regression, not to measure everything.
+- **Graduate scorers only when they pay for themselves.** Exact match → regex → structured match → rubric. Reach for an LLM-as-judge when you have evidence the cheaper scorer misses real failures, not because judges feel sophisticated.
+- **Version the dataset with the code.** When a case flips from pass to fail, `git blame` should tell you which change caused it. Evals that live outside the repo decay the moment they stop being convenient.
+- **Run them in CI, on every change that could move behavior.** A prompt edit, a tool definition change, a model bump. If the eval is not in the loop, it is a vanity metric.
+- **Read the per-case diff, not just the aggregate.** A score that stays at 0.86 while the failing cases rotate is a loud signal disguised as quiet.
+
+This blog already enforces the same discipline one level up: every spec declares a `gate:` field, and `tasks:verify` blocks the spec from closing until that gate passes. Evals are that idea applied to model behavior. Same shape, same rigor, same reason — the only thing that makes "done" mean anything is an artifact that fails when you're lying to yourself.
