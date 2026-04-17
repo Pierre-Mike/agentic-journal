@@ -8,6 +8,6 @@
 		"noUnusedParameters": true,
 		"types": ["@cloudflare/workers-types", "astro/client", "bun"]
 	},
-	"include": ["src", "scripts", "tests", ".astro"],
+	"include": ["src", "scripts", "tests", "e2e", ".astro", "playwright.config.ts"],
 	"exclude": ["dist", "node_modules"]
 }

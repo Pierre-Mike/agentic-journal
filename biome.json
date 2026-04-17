@@ -9,7 +9,9 @@
 			"!node_modules",
 			"!.wrangler",
 			"!.agentic",
-			"!.claude/dashboard.html"
+			"!.claude/dashboard.html",
+			"!playwright-report",
+			"!test-results"
 		]
 	},
 	"formatter": {
