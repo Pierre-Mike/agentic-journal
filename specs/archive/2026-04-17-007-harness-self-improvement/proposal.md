@@ -1,13 +1,14 @@
 ---
 id: 007-harness-self-improvement
 title: A harness that improves itself
-status: active
+status: archived
 kind: writeup
 gate: content/posts/harness-self-improvement.mdx
-created: 2026-04-17
+created: 2026-04-17T00:00:00.000Z
 owner: main
 depends_on: []
 supersedes: null
+archived: '2026-04-17'
 ---
 
 ## Intent
