@@ -7,4 +7,50 @@ tags: [agentic-engineering, feedback-loops, observability]
 required_sections: [Intent, Why, What, How]
 ---
 
-<!-- RED — sections to follow -->
+## Intent
+
+A harness is the set of rules, skills, hooks, and scripts that sits between a human and an agent. It rots by default. The cure is not more rules — it is a closed feedback loop: **logs, feedback, retros**. Every friction becomes evidence; every retro turns evidence into a spec; every shipped spec changes the harness.
+
+This post argues the loop is the single most important property of a harness that keeps getting better. Everything else — prompt polish, tool choice, model upgrades — is downstream of whether the harness can observe itself and act on what it sees.
+
+The blog you are reading is the proof. Every piece of friction has become a spec.
+
+## Why
+
+The default trajectory of any agentic system is entropy. Skills written in a rush stay forever. A rule someone added at 2am to silence a single bug outlives its reason by months. Hooks get stacked until nobody remembers which one enforces what. A prompt grows a defensive paragraph each time an agent misfires, and the paragraph is never deleted when the underlying cause is fixed.
+
+None of those are villains. Each was the right call at the time. But nothing removes them, so they accumulate. The harness gets heavier, slower, more superstitious. The agent's failures become harder to reason about because the failure mode and the fossilized workaround share the same codebase.
+
+Self-correction is not free. Writing logs costs CI minutes. Reading them costs attention. Running a retro costs half a day. But the cost of a rotten harness is larger and compounds: every new feature fights the cruft, every new contributor inherits the superstition, every retry budget is spent paying down debts nobody acknowledged.
+
+The only sustainable answer is to treat the harness the same way a good codebase treats itself — as something that must continuously justify its shape. Not by committee. By the loop.
+
+## What
+
+The triad is three artifacts, wired together:
+
+1. **Logs** — what actually happened. Traces, CI runs, PR timelines, hook rejections, tool-call histories. Not summaries. Not commit messages. Actual events, on disk, addressable.
+2. **Feedback** — what hurt. Where retries clustered. Which hook blocked too late. Which skill fired but produced nothing useful. Which spec took three tries to pass its own gate. Feedback is the reaction layer on top of logs; without it, logs are just data.
+3. **Retros** — what to do. A retro reads logs and feedback, picks one finding, and converts it into a single action: one spec, one PR, one change to the harness itself. Not a dashboard. Not a report that dies in Notion. A commit.
+
+The loop closes only when the retro's output changes the system the next retro will observe. If the finding lands as a ticket in a backlog, the loop is open and the harness keeps rotting. If the finding lands as a merged spec, the next run of the same task produces different logs, and the feedback shifts.
+
+One line, for the coda: logs are what happened; feedback is what hurt; retros are what to do.
+
+## How
+
+Last week this blog ran its first `/retro`.
+
+What the retro saw was reassuring. Five specs archived, four PRs merged, three trace files totalling about 16 KB on disk. The write side of observability was wired: every `/do` invocation had produced a jsonl trace, and every spec had left its proposal, design, tasks, and completion receipt in `specs/archive/`.
+
+What the retro could not do was read those traces. No script in the repo knew how. The constitution said traces were the source of truth for what happened, but nothing in the harness was actually consuming that truth. The retro was counting signals by hand, from filenames.
+
+The finding was one sentence: **observability is wired on the write side only.**
+
+The action was one spec. `/do` shipped `005-trace-scan` — a small aggregator over `.claude/traces/*.jsonl` that surfaces per-session tool counts, retry hotspots, and orphaned runs. Once it merges, the next `/retro` reads real data instead of hand-counted signal. The retro improved its own feedstock by shipping the tool that would feed its successor.
+
+That is the pattern in miniature. The retro before it did the same thing for a different pain. Spec `004-delegate-do-to-subagent` came out of a friction the human kept flagging — `/do` blocked the main session for minutes on CI watch. The fix was not a prompt tweak. It was delegation: `/do` now hands Steps 3–10 to a background subagent and returns control immediately. Observed friction, a spec, a merged PR, a changed harness.
+
+The loop closed on itself. A retro found its own blind spot, shipped the tool to fix it, and the next retro will see more. In a harness without the triad, that blind spot would still be there — the traces would still be written and still be unread, and every subsequent attempt to reason about the harness would start from the same missing evidence.
+
+This is the same mechanism the blog already runs on, one layer up. Every post is gated by a spec. Every spec's gate must fail before the work starts and pass before the work ships. The triad is that idea applied to the harness instead of the content: the retro is the gate, the logs are the evidence, the shipped spec is the diff. Same shape, same rigor, same reason — the only thing that makes "better" mean anything is an artifact that fails when you are lying to yourself.
