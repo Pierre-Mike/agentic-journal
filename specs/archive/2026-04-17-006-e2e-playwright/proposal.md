@@ -1,13 +1,14 @@
 ---
 id: 006-e2e-playwright
 title: E2E tests via Playwright
-status: active
+status: archived
 kind: workflow
 gate: scripts/smoke-e2e.ts
-created: 2026-04-17
+created: 2026-04-17T00:00:00.000Z
 owner: main
 depends_on: []
 supersedes: null
+archived: '2026-04-17'
 ---
 
 ## Intent
