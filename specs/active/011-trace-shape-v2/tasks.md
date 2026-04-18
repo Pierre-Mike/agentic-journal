@@ -30,9 +30,5 @@ Ordered checklist. Each task declares its `agent`, `depends`, `file_targets`.
   - agent: main
   - depends: [1]
   - file_targets: [.claude/hooks/observe.ts]
-- [ ] 6. Full check + smoke pass (bun run check, spec:lint, tasks:verify)
-  - agent: main
-  - depends: [3a, 3b, 3c, 4, 5]
-  - file_targets: []
 
 Task box ticking happens via `scripts/tasks-verify.ts`, not manually.
