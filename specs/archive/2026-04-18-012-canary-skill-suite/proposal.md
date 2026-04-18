@@ -1,13 +1,14 @@
 ---
 id: 012-canary-skill-suite
 title: Skill canary suite — gate skill changes against locked baseline
-status: active
+status: archived
 kind: workflow
 gate: scripts/smoke-canary.ts
-created: 2026-04-18
+created: 2026-04-18T00:00:00.000Z
 owner: main
 depends_on: []
 supersedes: null
+archived: '2026-04-18'
 ---
 
 ## Intent
