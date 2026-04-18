@@ -1,13 +1,14 @@
 ---
 id: 008-hook-fail-open
 title: Hook fail-open fix — explicit exit 2 discipline
-status: active
+status: archived
 kind: code
 gate: ./.claude/hooks/enforce.test.ts
-created: 2026-04-18
+created: 2026-04-18T00:00:00.000Z
 owner: main
 depends_on: []
 supersedes: null
+archived: '2026-04-18'
 ---
 
 ## Intent
