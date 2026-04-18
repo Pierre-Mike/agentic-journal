@@ -21,6 +21,10 @@ Onboarding for any agent entering this repository.
 - Astro + MDX, Cloudflare Workers, Bun, Biome, Lefthook
 - TypeScript strict, `noUncheckedIndexedAccess`, `noExplicitAny: error`
 
+## Observability
+
+Claude Code emits free OTLP telemetry (per-session token in/out, cost USD, session count, tool counts) when `CLAUDE_CODE_ENABLE_TELEMETRY=1` is set in its process environment. The gate `scripts/smoke-telemetry.ts` asserts this state. The `tasks:verify` npm script in `package.json` prefixes the variable so CI and local `bun run tasks:verify` / `bun run check` runs propagate it into the gate subprocess deterministically. For interactive `claude` sessions to actually emit telemetry on your machine, export the variable in your shell rc (`export CLAUDE_CODE_ENABLE_TELEMETRY=1` in `~/.zshrc` / `~/.bashrc`, or via your personal direnv `.envrc`). Wiring the emitted data into `scripts/trace-scan.ts` is a future spec.
+
 ## Directory Structure
 
 ```

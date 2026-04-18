@@ -20,7 +20,7 @@
 		"worktree:open": "bun scripts/worktree-open.ts",
 		"worktree:close": "bun scripts/worktree-close.ts",
 		"sync": "bun scripts/worktree-close.ts",
-		"tasks:verify": "bun scripts/tasks-verify.ts",
+		"tasks:verify": "CLAUDE_CODE_ENABLE_TELEMETRY=1 bun scripts/tasks-verify.ts",
 		"check": "bun run typecheck && bun run lint && bun run test && bun run spec:lint"
 	},
 	"dependencies": {
