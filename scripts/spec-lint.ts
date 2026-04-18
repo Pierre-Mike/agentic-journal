@@ -1,11 +1,48 @@
 /**
  * Validates every spec's frontmatter and detects cycles in depends_on.
+ * Also validates tasks.md schema per active spec and exports pure helpers
+ * (validateBoundary, validateTaskSchema) consumed by tests and tasks-verify.
  * Exits non-zero on any violation.
  */
 
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { gatePaths, listActiveSpecs, listArchivedIds, VALID_KINDS } from "./_lib";
+
+export interface ParsedTask {
+	readonly index: number;
+	readonly title: string;
+	readonly file_targets: readonly string[];
+	readonly boundary?: readonly string[] | undefined;
+}
+
+export interface SchemaReport {
+	readonly errors: readonly string[];
+	readonly warnings: readonly string[];
+}
+
+export type BoundaryResult =
+	| { readonly ok: true }
+	| { readonly ok: false; readonly offendingFiles: readonly string[] };
+
+/**
+ * STUB — next commit replaces with real Bun.Glob matcher.
+ * Present so the test file compiles against the module.
+ */
+export function validateBoundary(_args: {
+	readonly task: { readonly boundary?: readonly string[] | undefined };
+	readonly changedFiles: readonly string[];
+	readonly repoRoot: string;
+}): BoundaryResult {
+	throw new Error("validateBoundary not yet implemented");
+}
+
+/**
+ * STUB — next commit replaces with real schema checker.
+ */
+export function validateTaskSchema(_task: ParsedTask): SchemaReport {
+	throw new Error("validateTaskSchema not yet implemented");
+}
 
 function main(): void {
 	const errors: string[] = [];
@@ -56,7 +93,11 @@ function main(): void {
 		for (const e of errors) console.error(`✖ ${e}`);
 		process.exit(1);
 	}
+	// readFileSync is imported for future use (task parsing in a later commit)
+	void readFileSync;
 	console.log(`✓ ${active.length} active spec(s) valid.`);
 }
 
-main();
+if (import.meta.main) {
+	main();
+}
