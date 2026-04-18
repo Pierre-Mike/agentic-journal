@@ -18,6 +18,19 @@ export interface ToolEvent extends BaseEvent {
 	tool_response?: Record<string, unknown>;
 }
 
+/**
+ * Optional span-hierarchy and status fields added by observe.ts to each emitted
+ * trace line. Old jsonl lines won't carry these; consumers must treat every
+ * field as optional to preserve backward compatibility.
+ */
+export interface SpanFields {
+	span_id?: string;
+	parent_span_id?: string;
+	started_at?: number;
+	duration_ms?: number;
+	status?: "ok" | "error" | "blocked";
+}
+
 export type HookEvent = ToolEvent | BaseEvent;
 
 export function isToolEvent(event: HookEvent): event is ToolEvent {
