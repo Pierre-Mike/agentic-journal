@@ -1,13 +1,15 @@
 ---
 id: 011-trace-shape-v2
 title: Trace shape v2 — span IDs and failure-mode detectors
-status: active
+status: archived
 kind: code
 gate: scripts/trace-scan.test.ts
-created: 2026-04-18
+created: 2026-04-18T00:00:00.000Z
 owner: main
-depends_on: ["005-trace-scan"]
+depends_on:
+  - 005-trace-scan
 supersedes: null
+archived: '2026-04-18'
 ---
 
 ## Intent
