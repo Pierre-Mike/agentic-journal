@@ -1,13 +1,14 @@
 ---
 id: 013-task-boundary-annotations
 title: Task boundary + depends annotations — machine-detectable scope violations
-status: active
+status: archived
 kind: rule
 gate: scripts/spec-lint.test.ts
-created: 2026-04-18
+created: 2026-04-18T00:00:00.000Z
 owner: main
 depends_on: []
 supersedes: null
+archived: '2026-04-18'
 ---
 
 ## Intent
