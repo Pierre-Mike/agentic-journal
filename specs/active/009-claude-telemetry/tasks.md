@@ -14,9 +14,5 @@ Ordered checklist. Each task declares its `agent`, `depends`, `file_targets`.
   - agent: main
   - depends: []
   - file_targets: [AGENTS.md]
-- [ ] 4. Gate goes GREEN — run `bun run tasks:verify` and confirm `✓ 009-claude-telemetry (workflow)` reports pass
-  - agent: main
-  - depends: [2, 3]
-  - file_targets: []
 
 Task box ticking happens via `scripts/tasks-verify.ts`, not manually.
