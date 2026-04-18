@@ -173,7 +173,15 @@ Return to the main repo working directory (not the worktree). Then:
 gh pr checks "$PR_URL" --watch --interval 15 --required
 ```
 
-This blocks until all required CI checks resolve. On success → auto-merge fires → branch deleted on remote. On failure → the PR stays open for human triage.
+This blocks until all required CI checks resolve. On success → auto-merge fires → branch deleted on remote.
+
+On failure → invoke the CI feedback script so a brief lands inside the worktree for the next session to pick up:
+
+```bash
+bun scripts/ci-feedback.ts "$PR_URL" --worktree .agentic/worktrees/<slug>
+```
+
+The script fetches `gh pr checks` + `gh run view --log-failed` for every red job and writes `ci-failure.md` next to `proposal.md` inside the spec's active directory. A follow-up session (human or a future autonomous fix subagent) reads that brief and drives the fix. No LLM is invoked by this script — it is pure `gh` + markdown formatting.
 
 ### Step 10 — Report
 
@@ -202,7 +210,9 @@ failing checks:
   - <name>: <url>
   - <name>: <url>
 
-main is unchanged. Investigate the PR, push fixes to spec/<slug>, or close the PR.
+CI failure brief: .agentic/worktrees/<slug>/specs/active/<slug>/ci-failure.md
+
+main is unchanged. Investigate the brief, push fixes to spec/<slug>, or close the PR.
 ```
 
 Stop after printing the report. Do not pull, do not clean up the worktree — those happen on the user's next `git pull` (post-merge hook runs `sync` automatically).

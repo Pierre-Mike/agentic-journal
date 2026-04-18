@@ -1,0 +1,16 @@
+[
+	{
+		"id": "canary-spec-template-shape",
+		"description": "Asserts specs/_template/{proposal,tasks,design}.md exist with required sections. Guards against accidental template drift that would break /do authoring.",
+		"script_path": "canaries/scripts/canary-spec-template-shape.ts",
+		"expected_output": "CANARY_OK spec-template-shape",
+		"weight": 1
+	},
+	{
+		"id": "canary-hook-block-allowlist",
+		"description": "Asserts .claude/hooks/enforce.ts still blocks edits under /specs/archive/ with exit code 2. Guards against accidental de-fanging of the enforcement layer.",
+		"script_path": "canaries/scripts/canary-hook-block-allowlist.ts",
+		"expected_output": "CANARY_OK hook-block-allowlist",
+		"weight": 1
+	}
+]
