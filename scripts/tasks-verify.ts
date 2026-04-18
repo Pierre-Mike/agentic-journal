@@ -85,14 +85,14 @@ async function verifyBoundaries({
 	const changedSet = new Set(changedFiles);
 	const failures: string[] = [];
 
+	// Per-task check: for any task that has both a boundary AND has touched
+	// at least one of its file_targets, scope the changed files down to that
+	// task's declared file_targets and validate.
 	for (const task of tasks) {
 		if (task.boundary === undefined) continue;
 		const taskChanges = task.file_targets.filter((f) => changedSet.has(f));
 		if (taskChanges.length === 0) continue; // task hasn't been touched yet
 
-		// Scope: all changed files whose path matches ANY of this task's
-		// file_target directories or exact paths. We use file_targets
-		// themselves as the scoping lens (the most precise signal available).
 		const scopedChanges = scopeChangesToTask({ task, changedFiles });
 		const result = validateBoundary({
 			task,
@@ -102,6 +102,30 @@ async function verifyBoundaries({
 		if (!result.ok) {
 			failures.push(
 				`task ${task.index} "${task.title.slice(0, 60)}" — offending files: ${result.offendingFiles.join(", ")}`,
+			);
+		}
+	}
+
+	// Union check: every changed file must match the union of all task
+	// boundaries (plus the spec's own directory — authoring spec docs is
+	// always allowed). This catches "orphan" edits that live outside every
+	// task's file_targets and would otherwise slip through the per-task check.
+	const boundedTasks = tasks.filter(
+		(t): t is ParsedTask & { boundary: readonly string[] } => t.boundary !== undefined,
+	);
+	if (boundedTasks.length > 0) {
+		const specRelDir = spec.dir.startsWith(`${REPO_ROOT}/`)
+			? spec.dir.slice(REPO_ROOT.length + 1)
+			: spec.dir;
+		const unionBoundary = [...new Set(boundedTasks.flatMap((t) => t.boundary)), `${specRelDir}/**`];
+		const union = validateBoundary({
+			task: { boundary: unionBoundary },
+			changedFiles,
+			repoRoot: REPO_ROOT,
+		});
+		if (!union.ok) {
+			failures.push(
+				`orphan edits (outside every task boundary): ${union.offendingFiles.join(", ")}`,
 			);
 		}
 	}
