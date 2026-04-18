@@ -1,13 +1,14 @@
 ---
 id: 014-ci-feedback-loop
 title: CI failure feedback loop — fetch logs and stage a fix
-status: active
+status: archived
 kind: workflow
 gate: scripts/smoke-ci-feedback.ts
-created: 2026-04-18
+created: 2026-04-18T00:00:00.000Z
 owner: main
 depends_on: []
 supersedes: null
+archived: '2026-04-18'
 ---
 
 ## Intent
