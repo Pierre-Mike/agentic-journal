@@ -5,7 +5,7 @@
   - depends: []
   - file_targets: [scripts/smoke-preview-workflow.ts]
   - boundary: [scripts/smoke-preview-workflow.ts]
-- [ ] 2. Patch preview.yml — add env block + `--env=""` flag
+- [x] 2. Patch preview.yml — add env block + `--env=""` flag
   - agent: main
   - depends: [1]
   - file_targets: [.github/workflows/preview.yml]

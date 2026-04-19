@@ -1,13 +1,15 @@
 ---
 id: 019-preview-env-fix
 title: Preview workflow env-var defense for wrangler secrets
-status: active
+status: archived
 kind: workflow
 gate: scripts/smoke-preview-workflow.ts
 created: 2026-04-19T00:00:00.000Z
 owner: main
-depends_on: [006-e2e-playwright]
+depends_on:
+  - 006-e2e-playwright
 supersedes: null
+archived: '2026-04-19'
 ---
 
 ## Intent
