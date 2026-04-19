@@ -1,5 +1,6 @@
 import cloudflare from "@astrojs/cloudflare";
 import mdx from "@astrojs/mdx";
+import sitemap from "@astrojs/sitemap";
 import { defineConfig } from "astro/config";
 
 export default defineConfig({
@@ -7,6 +8,6 @@ export default defineConfig({
 	adapter: cloudflare({
 		imageService: "compile",
 	}),
-	integrations: [mdx()],
-	site: "https://agentic-journal.pages.dev",
+	integrations: [mdx(), sitemap()],
+	site: "https://agentic-journal-production.pm-lemeliner.workers.dev",
 });
