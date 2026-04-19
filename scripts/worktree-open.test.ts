@@ -13,10 +13,13 @@
 import { afterAll, expect, test } from "bun:test";
 import { randomBytes } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 
 const SCRIPT_PATH = "scripts/worktree-open.ts";
 const WORKTREE_ROOT = ".agentic/worktrees";
+// Absolute path to THIS test's sibling script — so the behavior test spawns
+// the working-tree version under test, not whatever's on main.
+const ABS_SCRIPT_PATH = resolve(dirname(import.meta.path), "worktree-open.ts");
 
 /**
  * Resolve the main repo root (the common git dir's parent). When this test
@@ -71,7 +74,7 @@ afterAll(async () => {
 });
 
 test("opens a worktree with populated node_modules", async () => {
-	const proc = Bun.spawn(["bun", SCRIPT_PATH, slug], {
+	const proc = Bun.spawn(["bun", ABS_SCRIPT_PATH, slug], {
 		cwd: repoRoot,
 		stdout: "pipe",
 		stderr: "pipe",
