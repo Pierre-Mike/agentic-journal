@@ -1,14 +1,15 @@
 ---
 id: 026-worktree-close-reconcile
 title: Worktree-close reconciles zombie branches
-status: active
+status: archived
 kind: code
 gate: scripts/worktree-close.test.ts
-created: 2026-04-19
+created: 2026-04-19T00:00:00.000Z
 owner: main
 depends_on:
   - 025-worktree-open-deps
 supersedes: null
+archived: '2026-04-19'
 ---
 
 ## Intent
