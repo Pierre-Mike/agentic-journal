@@ -1,0 +1,45 @@
+---
+import { AUTHOR_NAME, SITE_NAME } from "../site-config";
+
+interface Props {
+	title: string;
+	description: string;
+	url: string;
+	type?: "article" | "website";
+	datePublished?: string;
+	tags?: readonly string[];
+}
+
+const {
+	title,
+	description,
+	url,
+	type = "article",
+	datePublished,
+	tags,
+} = Astro.props;
+
+const articleSchema: Record<string, unknown> = {
+	"@context": "https://schema.org",
+	"@type": "Article",
+	headline: title,
+	description,
+	url,
+	author: { "@type": "Person", name: AUTHOR_NAME },
+};
+if (datePublished !== undefined) articleSchema.datePublished = datePublished;
+if (tags !== undefined && tags.length > 0) articleSchema.keywords = tags.join(", ");
+---
+
+<title>{title}</title>
+<meta name="description" content={description} />
+<link rel="canonical" href={url} />
+<meta property="og:title" content={title} />
+<meta property="og:description" content={description} />
+<meta property="og:type" content={type} />
+<meta property="og:url" content={url} />
+<meta property="og:site_name" content={SITE_NAME} />
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content={title} />
+<meta name="twitter:description" content={description} />
+<script type="application/ld+json" set:html={JSON.stringify(articleSchema)} />

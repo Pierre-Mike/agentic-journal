@@ -2,6 +2,7 @@
 // biome-ignore-all lint/correctness/noUnusedImports: template-only references in .astro
 // biome-ignore-all lint/correctness/noUnusedVariables: template-only references in .astro
 import { getCollection, render } from "astro:content";
+import SEOHead from "../../components/SEOHead.astro";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { readingTime } from "../../lib/reading-time";
 
@@ -16,9 +17,22 @@ export async function getStaticPaths() {
 const { post } = Astro.props;
 const { Content } = await render(post);
 const { minutes } = readingTime(post.body ?? "");
+
+if (Astro.site === undefined) {
+	throw new Error("Astro.site must be configured for canonical URLs");
+}
+const canonical = new URL(Astro.url.pathname, Astro.site).href;
 ---
 
 <BaseLayout title={post.data.title} description={post.data.summary}>
+	<SEOHead
+		slot="head"
+		title={post.data.title}
+		description={post.data.summary}
+		url={canonical}
+		datePublished={post.data.date.toISOString()}
+		tags={post.data.tags}
+	/>
 	<article>
 		<h1>{post.data.title}</h1>
 		<p style="color: var(--muted)">
