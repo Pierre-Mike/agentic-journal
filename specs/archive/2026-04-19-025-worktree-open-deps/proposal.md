@@ -1,14 +1,15 @@
 ---
 id: 025-worktree-open-deps
 title: Worktree-open installs deps post-creation
-status: active
+status: archived
 kind: code
 gate: scripts/worktree-open.test.ts
-created: 2026-04-19
+created: 2026-04-19T00:00:00.000Z
 owner: main
 depends_on:
   - 003-harness-friction-fixes
 supersedes: null
+archived: '2026-04-19'
 ---
 
 ## Intent
