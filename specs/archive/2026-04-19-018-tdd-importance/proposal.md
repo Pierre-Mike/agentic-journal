@@ -1,7 +1,7 @@
 ---
 id: 018-tdd-importance
 title: TDD is the discipline that scales with author velocity
-status: active
+status: archived
 kind: writeup
 gate: content/posts/tdd-importance.mdx
 created: 2026-04-19T00:00:00.000Z
@@ -10,6 +10,7 @@ depends_on:
   - 002-evals-importance
   - 016-red-commit-gate
 supersedes: null
+archived: '2026-04-19'
 ---
 
 ## Intent
