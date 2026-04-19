@@ -23,7 +23,7 @@
  */
 
 import { existsSync, readdirSync, readFileSync } from "node:fs";
-import { basename, join } from "node:path";
+import { basename, join, normalize } from "node:path";
 
 export interface TraceLine {
 	ts: string;
@@ -189,22 +189,63 @@ export function detectLoops(params: {
 }
 
 /**
+ * normalizeForMatch — normalize a TraceLine `file` against an explicit
+ * `repoRoot` so glob matching against repo-relative allowlist patterns is
+ * meaningful. Pure: no fs, no realpath, no ambient cwd.
+ *
+ * - Absolute path under `repoRoot` → `{ relative: "scripts/foo.ts" }` (no
+ *   leading slash).
+ * - Absolute path outside `repoRoot` → `{ outside: true }`. Allowlist
+ *   patterns are repo-relative by definition and cannot match.
+ * - Already-relative path → `{ relative: <path> }` unchanged (back-compat).
+ *
+ * Trailing slashes on `repoRoot` are tolerated.
+ */
+export function normalizeForMatch(params: {
+	file: string;
+	repoRoot: string;
+}): { relative: string } | { outside: true } {
+	const { file, repoRoot } = params;
+	const normFile = normalize(file);
+	if (!normFile.startsWith("/")) {
+		// Repo-relative input: pass through (back-compat with legacy traces).
+		return { relative: normFile };
+	}
+	const normRoot = normalize(repoRoot).replace(/\/+$/, "");
+	if (normFile === normRoot) return { relative: "" };
+	const prefix = `${normRoot}/`;
+	if (normFile.startsWith(prefix)) {
+		return { relative: normFile.slice(prefix.length) };
+	}
+	return { outside: true };
+}
+
+/**
  * detectDrift — flag write-class events whose `file` does not match any entry
  * in `allowedFiles`. Supports minimal globs: `**` (any path segments), `*`
  * (any chars within a segment).
+ *
+ * Paths are normalized against `repoRoot` first; out-of-tree writes
+ * short-circuit to drift (allowlist patterns are repo-relative by definition).
  */
 export function detectDrift(params: {
 	events: readonly TraceLine[];
 	allowedFiles: readonly string[];
+	repoRoot: string;
 }): DriftFinding[] {
-	const { events, allowedFiles } = params;
+	const { events, allowedFiles, repoRoot } = params;
 	const patterns = allowedFiles.map(compileGlob);
 	const findings: DriftFinding[] = [];
 	for (const ev of events) {
 		if (ev.tool === undefined || !WRITE_TOOLS.has(ev.tool)) continue;
 		if (ev.file === undefined || ev.file === null) continue;
 		const file = ev.file;
-		if (!patterns.some((re) => re.test(file))) {
+		const norm = normalizeForMatch({ file, repoRoot });
+		if ("outside" in norm) {
+			findings.push({ session_id: ev.session_id, tool: ev.tool, file, ts: ev.ts });
+			continue;
+		}
+		if (!patterns.some((re) => re.test(norm.relative))) {
 			findings.push({ session_id: ev.session_id, tool: ev.tool, file, ts: ev.ts });
 		}
 	}
@@ -312,7 +353,8 @@ function compileGlob(pattern: string): RegExp {
 	return new RegExp(`^${out}$`);
 }
 
-export function aggregate(events: TraceLine[]): TraceScanReport {
+export function aggregate(params: { events: TraceLine[]; repoRoot: string }): TraceScanReport {
+	const { events, repoRoot } = params;
 	const bySession = new Map<string, TraceLine[]>();
 	for (const ev of events) {
 		const arr = bySession.get(ev.session_id);
@@ -366,7 +408,7 @@ export function aggregate(events: TraceLine[]): TraceScanReport {
 		sessions,
 		files_touched_top: topN(globalFiles, 10).map((x) => ({ file: x.key, count: x.count })),
 		loops: detectLoops({ events, windowSize: 10, maxRepeats: 3 }),
-		drift: detectDrift({ events, allowedFiles: DEFAULT_ALLOWED_FILES }),
+		drift: detectDrift({ events, allowedFiles: DEFAULT_ALLOWED_FILES, repoRoot }),
 		retries: detectRetryStorm({ events, threshold: 3 }),
 	};
 }
@@ -507,7 +549,7 @@ export async function run(argv: string[]): Promise<number> {
 	const cutoff = parseSince(args.since, now);
 	const all = loadTraces(args.tracesDir, args.session);
 	const filtered = cutoff === null ? all : all.filter((e) => new Date(e.ts) >= cutoff);
-	const full = aggregate(filtered);
+	const full = aggregate({ events: filtered, repoRoot: process.cwd() });
 	const report = applyDetectFilter(full, args.detect);
 	report.since = cutoff === null ? null : cutoff.toISOString();
 	if (args.format === "json") {

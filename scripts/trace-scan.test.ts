@@ -120,20 +120,20 @@ describe("aggregate", () => {
 	];
 
 	test("events_total + sessions_scanned", () => {
-		const rep = aggregate([...baseA, ...baseB]);
+		const rep = aggregate({ events: [...baseA, ...baseB], repoRoot: "/tmp/fakerepo" });
 		expect(rep.events_total).toBe(5);
 		expect(rep.sessions_scanned).toBe(2);
 	});
 
 	test("tools_by_name counts PreToolUse only", () => {
-		const rep = aggregate(baseA);
+		const rep = aggregate({ events: baseA, repoRoot: "/tmp/fakerepo" });
 		const sess = rep.sessions[0];
 		expect(sess?.tools_by_name.Write).toBe(1); // only the Pre
 		expect(sess?.tools_by_name.Read).toBe(1);
 	});
 
 	test("files_touched_top per session sorted desc", () => {
-		const rep = aggregate(baseA);
+		const rep = aggregate({ events: baseA, repoRoot: "/tmp/fakerepo" });
 		const sess = rep.sessions[0];
 		const top = sess?.files_touched_top[0];
 		expect(top?.file).toBe("src/a.ts");
@@ -141,33 +141,33 @@ describe("aggregate", () => {
 	});
 
 	test("agent_ids_seen contains distinct non-null ids", () => {
-		const rep = aggregate(baseA);
+		const rep = aggregate({ events: baseA, repoRoot: "/tmp/fakerepo" });
 		const sess = rep.sessions[0];
 		expect(sess?.agent_ids_seen).toEqual(["sub-1"]);
 	});
 
 	test("first_ts and last_ts match the range of session events", () => {
-		const rep = aggregate(baseA);
+		const rep = aggregate({ events: baseA, repoRoot: "/tmp/fakerepo" });
 		const sess = rep.sessions[0];
 		expect(sess?.first_ts).toBe("2026-04-14T10:00:00.000Z");
 		expect(sess?.last_ts).toBe("2026-04-14T10:02:00.000Z");
 	});
 
 	test("sessions sorted by events desc", () => {
-		const rep = aggregate([...baseA, ...baseB]);
+		const rep = aggregate({ events: [...baseA, ...baseB], repoRoot: "/tmp/fakerepo" });
 		expect(rep.sessions[0]?.session_id).toBe("A");
 		expect(rep.sessions[1]?.session_id).toBe("B");
 	});
 
 	test("global files_touched_top aggregates across sessions", () => {
-		const rep = aggregate([...baseA, ...baseB]);
+		const rep = aggregate({ events: [...baseA, ...baseB], repoRoot: "/tmp/fakerepo" });
 		const top = rep.files_touched_top[0];
 		expect(top?.file).toBe("src/a.ts");
 		expect(top?.count).toBe(2);
 	});
 
 	test("empty input → zero counts, empty arrays", () => {
-		const rep = aggregate([]);
+		const rep = aggregate({ events: [], repoRoot: "/tmp/fakerepo" });
 		expect(rep.events_total).toBe(0);
 		expect(rep.sessions_scanned).toBe(0);
 		expect(rep.sessions).toEqual([]);
@@ -175,7 +175,7 @@ describe("aggregate", () => {
 	});
 
 	test("events missing tool/file are tolerated", () => {
-		const rep = aggregate(baseB);
+		const rep = aggregate({ events: baseB, repoRoot: "/tmp/fakerepo" });
 		const sess = rep.sessions[0];
 		expect(sess?.events).toBe(2);
 		expect(sess?.tools_by_name.Write).toBe(1);
@@ -183,7 +183,7 @@ describe("aggregate", () => {
 	});
 
 	test("aggregate includes loops/drift/retries summaries", () => {
-		const rep = aggregate([]);
+		const rep = aggregate({ events: [], repoRoot: "/tmp/fakerepo" });
 		expect(Array.isArray(rep.loops)).toBe(true);
 		expect(Array.isArray(rep.drift)).toBe(true);
 		expect(Array.isArray(rep.retries)).toBe(true);
@@ -279,6 +279,8 @@ describe("detectLoops", () => {
 });
 
 describe("detectDrift", () => {
+	const repoRoot = "/tmp/fakerepo";
+
 	test("flags Write outside allowedFiles", () => {
 		const events: TraceLine[] = [
 			preEvent({
@@ -288,7 +290,11 @@ describe("detectDrift", () => {
 				file: "content/posts/stolen.mdx",
 			}),
 		];
-		const findings = detectDrift({ events, allowedFiles: ["scripts/**", "src/**"] });
+		const findings = detectDrift({
+			events,
+			allowedFiles: ["scripts/**", "src/**"],
+			repoRoot,
+		});
 		expect(findings.length).toBe(1);
 		const first = findings[0];
 		expect(first?.file).toBe("content/posts/stolen.mdx");
@@ -309,7 +315,7 @@ describe("detectDrift", () => {
 				file: "src/components/Foo.astro",
 			}),
 		];
-		expect(detectDrift({ events, allowedFiles: ["scripts/**", "src/**"] })).toEqual([]);
+		expect(detectDrift({ events, allowedFiles: ["scripts/**", "src/**"], repoRoot })).toEqual([]);
 	});
 
 	test("non-write tools are not flagged", () => {
@@ -321,11 +327,93 @@ describe("detectDrift", () => {
 				file: "content/posts/any.mdx",
 			}),
 		];
-		expect(detectDrift({ events, allowedFiles: ["scripts/**"] })).toEqual([]);
+		expect(detectDrift({ events, allowedFiles: ["scripts/**"], repoRoot })).toEqual([]);
 	});
 
 	test("empty input → empty findings", () => {
-		expect(detectDrift({ events: [], allowedFiles: ["**"] })).toEqual([]);
+		expect(detectDrift({ events: [], allowedFiles: ["**"], repoRoot })).toEqual([]);
+	});
+});
+
+describe("detectDrift — path normalization (015)", () => {
+	const repoRoot = "/tmp/fakerepo";
+
+	test("absolute path under repoRoot matching allowlist is not drift", () => {
+		const events: TraceLine[] = [
+			preEvent({
+				ts: "2026-04-19T00:00:00.000Z",
+				session_id: "S",
+				tool: "Write",
+				file: "/tmp/fakerepo/scripts/foo.ts",
+			}),
+		];
+		expect(detectDrift({ events, allowedFiles: ["scripts/**"], repoRoot })).toEqual([]);
+	});
+
+	test("absolute path under repoRoot NOT in allowlist is drift", () => {
+		const events: TraceLine[] = [
+			preEvent({
+				ts: "2026-04-19T00:00:00.000Z",
+				session_id: "S",
+				tool: "Write",
+				file: "/tmp/fakerepo/content/posts/sneaky.mdx",
+			}),
+		];
+		const findings = detectDrift({
+			events,
+			allowedFiles: ["scripts/**"],
+			repoRoot,
+		});
+		expect(findings.length).toBe(1);
+		expect(findings[0]?.file).toBe("/tmp/fakerepo/content/posts/sneaky.mdx");
+	});
+
+	test("absolute path outside repoRoot is always drift", () => {
+		const events: TraceLine[] = [
+			preEvent({
+				ts: "2026-04-19T00:00:00.000Z",
+				session_id: "S",
+				tool: "Write",
+				file: "/etc/passwd",
+			}),
+		];
+		const findings = detectDrift({
+			events,
+			allowedFiles: ["**"],
+			repoRoot,
+		});
+		expect(findings.length).toBe(1);
+		expect(findings[0]?.file).toBe("/etc/passwd");
+	});
+
+	test("repo-relative path back-compat — matches allowlist", () => {
+		const events: TraceLine[] = [
+			preEvent({
+				ts: "2026-04-19T00:00:00.000Z",
+				session_id: "S",
+				tool: "Edit",
+				file: "scripts/old-style.ts",
+			}),
+		];
+		expect(detectDrift({ events, allowedFiles: ["scripts/**"], repoRoot })).toEqual([]);
+	});
+
+	test("trailing-slash repoRoot still strips correctly", () => {
+		const events: TraceLine[] = [
+			preEvent({
+				ts: "2026-04-19T00:00:00.000Z",
+				session_id: "S",
+				tool: "Write",
+				file: "/tmp/fakerepo/scripts/x.ts",
+			}),
+		];
+		expect(
+			detectDrift({
+				events,
+				allowedFiles: ["scripts/**"],
+				repoRoot: "/tmp/fakerepo/",
+			}),
+		).toEqual([]);
 	});
 });
 
@@ -418,7 +506,7 @@ describe("backward compat — old-shape TraceLine", () => {
 			tool: "Write",
 			file: "src/a.ts",
 		};
-		const rep = aggregate([old]);
+		const rep = aggregate({ events: [old], repoRoot: "/tmp/fakerepo" });
 		expect(rep.events_total).toBe(1);
 		expect(rep.sessions[0]?.session_id).toBe("legacy");
 		expect(rep.loops).toEqual([]);
