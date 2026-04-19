@@ -1,6 +1,6 @@
 # Tasks
 
-- [ ] 1. Author smoke script with assertion logic
+- [x] 1. Author smoke script with assertion logic
   - agent: main
   - depends: []
   - file_targets: [scripts/smoke-preview-workflow.ts]
