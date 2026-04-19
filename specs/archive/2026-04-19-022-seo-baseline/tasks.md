@@ -1,26 +1,26 @@
 # Tasks
 
-- [ ] 1. Add `@astrojs/sitemap` + `@astrojs/rss` deps; create `src/site-config.ts` with `SITE_NAME` / `SITE_DESCRIPTION` / `AUTHOR_NAME` constants
+- [x] 1. Add `@astrojs/sitemap` + `@astrojs/rss` deps; create `src/site-config.ts` with `SITE_NAME` / `SITE_DESCRIPTION` / `AUTHOR_NAME` constants
   - agent: main
   - depends: []
   - file_targets: [package.json, bun.lock, src/site-config.ts]
   - boundary: [package.json, bun.lock, src/site-config.ts]
-- [ ] 2. Configure `astro.config.ts`: set `site` to the Workers production URL and add `sitemap()` integration
+- [x] 2. Configure `astro.config.ts`: set `site` to the Workers production URL and add `sitemap()` integration
   - agent: main
   - depends: [1]
   - file_targets: [astro.config.ts]
   - boundary: [astro.config.ts]
-- [ ] 3. Author `src/components/SEOHead.astro` — single source for title, description, canonical, OpenGraph, Twitter card, and JSON-LD Article
+- [x] 3. Author `src/components/SEOHead.astro` — single source for title, description, canonical, OpenGraph, Twitter card, and JSON-LD Article
   - agent: main
   - depends: [1]
   - file_targets: [src/components/SEOHead.astro]
   - boundary: [src/components/SEOHead.astro]
-- [ ] 4. Wire `<SEOHead>` into `src/pages/posts/[...slug].astro` with frontmatter-derived props (title, summary, absolute URL via `Astro.url`+`Astro.site`, ISO date, tags). Add a named `head` slot to `BaseLayout.astro` so the post layout can override the default `<title>`/`<meta description>` with the full SEO surface.
+- [x] 4. Wire `<SEOHead>` into `src/pages/posts/[...slug].astro` with frontmatter-derived props (title, summary, absolute URL via `Astro.url`+`Astro.site`, ISO date, tags). Add a named `head` slot to `BaseLayout.astro` so the post layout can override the default `<title>`/`<meta description>` with the full SEO surface.
   - agent: main
   - depends: [3]
   - file_targets: [src/pages/posts/[...slug].astro, src/layouts/BaseLayout.astro]
   - boundary: [src/pages/posts/*, src/layouts/BaseLayout.astro]
-- [ ] 5. Author `src/pages/rss.xml.ts` — `@astrojs/rss` `GET` handler enumerating the `posts` collection, using `SITE_NAME`/`SITE_DESCRIPTION` from `src/site-config.ts`
+- [x] 5. Author `src/pages/rss.xml.ts` — `@astrojs/rss` `GET` handler enumerating the `posts` collection, using `SITE_NAME`/`SITE_DESCRIPTION` from `src/site-config.ts`
   - agent: main
   - depends: [1]
   - file_targets: [src/pages/rss.xml.ts]

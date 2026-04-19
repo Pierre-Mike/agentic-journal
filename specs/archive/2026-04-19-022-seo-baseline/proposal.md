@@ -1,13 +1,15 @@
 ---
 id: 022-seo-baseline
-title: SEO baseline — sitemap, head metadata, JSON-LD, RSS feed
-status: active
+title: 'SEO baseline — sitemap, head metadata, JSON-LD, RSS feed'
+status: archived
 kind: workflow
 gate: scripts/smoke-seo.ts
 created: 2026-04-19T00:00:00.000Z
 owner: main
-depends_on: [021-assetsignore-worker]
+depends_on:
+  - 021-assetsignore-worker
 supersedes: null
+archived: '2026-04-19'
 ---
 
 ## Intent
