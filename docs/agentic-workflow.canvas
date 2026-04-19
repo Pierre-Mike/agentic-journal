@@ -1,6 +1,433 @@
 {
   "nodes": [
-    { "id": "red-stub", "type": "text", "text": "RED — workflow canvas v2 pending generation", "x": 0, "y": 0, "width": 400, "height": 100 }
+    {
+      "id": "group-forward",
+      "type": "group",
+      "x": 310,
+      "y": -172,
+      "width": 4180,
+      "height": 324,
+      "label": "Forward loop",
+      "color": "#cce5ff"
+    },
+    {
+      "id": "group-feedback",
+      "type": "group",
+      "x": 4510,
+      "y": -172,
+      "width": 1380,
+      "height": 324,
+      "label": "Feedback loop",
+      "color": "#e0d4f7"
+    },
+    {
+      "id": "group-guardrails",
+      "type": "group",
+      "x": -40,
+      "y": -387,
+      "width": 330,
+      "height": 754,
+      "label": "Guardrails",
+      "color": "#ffd6d6"
+    },
+    {
+      "id": "human-intent",
+      "type": "text",
+      "x": 350,
+      "y": -30,
+      "width": 250,
+      "height": 60,
+      "text": "human intent"
+    },
+    {
+      "id": "do",
+      "type": "text",
+      "x": 700,
+      "y": -100,
+      "width": 250,
+      "height": 60,
+      "text": "/do"
+    },
+    {
+      "id": "align",
+      "type": "text",
+      "x": 1050,
+      "y": -42,
+      "width": 250,
+      "height": 85,
+      "text": "align\n(4-layer)"
+    },
+    {
+      "id": "confirm-fields",
+      "type": "text",
+      "x": 1400,
+      "y": -30,
+      "width": 250,
+      "height": 60,
+      "text": "confirm fields"
+    },
+    {
+      "id": "delegate",
+      "type": "text",
+      "x": 1750,
+      "y": -42,
+      "width": 250,
+      "height": 85,
+      "text": "delegate\n(background subagent)"
+    },
+    {
+      "id": "worktree-open",
+      "type": "text",
+      "x": 2100,
+      "y": -30,
+      "width": 250,
+      "height": 60,
+      "text": "worktree open"
+    },
+    {
+      "id": "red-commit",
+      "type": "text",
+      "x": 2450,
+      "y": -112,
+      "width": 250,
+      "height": 85,
+      "text": "RED commit\n(typecheck-bypassed)"
+    },
+    {
+      "id": "work-loop",
+      "type": "text",
+      "x": 2800,
+      "y": -112,
+      "width": 250,
+      "height": 85,
+      "text": "work loop\n(edit \u2194 tasks:verify)"
+    },
+    {
+      "id": "spec-complete",
+      "type": "text",
+      "x": 3150,
+      "y": -42,
+      "width": 250,
+      "height": 85,
+      "text": "spec:complete\n(archive + git-truth)"
+    },
+    {
+      "id": "push-pr",
+      "type": "text",
+      "x": 3500,
+      "y": -30,
+      "width": 250,
+      "height": 60,
+      "text": "push + PR"
+    },
+    {
+      "id": "auto-merge",
+      "type": "text",
+      "x": 3850,
+      "y": -112,
+      "width": 250,
+      "height": 85,
+      "text": "auto-merge\n(squash, delete branch)"
+    },
+    {
+      "id": "post-merge-sync",
+      "type": "text",
+      "x": 4200,
+      "y": -42,
+      "width": 250,
+      "height": 85,
+      "text": "post-merge sync\n(worktree cleanup)"
+    },
+    {
+      "id": "traces-archive",
+      "type": "text",
+      "x": 4550,
+      "y": -112,
+      "width": 250,
+      "height": 85,
+      "text": "traces + archive\n+ merged PRs"
+    },
+    {
+      "id": "retro",
+      "type": "text",
+      "x": 4900,
+      "y": -100,
+      "width": 250,
+      "height": 60,
+      "text": "/retro"
+    },
+    {
+      "id": "findings",
+      "type": "text",
+      "x": 5250,
+      "y": -42,
+      "width": 250,
+      "height": 85,
+      "text": "findings\n(acted vs deferred)"
+    },
+    {
+      "id": "improvement-spec",
+      "type": "text",
+      "x": 5600,
+      "y": -30,
+      "width": 250,
+      "height": 60,
+      "text": "improvement spec"
+    },
+    {
+      "id": "g-pre-commit-multi",
+      "type": "text",
+      "x": 0,
+      "y": -327,
+      "width": 250,
+      "height": 110,
+      "text": "pre-commit:\nbiome / spec-lint /\nsecret-scan"
+    },
+    {
+      "id": "g-pre-commit-typecheck-red",
+      "type": "text",
+      "x": 0,
+      "y": -137,
+      "width": 250,
+      "height": 85,
+      "text": "pre-commit:\ntypecheck (RED-skip)"
+    },
+    {
+      "id": "g-pre-push",
+      "type": "text",
+      "x": 0,
+      "y": 27,
+      "width": 250,
+      "height": 110,
+      "text": "pre-push:\nfull check\n+ tasks:verify"
+    },
+    {
+      "id": "g-ci",
+      "type": "text",
+      "x": 0,
+      "y": 217,
+      "width": 250,
+      "height": 110,
+      "text": "CI required:\ncheck + e2e\n+ skill-canary"
+    },
+    {
+      "id": "file-lefthook",
+      "type": "file",
+      "x": 2800,
+      "y": 52,
+      "width": 250,
+      "height": 60,
+      "file": "lefthook.yml"
+    },
+    {
+      "id": "file-red-commit-gate",
+      "type": "file",
+      "x": 2450,
+      "y": 52,
+      "width": 250,
+      "height": 60,
+      "file": "scripts/red-commit-gate.ts"
+    },
+    {
+      "id": "file-trace-scan",
+      "type": "file",
+      "x": 4550,
+      "y": 52,
+      "width": 250,
+      "height": 60,
+      "file": "scripts/trace-scan.ts"
+    },
+    {
+      "id": "skill-do",
+      "type": "file",
+      "x": 700,
+      "y": 40,
+      "width": 250,
+      "height": 60,
+      "file": ".claude/skills/do/SKILL.md"
+    },
+    {
+      "id": "skill-retro",
+      "type": "file",
+      "x": 4900,
+      "y": 40,
+      "width": 250,
+      "height": 60,
+      "file": ".claude/skills/retro/SKILL.md"
+    },
+    {
+      "id": "link-pr-list",
+      "type": "link",
+      "x": 3850,
+      "y": 52,
+      "width": 250,
+      "height": 60,
+      "url": "https://github.com/Pierre-Mike/agentic-journal/pulls"
+    }
   ],
-  "edges": []
+  "edges": [
+    {
+      "id": "edge-1",
+      "fromNode": "human-intent",
+      "toNode": "do",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "edge-2",
+      "fromNode": "do",
+      "toNode": "align",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "edge-3",
+      "fromNode": "align",
+      "toNode": "confirm-fields",
+      "fromSide": "right",
+      "toSide": "left",
+      "label": "user accepts"
+    },
+    {
+      "id": "edge-4",
+      "fromNode": "confirm-fields",
+      "toNode": "delegate",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "edge-5",
+      "fromNode": "delegate",
+      "toNode": "worktree-open",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "edge-6",
+      "fromNode": "worktree-open",
+      "toNode": "red-commit",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "edge-7",
+      "fromNode": "red-commit",
+      "toNode": "work-loop",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "edge-8",
+      "fromNode": "work-loop",
+      "toNode": "spec-complete",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "edge-9",
+      "fromNode": "spec-complete",
+      "toNode": "push-pr",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "edge-10",
+      "fromNode": "push-pr",
+      "toNode": "auto-merge",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "edge-11",
+      "fromNode": "auto-merge",
+      "toNode": "post-merge-sync",
+      "fromSide": "right",
+      "toSide": "left",
+      "label": "git pull"
+    },
+    {
+      "id": "edge-12",
+      "fromNode": "post-merge-sync",
+      "toNode": "traces-archive",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "edge-13",
+      "fromNode": "traces-archive",
+      "toNode": "retro",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "edge-14",
+      "fromNode": "retro",
+      "toNode": "findings",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "edge-15",
+      "fromNode": "findings",
+      "toNode": "improvement-spec",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "edge-16",
+      "fromNode": "improvement-spec",
+      "toNode": "do",
+      "fromSide": "left",
+      "toSide": "right",
+      "label": "/do <intent>"
+    },
+    {
+      "id": "edge-17",
+      "fromNode": "g-pre-commit-multi",
+      "toNode": "red-commit",
+      "fromSide": "right",
+      "toSide": "left",
+      "color": "1"
+    },
+    {
+      "id": "edge-18",
+      "fromNode": "g-pre-commit-multi",
+      "toNode": "work-loop",
+      "fromSide": "right",
+      "toSide": "left",
+      "color": "1"
+    },
+    {
+      "id": "edge-19",
+      "fromNode": "g-pre-commit-typecheck-red",
+      "toNode": "red-commit",
+      "fromSide": "right",
+      "toSide": "left",
+      "color": "1"
+    },
+    {
+      "id": "edge-20",
+      "fromNode": "g-pre-commit-typecheck-red",
+      "toNode": "work-loop",
+      "fromSide": "right",
+      "toSide": "left",
+      "color": "1"
+    },
+    {
+      "id": "edge-21",
+      "fromNode": "g-pre-push",
+      "toNode": "push-pr",
+      "fromSide": "right",
+      "toSide": "left",
+      "color": "1"
+    },
+    {
+      "id": "edge-22",
+      "fromNode": "g-ci",
+      "toNode": "auto-merge",
+      "fromSide": "right",
+      "toSide": "left",
+      "color": "1"
+    }
+  ]
 }

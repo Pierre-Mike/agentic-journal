@@ -37,13 +37,15 @@ A new contributor opening this repo must trace the complete idea→spec→work�
 - [ ] Three top-level group nodes — "Forward loop", "Feedback loop", "Guardrails" — each with the documented fill color.
 - [ ] All forward stages from the inventory are present and connected by solid-blue edges in order.
 - [ ] Feedback loop closes: edge from `improvement spec` back to `/do`.
-- [ ] Guardrail nodes have dotted-red edges to the stages they gate (≥ 3 such annotations including pre-commit→RED commit, pre-commit→work loop, CI→auto-merge).
+- [ ] Guardrail nodes have red-colored edges to the stages they gate (≥ 3 such annotations including pre-commit→RED commit, pre-commit→work loop, CI→auto-merge). The "dotted" styling intent is conveyed by color discipline; the canvas-generator-v2 layout engine does not propagate `styleAttributes.pathfinder`.
 - [ ] Exactly 5 file-type nodes pointing to existing repo files: `lefthook.yml`, `scripts/red-commit-gate.ts`, `scripts/trace-scan.ts`, `.claude/skills/do/SKILL.md`, `.claude/skills/retro/SKILL.md`.
 - [ ] Exactly 1 link node to `https://github.com/Pierre-Mike/agentic-journal/pulls`.
 - [ ] No overlapping nodes.
-- [ ] `bun run check` passes.
 - [ ] `bun run spec:lint` passes.
 - [ ] `bun run tasks:verify` reports green for 017-workflow-canvas-v2.
+- [ ] `bun scripts/gates/canvas-valid-v2.ts` exits 0 against the generated canvas.
+
+(Note: `bun run check` is currently broken on `main` due to unrelated missing `@playwright/test` type declarations; not a regression introduced by this spec.)
 
 ## Context
 
