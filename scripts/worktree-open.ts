@@ -13,9 +13,10 @@ import { join } from "node:path";
 
 async function sh(
 	cmd: string[],
-	opts: { silent?: boolean } = {},
+	opts: { silent?: boolean; cwd?: string } = {},
 ): Promise<{ ok: boolean; out: string }> {
 	const proc = Bun.spawn(cmd, {
+		cwd: opts.cwd,
 		stdout: opts.silent ? "pipe" : "inherit",
 		stderr: opts.silent ? "pipe" : "inherit",
 	});
@@ -65,6 +66,15 @@ async function main(): Promise<void> {
 	const result = await sh(["git", "worktree", "add", worktreePath, "-b", branch, "main"]);
 	if (!result.ok) {
 		console.error("✖ git worktree add failed");
+		process.exit(1);
+	}
+
+	console.log("\ninstalling dependencies…");
+	const install = await sh(["bun", "install", "--frozen-lockfile"], { cwd: worktreePath });
+	if (!install.ok) {
+		console.error(
+			`✖ bun install --frozen-lockfile failed in ${worktreePath}\n  worktree left in place for diagnostic.`,
+		);
 		process.exit(1);
 	}
 
