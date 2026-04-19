@@ -3,7 +3,7 @@ id: 021-assetsignore-worker
 title: Exclude worker bundle from public asset upload via .assetsignore
 status: active
 kind: code
-gate: scripts/smoke-assetsignore.ts
+gate: scripts/smoke-assetsignore.test.ts
 created: 2026-04-19T00:00:00.000Z
 owner: main
 depends_on: []
@@ -26,8 +26,9 @@ Specs 019 (preview-env-fix) and 020 (deploy-env-fix) restored wrangler authentic
 
 - [ ] `public/.assetsignore` exists.
 - [ ] `public/.assetsignore` content is exactly: `_worker.js\n_worker.js/**\n` (two lines, trailing newline).
-- [ ] `scripts/smoke-assetsignore.ts` exists and exits 0 against the patched repo.
-- [ ] Smoke exits non-zero with a diagnostic when the file is missing or content is wrong (verified by temporary break + revert).
+- [ ] `scripts/smoke-assetsignore.test.ts` exists and `bun test` against it exits 0 against the patched repo.
+- [ ] Test fails with a diagnostic when the file is missing or content is wrong (verified by temporary break + revert).
+- [ ] Standalone invocation (`bun run scripts/smoke-assetsignore.test.ts`) prints `ASSETSIGNORE_OK` and exits 0; prints `FAIL …` and exits 1 on red.
 - [ ] `bun run check` passes.
 - [ ] `bun run spec:lint` passes.
 - [ ] `bun run tasks:verify` reports green for 021-assetsignore-worker.
