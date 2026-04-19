@@ -1,14 +1,15 @@
 ---
 id: 023-preview-pr-write-perm
-title: Preview workflow pull-requests:write permission
-status: active
+title: 'Preview workflow pull-requests:write permission'
+status: archived
 kind: workflow
 gate: scripts/smoke-preview-workflow.ts
-created: 2026-04-19
+created: 2026-04-19T00:00:00.000Z
 owner: main
 depends_on:
   - 019-preview-env-fix
 supersedes: null
+archived: '2026-04-19'
 ---
 
 ## Intent
