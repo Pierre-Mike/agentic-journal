@@ -1,21 +1,21 @@
 # Tasks
 
-- [ ] 1. Stub `scripts/red-commit-gate.ts` with no-op `shouldSkipTypecheck`
+- [x] 1. Stub `scripts/red-commit-gate.ts` with no-op `shouldSkipTypecheck`
   - agent: main
   - depends: []
   - file_targets: [scripts/red-commit-gate.ts]
   - boundary: [scripts/red-commit-gate.ts]
-- [ ] 2. Write `scripts/red-commit-gate.test.ts` with full nine-case matrix
+- [x] 2. Write `scripts/red-commit-gate.test.ts` with full nine-case matrix
   - agent: main
   - depends: [1]
   - file_targets: [scripts/red-commit-gate.test.ts]
   - boundary: [scripts/red-commit-gate.test.ts]
-- [ ] 3. Implement real `shouldSkipTypecheck` regex + `readCommitSubject` + CLI main
+- [x] 3. Implement real `shouldSkipTypecheck` regex + `readCommitSubject` + CLI main
   - agent: main
   - depends: [2]
   - file_targets: [scripts/red-commit-gate.ts]
   - boundary: [scripts/red-commit-gate.ts]
-- [ ] 4. Wire `lefthook.yml` pre-commit `typecheck` to consult the helper
+- [x] 4. Wire `lefthook.yml` pre-commit `typecheck` to consult the helper
   - agent: main
   - depends: [3]
   - file_targets: [lefthook.yml]

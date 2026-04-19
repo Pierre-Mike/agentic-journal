@@ -1,7 +1,7 @@
 ---
 id: 016-red-commit-gate
 title: Allow RED spec commits to bypass typecheck pre-commit
-status: active
+status: archived
 kind: rule
 gate: scripts/red-commit-gate.test.ts
 created: 2026-04-19T00:00:00.000Z
@@ -9,6 +9,7 @@ owner: main
 depends_on:
   - 008-hook-fail-open
 supersedes: null
+archived: '2026-04-19'
 ---
 
 ## Intent
