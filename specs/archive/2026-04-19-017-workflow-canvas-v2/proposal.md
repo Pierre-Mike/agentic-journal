@@ -1,13 +1,16 @@
 ---
 id: 017-workflow-canvas-v2
 title: Workflow canvas v2 — full agentic loop with guardrails
-status: active
+status: archived
 kind: workflow
 gate: scripts/gates/canvas-valid-v2.ts
 created: 2026-04-19T00:00:00.000Z
 owner: main
-depends_on: [005-workflow-canvas, 016-red-commit-gate]
+depends_on:
+  - 005-workflow-canvas
+  - 016-red-commit-gate
 supersedes: 005-workflow-canvas
+archived: '2026-04-19'
 ---
 
 ## Intent
