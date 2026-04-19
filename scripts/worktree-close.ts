@@ -77,7 +77,20 @@ async function closeOne(slug: string, repoRoot: string): Promise<{ ok: boolean; 
 	const branch = `spec/${slug}`;
 
 	if (!existsSync(worktreePath)) {
-		return { ok: false, reason: `no worktree at ${worktreePath}` };
+		// Zombie reconcile: worktree dir is gone but the branch may still
+		// exist. If the branch is merged, delete it and continue. If not,
+		// refuse — don't destroy unpushed work from a manually-cleaned dir.
+		if (await isMerged(branch)) {
+			const del = await sh(["git", "branch", "-D", branch]);
+			if (!del.ok) {
+				return { ok: false, reason: `branch '${branch}' deletion failed` };
+			}
+			return { ok: true };
+		}
+		return {
+			ok: false,
+			reason: `no worktree at ${worktreePath} and branch '${branch}' not merged`,
+		};
 	}
 
 	const status = await sh(["git", "status", "--porcelain"], {
@@ -110,6 +123,11 @@ async function closeOne(slug: string, repoRoot: string): Promise<{ ok: boolean; 
 async function main(): Promise<void> {
 	const repoRoot = process.cwd();
 	const arg = process.argv[2];
+
+	// Reconcile stale .git/worktrees/* admin dirs before any listing, so
+	// listMergedSpecBranches() sees an authoritative snapshot and no later
+	// step trips on a "prunable" entry.
+	await sh(["git", "worktree", "prune"], { silent: true });
 
 	if (arg) {
 		// Single-slug strict mode

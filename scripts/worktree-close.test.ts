@@ -48,9 +48,12 @@ function mainRepoRoot(): string {
 test("prune runs before listMergedSpecBranches and dir-missing path reaches branch -D via isMerged", () => {
 	const src = readFileSync(SCRIPT_PATH, "utf8");
 	const pruneIdx = src.indexOf(`"git", "worktree", "prune"`);
-	const listIdx = src.indexOf("listMergedSpecBranches");
+	// Match the call site (await listMergedSpecBranches(...)), not the
+	// declaration — the declaration naturally sits above main() and would
+	// never assert anything useful.
+	const listCallIdx = src.indexOf("await listMergedSpecBranches(");
 	expect(pruneIdx).toBeGreaterThan(-1);
-	expect(listIdx).toBeGreaterThan(pruneIdx);
+	expect(listCallIdx).toBeGreaterThan(pruneIdx);
 
 	// The dir-missing branch must:
 	//   - still be guarded by isMerged

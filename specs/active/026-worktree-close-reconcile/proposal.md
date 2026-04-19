@@ -29,12 +29,12 @@ the branch and continue. The post-merge sync hook should stop failing.
 
 ## Acceptance criteria
 
-- [ ] `scripts/worktree-close.ts` calls `git worktree prune` at the top of `main()` before `listMergedSpecBranches()`
-- [ ] `scripts/worktree-close.ts` handles dir-missing + merged-branch by running `git branch -D branch`, returning ok, and continuing the loop
-- [ ] `scripts/worktree-close.ts` still refuses (returns error) when dir is missing AND branch is not merged
-- [ ] `scripts/worktree-close.test.ts` shape case asserts the prune landmark precedes `listMergedSpecBranches` and the dir-missing path reaches `git branch -D` via an `isMerged` guard
-- [ ] `scripts/worktree-close.test.ts` behavior case reproduces the zombie via real git primitives (fast-forward merge into main, `rm -rf` dir), spawns the script, asserts exit 0 + branch gone, resets main in `afterAll`
-- [ ] `bun run tasks:verify` green
+- [x] `scripts/worktree-close.ts` calls `git worktree prune` at the top of `main()` before `listMergedSpecBranches()`
+- [x] `scripts/worktree-close.ts` handles dir-missing + merged-branch by running `git branch -D branch`, returning ok, and continuing the loop
+- [x] `scripts/worktree-close.ts` still refuses (returns error) when dir is missing AND branch is not merged
+- [x] `scripts/worktree-close.test.ts` shape case asserts the prune landmark precedes `listMergedSpecBranches` and the dir-missing path reaches `git branch -D` via an `isMerged` guard
+- [x] `scripts/worktree-close.test.ts` behavior case reproduces the zombie via real git primitives (fast-forward merge into main, `rm -rf` dir), spawns the script, asserts exit 0 + branch gone, resets main in `afterAll`
+- [x] `bun run tasks:verify` green
 
 ## Context
 
