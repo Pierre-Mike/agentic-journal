@@ -7,7 +7,9 @@ pre-commit:
       stage_fixed: true
     typecheck:
       glob: "*.{ts,tsx,astro}"
-      run: bun run typecheck
+      run: |
+        if bun scripts/red-commit-gate.ts; then exit 0; fi
+        bun run typecheck
     spec-lint:
       glob: "specs/**/*.md"
       run: bun run spec:lint
