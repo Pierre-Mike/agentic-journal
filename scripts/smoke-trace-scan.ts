@@ -102,7 +102,7 @@ async function test1_aggregateBasics(): Promise<void> {
 			return;
 		}
 		const events = mod.loadTraces(dir, null);
-		const report = mod.aggregate(events);
+		const report = mod.aggregate({ events, repoRoot: process.cwd() });
 
 		assertTrue(report.events_total === 6, "events_total === 6", `got ${report.events_total}`);
 		assertTrue(
@@ -181,7 +181,10 @@ async function test2_sessionFilter(): Promise<void> {
 			fail("scripts/trace-scan.ts exports loadTraces + aggregate", "missing export(s)");
 			return;
 		}
-		const onlyX = mod.aggregate(mod.loadTraces(dir, "sess-X"));
+		const onlyX = mod.aggregate({
+			events: mod.loadTraces(dir, "sess-X"),
+			repoRoot: process.cwd(),
+		});
 		assertTrue(
 			onlyX.sessions_scanned === 1,
 			"sessions_scanned === 1 under --session sess-X",

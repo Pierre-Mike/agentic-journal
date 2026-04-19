@@ -1,0 +1,22 @@
+# Tasks
+
+- [x] 1. Add `normalizeForMatch({ file, repoRoot })` helper to `scripts/trace-scan.ts`
+  - agent: main
+  - depends: []
+  - file_targets: [scripts/trace-scan.ts]
+  - boundary: [scripts/trace-scan.ts]
+- [x] 2. Update `detectDrift` to require `repoRoot` and short-circuit on out-of-tree
+  - agent: main
+  - depends: [1]
+  - file_targets: [scripts/trace-scan.ts]
+  - boundary: [scripts/trace-scan.ts]
+- [x] 3. Thread `repoRoot` through `aggregate()` and CLI `run()`
+  - agent: main
+  - depends: [2]
+  - file_targets: [scripts/trace-scan.ts]
+  - boundary: [scripts/trace-scan.ts]
+- [x] 4. Extend `scripts/trace-scan.test.ts` with new path-normalization block; update existing tests + smoke to pass `repoRoot`
+  - agent: main
+  - depends: [3]
+  - file_targets: [scripts/trace-scan.test.ts, scripts/smoke-trace-scan.ts]
+  - boundary: [scripts/trace-scan.test.ts, scripts/smoke-trace-scan.ts]
