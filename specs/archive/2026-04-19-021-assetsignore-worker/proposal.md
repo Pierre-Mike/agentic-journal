@@ -1,13 +1,14 @@
 ---
 id: 021-assetsignore-worker
 title: Exclude worker bundle from public asset upload via .assetsignore
-status: active
+status: archived
 kind: code
 gate: scripts/smoke-assetsignore.test.ts
 created: 2026-04-19T00:00:00.000Z
 owner: main
 depends_on: []
 supersedes: null
+archived: '2026-04-19'
 ---
 
 ## Intent
