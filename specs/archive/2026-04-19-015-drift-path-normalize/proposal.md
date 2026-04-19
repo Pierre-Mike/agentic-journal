@@ -1,13 +1,17 @@
 ---
 id: 015-drift-path-normalize
-title: Drift detector path normalization — distinguish in-repo from out-of-tree writes
-status: active
+title: >-
+  Drift detector path normalization — distinguish in-repo from out-of-tree
+  writes
+status: archived
 kind: code
 gate: scripts/trace-scan.test.ts
 created: 2026-04-19T00:00:00.000Z
 owner: main
-depends_on: [011-trace-shape-v2]
+depends_on:
+  - 011-trace-shape-v2
 supersedes: null
+archived: '2026-04-19'
 ---
 
 ## Intent
