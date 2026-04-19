@@ -1,4 +1,6 @@
 ---
+import ThemeToggle from "../components/ThemeToggle.astro";
+
 interface Props {
 	title: string;
 	description?: string;
@@ -9,10 +11,35 @@ const hasHeadSlot = Astro.slots.has("head");
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="light">
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		{/*
+		  Inline synchronous theme bootstrap — MUST stay `is:inline` so Astro
+		  does not hoist/bundle it, otherwise it runs after first paint and
+		  reintroduces FOUC. Logic duplicates `resolveTheme` in
+		  src/lib/theme.ts (unit-tested source of truth) because this script
+		  runs before modules are loaded and cannot import.
+		*/}
+		<script is:inline>
+			(function () {
+				try {
+					var stored = null;
+					try { stored = window.localStorage.getItem("theme"); } catch (_) {}
+					var prefersDark = false;
+					try {
+						prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+					} catch (_) {}
+					var resolved = (stored === "light" || stored === "dark")
+						? stored
+						: (prefersDark ? "dark" : "light");
+					document.documentElement.dataset.theme = resolved;
+				} catch (_) {
+					document.documentElement.dataset.theme = "light";
+				}
+			})();
+		</script>
 		{hasHeadSlot ? <slot name="head" /> : (
 			<>
 				<meta name="description" content={description} />
@@ -25,6 +52,14 @@ const hasHeadSlot = Astro.slots.has("head");
 				--bg: #fafafa;
 				--muted: #666;
 				--accent: #0066cc;
+				--code-bg: #eee;
+			}
+			[data-theme="dark"] {
+				--fg: #eaeaea;
+				--bg: #111111;
+				--muted: #9a9a9a;
+				--accent: #66b2ff;
+				--code-bg: #1e1e1e;
 			}
 			* { box-sizing: border-box; }
 			body {
@@ -38,14 +73,21 @@ const hasHeadSlot = Astro.slots.has("head");
 			}
 			a { color: var(--accent); }
 			h1, h2, h3 { line-height: 1.2; }
-			code { background: #eee; padding: 0.1em 0.3em; border-radius: 3px; }
-			pre { background: #eee; padding: 1rem; overflow-x: auto; border-radius: 4px; }
+			code { background: var(--code-bg); padding: 0.1em 0.3em; border-radius: 3px; }
+			pre { background: var(--code-bg); padding: 1rem; overflow-x: auto; border-radius: 4px; }
 			header, footer { color: var(--muted); font-size: 0.9rem; margin: 2rem 0; }
+			header.site-header {
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				gap: 1rem;
+			}
 		</style>
 	</head>
 	<body>
-		<header>
+		<header class="site-header">
 			<a href="/">agentic-journal</a>
+			<ThemeToggle />
 		</header>
 		<main>
 			<slot />
