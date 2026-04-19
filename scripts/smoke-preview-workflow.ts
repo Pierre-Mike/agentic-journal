@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 
-const WORKFLOW_PATH = ".github/workflows/preview.yml";
+const WORKFLOW_PATH = process.env.PREVIEW_WORKFLOW_PATH ?? ".github/workflows/preview.yml";
 
 type StepBlock = { readonly text: string; readonly startLine: number };
 
@@ -43,6 +43,37 @@ for (const needle of requiredEnvLines) {
 if (!step.text.includes("--env=")) {
 	fail(
 		`MISSING wrangler flag: --env= in Preview deploy command (step starts at L${step.startLine})`,
+	);
+}
+
+type PermissionsBlock = { readonly text: string; readonly startLine: number };
+
+function findTopLevelPermissionsBlock(src: string): PermissionsBlock | null {
+	const lines = src.split("\n");
+	// Anchor at start-of-line (column 0) so a nested job-scope `permissions:`
+	// (indented) does not false-match the workflow-scope key we want.
+	const startIdx = lines.findIndex((l) => /^permissions:\s*$/.test(l));
+	if (startIdx < 0) return null;
+	let endIdx = lines.length;
+	for (let i = startIdx + 1; i < lines.length; i++) {
+		const l = lines[i];
+		if (l === undefined) continue;
+		// A new top-level key (non-indented, non-empty, non-comment) ends the block.
+		if (/^\S/.test(l)) {
+			endIdx = i;
+			break;
+		}
+	}
+	return { text: lines.slice(startIdx, endIdx).join("\n"), startLine: startIdx + 1 };
+}
+
+const permissions = findTopLevelPermissionsBlock(content);
+if (permissions === null) {
+	fail(`MISSING: workflow-scope 'permissions:' block in ${WORKFLOW_PATH}`);
+}
+if (!permissions.text.includes("pull-requests: write")) {
+	fail(
+		`MISSING permissions entry: 'pull-requests: write' (permissions block starts at L${permissions.startLine})`,
 	);
 }
 
