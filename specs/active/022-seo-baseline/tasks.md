@@ -19,7 +19,7 @@
   - agent: main
   - depends: [3]
   - file_targets: [src/pages/posts/[...slug].astro, src/layouts/BaseLayout.astro]
-  - boundary: [src/pages/posts/[...slug].astro, src/layouts/BaseLayout.astro]
+  - boundary: [src/pages/posts/*, src/layouts/BaseLayout.astro]
 - [ ] 5. Author `src/pages/rss.xml.ts` — `@astrojs/rss` `GET` handler enumerating the `posts` collection, using `SITE_NAME`/`SITE_DESCRIPTION` from `src/site-config.ts`
   - agent: main
   - depends: [1]
