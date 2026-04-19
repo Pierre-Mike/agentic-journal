@@ -9,16 +9,65 @@ required_sections: [Intent, Why, What, How]
 
 ## Intent
 
-RED — content pending.
+Test-driven development is not a quaint relic of the agile era. It is the only discipline that scales with the speed of the author, and the speed of the author just changed by three orders of magnitude. A failing test written before the change is what separates "I changed it" from "I improved it" — and that distinction is the only thing keeping a codebase from rotting under an agent that emits a thousand plausible diffs per hour.
+
+The same claim repeats at three layers — unit test, spec gate, eval. The model-layer instance lives in [evals-importance](/posts/evals-importance); this post is the layer underneath.
 
 ## Why
 
-RED — content pending.
+Without a test written first, "I changed it" and "I improved it" are indistinguishable. The test is a falsifiable claim about behavior, frozen before the change, against which the change is judged. Skip the freezing step and you have no claim — only an opinion that the new code is better than the old, defended by the same intuition that wrote both.
+
+That gap was tolerable when humans typed at fifty words per minute. A senior engineer writing by hand carries enough in-flight context — call sites, invariants, historical accidents — that the gap between "what I changed" and "what I think I changed" stays small. Slow authorship is its own form of review. Cost of skipping the test: a bug found Tuesday.
+
+The cost flips when the author is an LLM emitting a thousand diffs per hour. Each diff looks plausible. Each was generated against a context window that never contained your full system. The reviewer's intuition is no longer a substitute for a falsifiable claim.
+
+```
+human author          →  LLM author
+50 WPM                   ~1000 diffs/hour
+deep in-context          shallow per-diff
+peer review catches it   peer review drowns
+
+   ↓                          ↓
+
+skipping the test       skipping the test
+costs you Tuesday       costs you the system
+```
+
+The classical critique lands here — DHH's "TDD is dead" and Coplien's "Why Most Unit Testing Is Waste" argued the ceremony of red-green-refactor produced fragile mock-laden suites that fossilised the code's first guess. They were right about a slow human authoring code in a domain they understood. Both premises evaporate with LLM authorship: the author is no longer slow, and the author has no domain familiarity at all. What was ceremony at 50 WPM is the only review at 1000 diffs/hour.
 
 ## What
 
-RED — content pending.
+The shape is the same at every layer. One artifact, written before the change, that fails until the change makes it pass.
+
+```
+classical TDD       spec-first /do       evals for AI
+─────────────       ──────────────       ─────────────
+red test            RED gate             failing eval set
+   ↓                   ↓                     ↓
+green impl          GREEN tasks         passing rollout
+   ↓                   ↓                     ↓
+refactor            refactor            tune prompt/model
+
+       ↓ same idea, different artifact ↓
+
+a falsifiable claim before the change is what
+distinguishes "done" from "feels done"
+```
+
+At the function layer the artifact is a unit test. At the spec layer it's the gate file declared in `proposal.md`'s `gate:` field; the spec cannot close until `tasks-verify` reports green against it. At the model layer it's an [evals](/posts/evals-importance) suite — versioned dataset, scorer, run harness — and the prompt change is judged by which cases flip, not by the demo.
+
+Spec 016 in this repo is the canonical worked example. The intent was to land the RED commit per the documented red→green→refactor flow, but the pre-commit typecheck hook blocked any commit with TS errors and safety protocol forbade `--no-verify`. The deviation showed up in the trace, the next `/retro` named it, and the next spec installed a narrowly-scoped bypass: typecheck skips only when the commit subject matches `^spec\(\d+\): RED\b`. The audit value of the failing state — visible in git history, not collapsed into a single GREEN commit — was the whole point.
 
 ## How
 
-RED — content pending.
+Four moves the LLM era forces. None are new. All separate a harness that compounds from one that ratchets toward chaos.
+
+**Write the failing test before you write the prompt.** A test written after the implementation encodes whatever the implementation happened to do — including its bugs. With LLM authorship the temptation is sharper: asking the agent to "also add tests" produces a green suite that proves nothing. Anything else is the agent grading its own homework.
+
+**Freeze the eval before tuning.** A prompt change without a frozen eval is unfalsifiable. You will believe the new prompt is better because you wrote it; the eval is the thing that disagrees with you. This is the [evals-importance](/posts/evals-importance) thesis applied as ritual: no tuning until the eval is locked, no merge until it is green.
+
+**Gate every spec on a deterministic artifact.** The rule [day-0-why-this-blog](/posts/day-0-why-this-blog) laid down. Every `proposal.md` declares a `gate:` field; `tasks-verify` runs against it; the failing state lives in git history. A gate that can't fail isn't a gate.
+
+**Resist "I'll add the tests after."** The move that kills every harness. It always sounds reasonable — the change is small, the agent is fast, the test will be five minutes of cleanup. The test added after is the test that encodes the bug. The [harness-self-improvement](/posts/harness-self-improvement) loop only works because the gate refuses to move; the retros are reading from a system that can't lie about whether yesterday's work shipped.
+
+The LLM era made the discipline mandatory. The agent will always produce something. Whether what it produced is an improvement — only a falsifiable claim, written first, frozen against the change, can answer.
