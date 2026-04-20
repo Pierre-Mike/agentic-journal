@@ -1,0 +1,42 @@
+# Tasks
+
+- [ ] 1. Author spec scaffolding — design.md and tasks.md alongside the already-written proposal.md
+  - agent: main
+  - depends: []
+  - file_targets: [specs/active/027-dual-agent-tdd/design.md, specs/active/027-dual-agent-tdd/tasks.md]
+  - boundary: [specs/active/027-dual-agent-tdd/design.md, specs/active/027-dual-agent-tdd/tasks.md]
+- [ ] 2. RED gate + colocated bun:test — shape-gate asserting three-agent invariants
+  - agent: main
+  - depends: []
+  - file_targets: [scripts/smoke-dual-agent-do.ts, scripts/smoke-dual-agent-do.test.ts]
+  - boundary: [scripts/smoke-dual-agent-do.ts, scripts/smoke-dual-agent-do.test.ts]
+- [ ] 3. Create spec-tester agent — Sonnet; authors RED state; scoped to specs/active/<id>/ + gate paths
+  - agent: main
+  - depends: [1, 2]
+  - file_targets: [.claude/agents/spec-tester.md]
+  - boundary: [.claude/agents/spec-tester.md]
+- [ ] 4. Create spec-judge agent — Opus; 4-item rubric verbatim; touches .gate-frozen on PASS; writes blocker.md on 3-strike FAIL
+  - agent: main
+  - depends: [1, 2]
+  - file_targets: [.claude/agents/spec-judge.md]
+  - boundary: [.claude/agents/spec-judge.md]
+- [ ] 5. Create spec-implementer agent — Sonnet; gate paths frozen (hook-enforced); executes Steps 6–10
+  - agent: main
+  - depends: [1, 2]
+  - file_targets: [.claude/agents/spec-implementer.md]
+  - boundary: [.claude/agents/spec-implementer.md]
+- [ ] 6. Extend enforce hook — frozen-gate check + fixture tests + settings.json permission rules
+  - agent: main
+  - depends: [3, 4, 5]
+  - file_targets: [.claude/hooks/enforce.ts, .claude/hooks/enforce.test.ts, .claude/settings.json]
+  - boundary: [.claude/hooks/enforce.ts, .claude/hooks/enforce.test.ts, .claude/settings.json]
+- [ ] 7. Rewrite SKILL.md orchestration — Step 2.5 three-dispatch chain + Step 10 escalated variant
+  - agent: main
+  - depends: [3, 4, 5]
+  - file_targets: [.claude/skills/do/SKILL.md]
+  - boundary: [.claude/skills/do/SKILL.md]
+- [ ] 8. Verify — `bun run tasks:verify` green end-to-end
+  - agent: main
+  - depends: [1, 2, 3, 4, 5, 6, 7]
+  - file_targets: [scripts/smoke-dual-agent-do.ts]
+  - boundary: [scripts/smoke-dual-agent-do.ts]
