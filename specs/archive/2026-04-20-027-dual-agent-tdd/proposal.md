@@ -1,15 +1,16 @@
 ---
 id: 027-dual-agent-tdd
 title: Dual-agent TDD with AI judge
-status: active
+status: archived
 kind: workflow
 gate: scripts/smoke-dual-agent-do.ts
-created: 2026-04-19
+created: 2026-04-19T00:00:00.000Z
 owner: main
 depends_on:
   - 007-harness-self-improvement
   - 012-canary-skill-suite
 supersedes: null
+archived: '2026-04-20'
 ---
 
 ## Intent
