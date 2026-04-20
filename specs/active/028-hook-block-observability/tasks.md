@@ -1,0 +1,34 @@
+# Tasks
+
+Ordered. Gate `scripts/trace-scan.test.ts` is frozen by the judge and MUST NOT appear in any task's `file_targets`.
+
+- [ ] 1. Upgrade `block()` signature in `.claude/hooks/types.ts` to `block(event: ToolEvent, reason: string, filePath: string)`; call `emitBlocked(...)` before throwing `BlockError`.
+  - agent: main
+  - depends: []
+  - file_targets: [.claude/hooks/types.ts]
+  - boundary: [.claude/hooks/types.ts]
+- [ ] 2. Add `emitBlocked(event, reason, tool, filePath)` export in `.claude/hooks/observe.ts` — appends a `ToolBlocked` line with `status: "blocked"`; never throws; mirrors `emitTrace()` structure.
+  - agent: main
+  - depends: [1]
+  - file_targets: [.claude/hooks/observe.ts]
+  - boundary: [.claude/hooks/observe.ts]
+- [ ] 3. Update every `block(...)` call site in `.claude/hooks/enforce.ts` to pass `(event, reason, filePath)`; keep `enforce.test.ts` green.
+  - agent: main
+  - depends: [1, 2]
+  - file_targets: [.claude/hooks/enforce.ts]
+  - boundary: [.claude/hooks/enforce.ts, .claude/hooks/enforce.test.ts]
+- [ ] 4. Add `parseBlocked()` + `renderBlocks()` in `scripts/trace-scan.ts`; widen `TraceLine` with optional `reason`; extend `TraceScanReport` with `blocks: BlockFinding[]`; populate via `aggregate()`; surface in `renderText()` as a `Blocks:` section emitted only when non-empty.
+  - agent: main
+  - depends: [1, 2, 3]
+  - file_targets: [scripts/trace-scan.ts]
+  - boundary: [scripts/trace-scan.ts]
+- [ ] 5. Write retro findings — retrospective audit trail for the 2026-04-20 `/retro` cycle that spawned this spec.
+  - agent: main
+  - depends: []
+  - file_targets: [specs/active/028-hook-block-observability/findings.md]
+  - boundary: [specs/active/028-hook-block-observability/findings.md]
+- [ ] 6. Verify — `bun run tasks:verify` green end-to-end.
+  - agent: main
+  - depends: [1, 2, 3, 4, 5]
+  - file_targets: [scripts/trace-scan.ts]
+  - boundary: [scripts/trace-scan.ts, .claude/hooks/**]
