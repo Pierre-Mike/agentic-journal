@@ -41,29 +41,81 @@ Confirm these four fields with the user in a single compact message. If any are 
 
 After the user confirms, do NOT continue inline. Hand off Steps 3–10 to a background subagent.
 
-### Step 2.5 — Delegate
+### Step 2.5 — Dual-agent TDD dispatch
 
-Everything from Step 3 onward is deterministic, long-running, and does not need the user. Dispatch it to a background subagent so the main session is free.
+The rest of `/do` runs as three serial subagent roles, orchestrated by the main session. The separation between test-author, test-judge, and implementer closes the self-collusion window where a single agent writes both the tests and the code that passes them (research: AgentCoder arxiv 2312.13010, Code-A1 arxiv 2603.15611 — measured 8–11pp pass@1 improvement from role separation). Main session holds state on the filesystem (commits + sentinel files) — no orchestrator subagent needed.
+
+**Role summary**:
+
+| Role | Agent | Model | Reads | Writes | Exits on |
+|---|---|---|---|---|---|
+| spec-tester | `spec-tester` | sonnet | proposal/design/tasks + tester-review.md (retry) | spec folder + gate files | RED commit |
+| spec-judge | `spec-judge` | opus | proposal.md + gate files ONLY | tester-review.md, .gate-frozen (PASS), blocker.md (3-strike FAIL) | verdict written |
+| spec-implementer | `spec-implementer` | sonnet | proposal + design + frozen gate + review | everything except gate paths | Step 10 report |
+
+**Dispatch chain** (by kind):
+
+```
+code | rule | workflow    →  tester → judge (retry cap 3) → implementer
+writeup                    →  tester → implementer  (skip judge, skip .gate-frozen)
+```
+
+**Main-session pseudocode**:
+
+```
+const spec_dir = `specs/active/${id}-${slug}`
+
+if kind === "writeup":
+  dispatch spec-tester with aligned-plan handoff
+  await completion
+  dispatch spec-implementer
+  await completion
+  return  // no judge for writeups; the prose IS the deliverable
+
+attempt = 1
+review_brief = null
+while attempt <= 3:
+  dispatch spec-tester (attempt, review_brief)
+  await completion
+  dispatch spec-judge (attempt)
+  await completion
+  if exists(`${spec_dir}/.gate-frozen`):
+    break  // judge passed
+  review_brief = read(`${spec_dir}/tester-review.md`)
+  attempt += 1
+
+if not exists(`${spec_dir}/.gate-frozen`):
+  // judge wrote blocker.md; escalate without dispatching implementer
+  print_step_10_report(status="escalated")
+  return
+
+dispatch spec-implementer
+await completion  // implementer prints Step 10 report itself
+```
+
+**Dispatch mechanics**: each role is a subagent defined in `.claude/agents/<name>.md`. Invoke via:
 
 ```
 Agent({
-  subagent_type: "general-purpose",
+  subagent_type: "spec-tester" | "spec-judge" | "spec-implementer",
   run_in_background: true,
-  description: "do/<slug>",
-  prompt: <self-contained handoff>,
+  description: "do/<slug>: <role>",
+  prompt: <self-contained handoff — aligned plan + worktree path + current attempt + review brief if any>,
 })
 ```
 
-The handoff prompt must be fully self-contained — the subagent has no prior context:
+The handoff prompt for each dispatch must be fully self-contained — the subagent has no prior context:
 
 - **Spec fields** — `title`, `kind`, `gate`, `depends_on` (from Step 2)
 - **Aligned plan** — copy-paste the confirmed Goal + Big Picture + Straightforward Details + Non-obvious Decisions text from the align interview, verbatim. Do not summarise.
-- **Procedure** — inline Steps 3 through 10 (below) directly into the prompt. The subagent does NOT reinvoke `/do` — that would spawn a nested align with no user.
-- **Termination** — "exit after printing the Step 10 report. Do not `git pull`. Do not touch `main`."
+- **Worktree path** — absolute path to `.agentic/worktrees/<slug>`
+- **For spec-tester retries** — include the current `tester-review.md` as a revision brief
+- **For spec-implementer** — note that the gate is frozen; the hook will enforce
+- **Termination** — "exit after <role-specific exit condition>. Do not `git pull`. Do not touch `main`."
 
-After dispatch, the main session returns control to the user immediately. When the subagent finishes, its final message (one of /do complete, /do paused, /do escalated) lands as a completion notification. Relay that message to the user verbatim.
+After the main session's orchestration loop ends, the final subagent's exit notification lands in the transcript. The main session prints the Step 10 report based on the status observed (complete / paused / escalated). Relay the report to the user verbatim.
 
-The steps below are executed by the background subagent, not the main session.
+The steps below are executed by the subagents. Step 5 lives in spec-tester; Step 6 lives in spec-implementer.
 
 ### Step 3 — Allocate ID and slug
 
@@ -185,7 +237,7 @@ The script fetches `gh pr checks` + `gh run view --log-failed` for every red job
 
 ### Step 10 — Report
 
-After CI resolves, print one of:
+After the dispatch chain resolves, print one of three variants:
 
 **On CI green + auto-merged**:
 ```
@@ -214,6 +266,21 @@ CI failure brief: .agentic/worktrees/<slug>/specs/active/<slug>/ci-failure.md
 
 main is unchanged. Investigate the brief, push fixes to spec/<slug>, or close the PR.
 ```
+
+**On judge rejecting 3 tester attempts (NEW — spec 027)**:
+```
+/do escalated for <id>:
+  branch: spec/<slug>
+  PR: (none — judge rejected 3 tester attempts, no implementer ran)
+  Status: ESCALATED
+
+Blocker brief: .agentic/worktrees/<slug>/specs/active/<slug>/blocker.md
+
+main is unchanged. Review the blocker brief, pick a resume path (clarify intent,
+override judge, or abandon), then re-run /do <slug>.
+```
+
+The three variants signal different human next-actions. `complete` = nothing to do. `paused` = fix the code, push again. `escalated` = fix the intent or override the judge. Conflating them (e.g., reusing `paused` for escalation) hides which gate actually failed.
 
 Stop after printing the report. Do not pull, do not clean up the worktree — those happen on the user's next `git pull` (post-merge hook runs `sync` automatically).
 
