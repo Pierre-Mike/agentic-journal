@@ -1,4 +1,6 @@
-import { describe, expect, mock, test } from "bun:test";
+import { afterEach, describe, expect, mock, test } from "bun:test";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { ToolEvent } from "./types";
 
@@ -150,5 +152,77 @@ describe(".claude/hooks.ts dispatcher (fail-closed)", () => {
 			const { code } = await runDispatcher(input);
 			expect(code).not.toBe(1);
 		}
+	});
+});
+
+describe("findFrozenGateForPath (spec 027 gate-freeze)", () => {
+	let tmpRoot: string;
+
+	afterEach(() => {
+		if (tmpRoot) rmSync(tmpRoot, { recursive: true, force: true });
+	});
+
+	function seedSpec(args: { slug: string; gate: string; frozen: boolean }): void {
+		const specDir = join(tmpRoot, "specs", "active", args.slug);
+		mkdirSync(specDir, { recursive: true });
+		const proposal = [
+			"---",
+			`id: ${args.slug}`,
+			"title: test",
+			"status: active",
+			"kind: code",
+			`gate: ${args.gate}`,
+			"created: 2026-04-20",
+			"owner: main",
+			"depends_on: []",
+			"supersedes: null",
+			"---",
+			"",
+			"## Intent",
+			"test fixture",
+			"",
+		].join("\n");
+		writeFileSync(join(specDir, "proposal.md"), proposal);
+		if (args.frozen) writeFileSync(join(specDir, ".gate-frozen"), "");
+	}
+
+	function seedRepo(): void {
+		tmpRoot = mkdtempSync(join(tmpdir(), "gate-freeze-"));
+		mkdirSync(join(tmpRoot, ".git"), { recursive: true });
+	}
+
+	test("blocks when frozen sentinel exists and path matches gate", async () => {
+		seedRepo();
+		seedSpec({ slug: "027-fixture", gate: "scripts/my-gate.ts", frozen: true });
+		const { findFrozenGateForPath } = await import("./enforce");
+		const target = join(tmpRoot, "scripts", "my-gate.ts");
+		const hit = findFrozenGateForPath(tmpRoot, target);
+		expect(hit).not.toBeNull();
+		expect(hit?.slug).toBe("027-fixture");
+		expect(hit?.gatePath).toBe("scripts/my-gate.ts");
+	});
+
+	test("allows when frozen sentinel exists but path does not match gate", async () => {
+		seedRepo();
+		seedSpec({ slug: "027-fixture", gate: "scripts/my-gate.ts", frozen: true });
+		const { findFrozenGateForPath } = await import("./enforce");
+		const target = join(tmpRoot, "src", "unrelated.ts");
+		expect(findFrozenGateForPath(tmpRoot, target)).toBeNull();
+	});
+
+	test("allows when path matches gate but frozen sentinel is absent", async () => {
+		seedRepo();
+		seedSpec({ slug: "027-fixture", gate: "scripts/my-gate.ts", frozen: false });
+		const { findFrozenGateForPath } = await import("./enforce");
+		const target = join(tmpRoot, "scripts", "my-gate.ts");
+		expect(findFrozenGateForPath(tmpRoot, target)).toBeNull();
+	});
+
+	test("returns null when no active specs directory exists", async () => {
+		tmpRoot = mkdtempSync(join(tmpdir(), "gate-freeze-"));
+		mkdirSync(join(tmpRoot, ".git"), { recursive: true });
+		const { findFrozenGateForPath } = await import("./enforce");
+		const target = join(tmpRoot, "scripts", "my-gate.ts");
+		expect(findFrozenGateForPath(tmpRoot, target)).toBeNull();
 	});
 });

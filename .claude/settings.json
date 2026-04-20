@@ -10,7 +10,11 @@
 			"Bash(git diff:*)",
 			"Bash(git log:*)",
 			"Bash(wrangler:*)",
-			"Bash(astro:*)"
+			"Bash(astro:*)",
+			"Edit(.claude/hooks/**)",
+			"Write(.claude/hooks/**)",
+			"Edit(.agentic/worktrees/**/.claude/hooks/**)",
+			"Write(.agentic/worktrees/**/.claude/hooks/**)"
 		],
 		"deny": [
 			"Bash(*--no-verify*)",
