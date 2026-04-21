@@ -1,18 +1,19 @@
 ---
 id: 028
 title: Emit ToolBlocked trace events for rule friction observability
-status: active
+status: archived
 kind: code
 gate:
   - scripts/trace-scan.test.ts
   - .claude/hooks/enforce.test.ts
-created: 2026-04-20
+created: 2026-04-20T00:00:00.000Z
 owner: main
 depends_on:
   - 008-hook-fail-open
   - 011-trace-shape-v2
   - 013-task-boundary-annotations
 supersedes: null
+archived: '2026-04-21'
 ---
 
 ## Intent
