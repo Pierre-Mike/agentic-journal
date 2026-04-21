@@ -31,6 +31,7 @@ The `/retro` skill must never run a retrospective without first checking whether
 - Non-goal: no automatic resumption of dormant specs.
 - Non-goal: no archiving of dormant worktrees.
 - Non-goal: no hook-level blocking on dormant worktrees.
+- Test affordance: `retro-preflight.ts` reads subprocess-override env vars `GIT_WORKTREE_LIST_FIXTURE` (newline-delimited `<path> <branch>` entries), `GH_PR_LIST_FIXTURE` (JSON object keyed by `<branch>+state=all` returning `gh pr list` arrays), and `GIT_LOG_FIXTURE` (JSON object keyed by worktree path returning `{sha, ts}`) when present; when absent it shells out to the real commands (`git worktree list --porcelain`, `gh pr list`, `git log -1`).
 
 ## Acceptance criteria
 
