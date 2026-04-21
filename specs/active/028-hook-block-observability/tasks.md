@@ -27,8 +27,8 @@ Ordered. Gate files `scripts/trace-scan.test.ts` and `.claude/hooks/enforce.test
   - depends: []
   - file_targets: [specs/active/028-hook-block-observability/findings.md]
   - boundary: [specs/active/028-hook-block-observability/findings.md]
-- [ ] 6. Verify — `bun run tasks:verify` green end-to-end.
+- [ ] 6. Verify — `bun run tasks:verify` green end-to-end; fix orphan-check in `tasks-verify.ts` to exclude gate paths from the union boundary.
   - agent: main
   - depends: [1, 2, 3, 4, 5]
-  - file_targets: [scripts/trace-scan.ts]
-  - boundary: [scripts/trace-scan.ts, .claude/hooks/**]
+  - file_targets: [scripts/trace-scan.ts, scripts/tasks-verify.ts]
+  - boundary: [scripts/trace-scan.ts, .claude/hooks/**, scripts/tasks-verify.ts]

@@ -1,51 +1,59 @@
-# Tester review — 028 (attempt 1 of 3)
+# Tester review — 028 (attempt 2 of 3)
 
-**Verdict**: FAIL
+**Verdict**: PASS
 
 ## Rubric
 
 ### 1. Acceptance criterion coverage
-NO
+YES
 
-AC numbering (sequenced from proposal.md `- [ ]` bullets):
+Mapping (AC numbering from `proposal.md` Acceptance criteria bullets):
 
-- AC 1 (`types.ts`: `block()` signature upgraded; calls `emitBlocked(...)` before throwing) → **UNCOVERED**
-- AC 2 (`observe.ts`: exports `emitBlocked(...)` appending `ToolBlocked` line with `status: "blocked"`; never throws) → **UNCOVERED**
-- AC 3 (`enforce.ts`: every `block(...)` call site passes `(event, reason, filePath)`) → **UNCOVERED**
-- AC 4 (`trace-scan.ts`: `parseBlocked`, `renderBlocks`, `aggregate.blocks`, `renderText` Blocks: header) → `parseBlocked — spec 028`, `renderBlocks — spec 028`, `aggregate.blocks + renderText \`Blocks:\` section — spec 028` ✓
-- AC 5 (zero blocks → no header) → `renderBlocks — spec 028 > empty findings → empty string`, `aggregate.blocks + renderText > zero blocks → no Blocks: header` ✓
-- AC 6 (test cases assert `[<sid>] <reason> → <file> ×<count>` format and empty-input no-header) → `renderBlocks — spec 028 > renders each finding as...`, `renderBlocks — spec 028 > empty findings → empty string` ✓
-- AC 7 (`bun run tasks:verify` green) → meta, not a unit test; acceptable as out-of-gate.
+- AC 1 (`types.ts`: `block()` signature upgraded, calls `emitBlocked` before throwing) → `.claude/hooks/enforce.test.ts` → `block() emit-before-throw — spec 028 > block() calls emitBlocked before throwing BlockError` ✓ (imports `block` from `./types`, invokes with `(event, reason, filePath)`, asserts `.jsonl` contains `ToolBlocked` line even though `block()` threw)
+- AC 2 (`observe.ts`: exports `emitBlocked(...)`, appends `ToolBlocked` with `status:"blocked"`, never throws) → `emitBlocked — spec 028 > appends a ToolBlocked line...` + `> never throws when given malformed/missing input` ✓
+- AC 3 (`enforce.ts`: every `block(...)` call site passes `(event, reason, filePath)`) → `enforce.ts call-site integration — spec 028 > a blocked PreToolUse emits a ToolBlocked line whose reason and file match the rule that fired` ✓ (spawns real dispatcher, blocks on `wrangler.toml`, reads back `.jsonl` from temp-dir traces, asserts `reason` + `file` populated)
+- AC 4 (`trace-scan.ts`: `parseBlocked`, `renderBlocks`, `aggregate.blocks`, `renderText` `Blocks:` header) → `scripts/trace-scan.test.ts` → `parseBlocked — spec 028`, `renderBlocks — spec 028`, `aggregate.blocks + renderText \`Blocks:\` section — spec 028` ✓
+- AC 5 (zero blocks → no header) → `aggregate.blocks + renderText > zero blocks → no \`Blocks:\` header in renderText output` ✓
+- AC 6 (format `[<sid>] <reason> → <file> ×<count>`; empty input → no header) → `renderBlocks — spec 028 > renders each finding as...` + `> empty findings → empty string (no header)` ✓
+- AC 7 (`bun run tasks:verify` green) → meta, out-of-gate ✓
 
-ACs 1, 2, 3 are hook-side behavior. The declared gate `scripts/trace-scan.test.ts` only consumes synthetic `TraceLine[]` fixtures — it never exercises `.claude/hooks/types.ts::block()`, never exercises `.claude/hooks/observe.ts::emitBlocked()`, never exercises any `enforce.ts` call site. The hook-to-scanner data path is asserted in zero places.
+Constraint coverage (proposal.md Constraints section) also checked:
+- Single-writer rule (`enforce.ts` never touches file) → `emitBlocked — spec 028 > observe.ts is the single writer — enforce.ts does not import fs write functions directly` ✓
+- `emitBlocked` never-throw → ✓
+- `block()` emit-THEN-throw → ✓
+- `reason` passed through verbatim → exact-string equality on readback ✓
+- Scanner grouping `(session_id, reason, file)` + order (count desc, first-seen asc) → ✓
 
 ### 2. Adversarial gap
-YES
+NO — searched, found none material.
 
-Concrete adversarial path: an implementer can leave `.claude/hooks/enforce.ts` unchanged (or change it incorrectly), add a stub `emitBlocked` export that is a no-op (or writes to stdout instead of `.jsonl`), and wire `block()` in `types.ts` to *not* call `emitBlocked`. Since the gate fixtures are hand-constructed `TraceLine` objects passed directly to `parseBlocked` / `aggregate`, no test forces the hook side to actually produce any `ToolBlocked` line on disk. The scanner tests pass; the feature (make real hook-enforced friction visible) does not work end-to-end. This violates the intent declared in the Intent paragraph of `proposal.md` ("wires the missing signal").
+Best attempted gap: Constraint §4 ("no `parent_span_id`, no `duration_ms`" — point event, not span) is not asserted as a negative. An implementer could emit a `ToolBlocked` line that also carries span fields without breaking any current assertion. This is the letter of a shape constraint, not the observability spirit (`/retro` still consumes correctly). Mild, not structural.
 
-A second, weaker gap: the "never throws" contract on `emitBlocked` (Constraints §2, AC 2) is not exercised. An implementation that throws on a malformed event would regress the fail-open invariant from spec 008 silently.
+The attempt-1 adversarial path (stub `emitBlocked`, leave hooks silent) is closed: three independent hook-seam tests (never-throw, emit-before-throw, dispatcher integration) all read `.jsonl` back from a temp-dir and demand the `ToolBlocked` line land on disk through the real code path. A no-op stub fails every one.
 
 ### 3. Coverage gap
-YES
+YES (minor).
 
-Uncovered testable properties:
+- Negative-shape assertion on trace line: no test pins that `ToolBlocked` omits `parent_span_id` / `duration_ms`. Testable as `expect(blocked?.parent_span_id).toBeUndefined()` against the same readback fixture. Classified minor because downstream scanner doesn't read those fields, so the omission doesn't compromise the observability intent.
 
-- `block()` in `types.ts` invokes `emitBlocked(...)` on the blocked-exit path before throwing `BlockError`. (observable via spy/mock or via `.jsonl` file written during test)
-- `emitBlocked()` appends a line with `event: "ToolBlocked"` and `status: "blocked"` to `.claude/traces/<session>.jsonl`. (observable via temp-dir `.jsonl` read-back)
-- `emitBlocked()` never throws when given malformed input. (observable via `expect(() => emitBlocked(...)).not.toThrow()` with bad args)
-- `enforce.ts` passes `(event, reason, filePath)` at every call site — i.e. the integration, given a real blocked PreToolUse, yields a `ToolBlocked` line whose `reason` and `file` match the block rule. (observable via hook-level integration test)
-- `observe.ts` is the single writer — `enforce.ts` does not touch the file. (observable via import-graph or spy on fs writer)
-
-All five are deterministic assertions given mockable inputs and observable outputs. None is covered by the current gate.
+No structural gaps remain. The three hook-side ACs that attempt 1 flagged are now each anchored to at least one observable temp-dir `.jsonl` readback.
 
 ### 4. Behavior vs implementation detail
-YES (behavior-pinned, within the narrow scanner scope)
+YES — tests are behavior-pinned, with one acceptable source-level concession.
 
-Inside the gate file, the spec-028 assertions are pinned to observable contract surface: exported function names (`parseBlocked`, `renderBlocks`) that AC 4 mandates, the rendered format tokens (`Blocks:`, `×`, `→`) that the Scanner-output-format section of design.md mandates, and structural count/ordering asserts. Reason strings and file paths used in fixtures (e.g. `"wrangler.toml is a protected file."`, `"specs/archive/2026-04-18-008-hook-fail-open/proposal.md"`) are fixture data, not coupled to implementation internals. The `blockedEvent` helper casts `reason` via `as unknown as Partial<TraceLine>` — this is a schema-widening concession, not coupling. No hard-coded absolute paths, no library-specific error strings, no internal function name matching.
+Concession: the single-writer test reads `enforce.ts` source and greps for literal fs function names:
 
-Within scope, tests are behavior-pinned. The problem is not coupling — it is scope.
+```
+expect(enforceSrc).not.toMatch(/appendFileSync/);
+expect(enforceSrc).not.toMatch(/writeFileSync/);
+expect(enforceSrc).not.toMatch(/openSync/);
+expect(enforceSrc).not.toMatch(/createWriteStream/);
+```
+
+This is a static-source assertion, not a runtime-behavior assertion. It's the most direct way to pin the "enforce.ts never touches `.jsonl` directly" constraint without an import-graph crawler. The allow-list is reasonable (covers the node:fs write surface). Accept as minor coupling cost for a real structural invariant; not a blocker.
+
+All other assertions use public exports (`block`, `emitBlocked`, `parseBlocked`, `renderBlocks`, `aggregate`, `renderText`), the real dispatcher as a spawned process, and `.jsonl` readback — all observable contract.
 
 ## Verdict summary
 
-FAIL on attempt 1 because rubric item 1 (three unmapped ACs) and item 3 (five uncovered testable properties) fail, with a concrete adversarial gap identified under item 2. The declared gate `scripts/trace-scan.test.ts` is legitimately narrow — it only tests the scanner — but ACs 1, 2, 3 describe hook-side behavior (`block()` signature + call, `emitBlocked()` export + never-throw contract + `.jsonl` write, `enforce.ts` call-site updates) that the scanner gate cannot reach from synthetic fixtures. An implementation can satisfy every scanner assertion while leaving the hooks silent, which directly violates the Intent ("wires the missing signal"). Expected correction, at the rubric level: either (a) widen the gate declaration in `proposal.md` frontmatter to include a second test file covering the hook side (e.g. a colocated test for `observe.ts::emitBlocked` and an integration case for `types.ts::block`), and add assertions there that pin emit-before-throw, never-throw, and `.jsonl` contents; or (b) restate ACs 1–3 in proposal.md as internal refactor notes (not acceptance criteria) and add one scanner-observable acceptance criterion that forces the end-to-end path (e.g. a test that drives the real hook and then asserts via `parseBlocked` on the resulting `.jsonl`). Do not propose the test code — re-author the gate so the unmapped ACs land on observable assertions.
+PASS on attempt 2. The gate widening from attempt 1 landed correctly: ACs 1/2/3 are now anchored to temp-dir `.jsonl` readback assertions driven through the real `block()`, the real `emitBlocked()`, and the real dispatcher process. The attempt-1 adversarial path (stub `emitBlocked`, leave hooks silent, let scanner pass on fixtures) is closed. Remaining concerns are minor: one unpinned negative-shape constraint (no `parent_span_id`/`duration_ms`), and one source-grep concession for the single-writer invariant. Neither is structural. Freeze gate and proceed to GREEN.

@@ -32,6 +32,7 @@ export interface TraceLine {
 	agent_id: string | null;
 	tool?: string;
 	file?: string | null;
+	reason?: string;
 	span_id?: string;
 	parent_span_id?: string;
 	started_at?: number;
@@ -68,6 +69,14 @@ export interface RetryFinding {
 	last_ts: string;
 }
 
+export interface BlockFinding {
+	session_id: string;
+	reason: string;
+	file: string;
+	count: number;
+	first_ts: string;
+}
+
 export interface SessionAgg {
 	session_id: string;
 	events: number;
@@ -87,6 +96,7 @@ export interface TraceScanReport {
 	loops: LoopFinding[];
 	drift: DriftFinding[];
 	retries: RetryFinding[];
+	blocks: BlockFinding[];
 }
 
 const DAYS_RE = /^(\d+)d$/;
@@ -306,6 +316,56 @@ export function detectRetryStorm(params: {
 	return findings;
 }
 
+/**
+ * parseBlocked — collapse ToolBlocked events into BlockFinding records.
+ * Grouping key: (session_id, reason, file). Count = number of emissions.
+ * Order: count desc, then first_ts ascending.
+ */
+export function parseBlocked(events: readonly TraceLine[]): BlockFinding[] {
+	const key = (ev: TraceLine) => `${ev.session_id}\x00${ev.reason ?? ""}\x00${ev.file ?? ""}`;
+	const map = new Map<
+		string,
+		{ session_id: string; reason: string; file: string; count: number; first_ts: string }
+	>();
+	for (const ev of events) {
+		if (ev.event !== "ToolBlocked" || ev.status !== "blocked") continue;
+		const k = key(ev);
+		const existing = map.get(k);
+		if (existing) {
+			existing.count += 1;
+			if (ev.ts < existing.first_ts) existing.first_ts = ev.ts;
+		} else {
+			map.set(k, {
+				session_id: ev.session_id,
+				reason: ev.reason ?? "",
+				file: ev.file ?? "",
+				count: 1,
+				first_ts: ev.ts,
+			});
+		}
+	}
+	const findings = Array.from(map.values());
+	findings.sort((a, b) => {
+		if (b.count !== a.count) return b.count - a.count;
+		return a.first_ts.localeCompare(b.first_ts);
+	});
+	return findings;
+}
+
+/**
+ * renderBlocks — render a `Blocks:` section from BlockFinding[].
+ * Returns empty string when findings is empty (no header emitted).
+ * Format per line: `  [<sid>] <reason> → <file> ×<count>`
+ */
+export function renderBlocks(findings: readonly BlockFinding[]): string {
+	if (findings.length === 0) return "";
+	const lines: string[] = ["Blocks:"];
+	for (const f of findings) {
+		lines.push(`  [${f.session_id}] ${f.reason} → ${f.file} ×${f.count}`);
+	}
+	return lines.join("\n");
+}
+
 function groupBySession(events: readonly TraceLine[]): Map<string, TraceLine[]> {
 	const m = new Map<string, TraceLine[]>();
 	for (const ev of events) {
@@ -410,6 +470,7 @@ export function aggregate(params: { events: TraceLine[]; repoRoot: string }): Tr
 		loops: detectLoops({ events, windowSize: 10, maxRepeats: 3 }),
 		drift: detectDrift({ events, allowedFiles: DEFAULT_ALLOWED_FILES, repoRoot }),
 		retries: detectRetryStorm({ events, threshold: 3 }),
+		blocks: parseBlocked(events),
 	};
 }
 
@@ -491,6 +552,10 @@ export function renderText(report: TraceScanReport): string {
 				`  [${r.session_id}] ${r.count} consecutive verify failures [${r.first_ts} → ${r.last_ts}]`,
 			);
 		}
+	}
+	if (report.blocks.length > 0) {
+		lines.push("");
+		lines.push(renderBlocks(report.blocks));
 	}
 	return lines.join("\n");
 }

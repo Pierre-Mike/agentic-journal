@@ -87,14 +87,18 @@ function enforce(event: ToolEvent): void {
 	const frozen = findFrozenGateForPath(event.cwd, filePath);
 	if (frozen) {
 		block(
+			event,
 			`spec ${frozen.slug} gate is frozen; edits to ${frozen.gatePath} are not allowed until the spec is archived or specs/active/${frozen.slug}/.gate-frozen is manually removed.`,
+			filePath,
 		);
 	}
 
 	if (filePath.endsWith("wrangler.toml")) {
 		if (!activeSpecTargetsFile(event.cwd, "wrangler.toml")) {
 			block(
+				event,
 				"wrangler.toml is a protected file. Create an active spec that targets it before editing.",
+				filePath,
 			);
 		}
 		return;
@@ -103,14 +107,20 @@ function enforce(event: ToolEvent): void {
 	if (filePath.includes("/content/posts/") && filePath.endsWith(".mdx")) {
 		if (!activeSpecTargetsFile(event.cwd, filePath)) {
 			block(
+				event,
 				`${filePath} is a post file. Create an active spec of kind:writeup that targets it before editing.`,
+				filePath,
 			);
 		}
 		return;
 	}
 
 	if (filePath.includes("/specs/archive/")) {
-		block("Archived specs are immutable. Create a new spec that supersedes the previous one.");
+		block(
+			event,
+			"Archived specs are immutable. Create a new spec that supersedes the previous one.",
+			filePath,
+		);
 	}
 }
 
