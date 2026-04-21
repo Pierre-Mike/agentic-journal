@@ -9,11 +9,14 @@ import { describe, expect, test } from "bun:test";
 import {
 	aggregate,
 	detectDrift,
+	detectHotFiles,
 	detectLoops,
 	detectRetryStorm,
+	type HotFileFinding,
 	parseBlocked,
 	parseSince,
 	renderBlocks,
+	renderHotFiles,
 	renderText,
 	type TraceLine,
 	topN,
@@ -748,5 +751,336 @@ describe("aggregate.blocks + renderText `Blocks:` section — spec 028", () => {
 		expect(rep.blocks).toEqual([]);
 		const text = renderText(rep);
 		expect(text).not.toContain("Blocks:");
+	});
+});
+
+/**
+ * Spec 029 — hot-file-saturation. RED gate.
+ *
+ * Scanner must expose `detectHotFiles` / `renderHotFiles`, include a
+ * `hot_files` array on the aggregate report, and `renderText()` must emit a
+ * `Hot files:` section when ≥1 hot-file finding exists — and OMIT the header
+ * entirely when zero findings exist.
+ */
+describe("detectHotFiles — spec 029", () => {
+	// Assertion 1: 12 Write events on one file in one session → one finding.
+	test("12 Write events on one file → one finding with count 12", () => {
+		const ts = (n: number) => `2026-04-21T10:${String(n).padStart(2, "0")}:00.000Z`;
+		const events: TraceLine[] = Array.from({ length: 12 }, (_, i) =>
+			preEvent({
+				ts: ts(i),
+				session_id: "S1",
+				tool: "Write",
+				file: "content/posts/tdd-importance.mdx",
+			}),
+		);
+		const findings = detectHotFiles({ events });
+		expect(findings.length).toBe(1);
+		const f = findings[0];
+		expect(f?.session_id).toBe("S1");
+		expect(f?.file).toBe("content/posts/tdd-importance.mdx");
+		expect(f?.count).toBe(12);
+		expect(f?.first_ts).toBe(ts(0));
+		expect(f?.last_ts).toBe(ts(11));
+	});
+
+	// Assertion 2: 9 Edit events → zero findings (threshold = 10 default).
+	test("9 Edit events on one file → zero findings (below threshold)", () => {
+		const events: TraceLine[] = Array.from({ length: 9 }, (_, i) =>
+			preEvent({
+				ts: `2026-04-21T10:${String(i).padStart(2, "0")}:00.000Z`,
+				session_id: "S1",
+				tool: "Edit",
+				file: "src/foo.ts",
+			}),
+		);
+		expect(detectHotFiles({ events })).toEqual([]);
+	});
+
+	// Assertion 3: 6 Edits in S1 + 6 Edits in S2 → zero findings (per-session grouping).
+	test("6 Edits on same file in two sessions → zero findings (per-session grouping)", () => {
+		const s1Events: TraceLine[] = Array.from({ length: 6 }, (_, i) =>
+			preEvent({
+				ts: `2026-04-21T10:${String(i).padStart(2, "0")}:00.000Z`,
+				session_id: "S1",
+				tool: "Edit",
+				file: "content/posts/gap-registry.md",
+			}),
+		);
+		const s2Events: TraceLine[] = Array.from({ length: 6 }, (_, i) =>
+			preEvent({
+				ts: `2026-04-21T11:${String(i).padStart(2, "0")}:00.000Z`,
+				session_id: "S2",
+				tool: "Edit",
+				file: "content/posts/gap-registry.md",
+			}),
+		);
+		expect(detectHotFiles({ events: [...s1Events, ...s2Events] })).toEqual([]);
+	});
+
+	// Assertion 4: Two files each at ≥10 edits → ordered count desc, first_ts asc.
+	test("two hot files → ordered by count desc then first_ts asc", () => {
+		// fileA: 15 edits starting at 10:00
+		const fileAEvents: TraceLine[] = Array.from({ length: 15 }, (_, i) =>
+			preEvent({
+				ts: `2026-04-21T10:${String(i).padStart(2, "0")}:00.000Z`,
+				session_id: "S1",
+				tool: "Edit",
+				file: "src/a.ts",
+			}),
+		);
+		// fileB: 10 edits starting at 09:00 (earlier first_ts, but lower count)
+		const fileBEvents: TraceLine[] = Array.from({ length: 10 }, (_, i) =>
+			preEvent({
+				ts: `2026-04-21T09:${String(i).padStart(2, "0")}:00.000Z`,
+				session_id: "S1",
+				tool: "Write",
+				file: "src/b.ts",
+			}),
+		);
+		const findings = detectHotFiles({ events: [...fileAEvents, ...fileBEvents] });
+		expect(findings.length).toBe(2);
+		expect(findings[0]?.file).toBe("src/a.ts"); // higher count first
+		expect(findings[0]?.count).toBe(15);
+		expect(findings[1]?.file).toBe("src/b.ts");
+		expect(findings[1]?.count).toBe(10);
+	});
+
+	// Assertion 5: Non-Write/Edit tools do not count.
+	test("Read and Bash events do not count toward hot-file total", () => {
+		const writeEvents: TraceLine[] = Array.from({ length: 8 }, (_, i) =>
+			preEvent({
+				ts: `2026-04-21T10:${String(i).padStart(2, "0")}:00.000Z`,
+				session_id: "S1",
+				tool: "Write",
+				file: "src/a.ts",
+			}),
+		);
+		// Add 5 Read + 5 Bash events on same file — should not push count to ≥10
+		const noiseEvents: TraceLine[] = [
+			...Array.from({ length: 5 }, (_, i) =>
+				preEvent({
+					ts: `2026-04-21T11:${String(i).padStart(2, "0")}:00.000Z`,
+					session_id: "S1",
+					tool: "Read",
+					file: "src/a.ts",
+				}),
+			),
+			...Array.from({ length: 5 }, (_, i) =>
+				preEvent({
+					ts: `2026-04-21T12:${String(i).padStart(2, "0")}:00.000Z`,
+					session_id: "S1",
+					tool: "Bash",
+					file: "src/a.ts",
+				}),
+			),
+		];
+		expect(detectHotFiles({ events: [...writeEvents, ...noiseEvents] })).toEqual([]);
+	});
+
+	// Assertion 4c: tiebreak first_ts asc when counts are equal.
+	test("equal counts → ordered by first_ts asc (earlier first_ts ranks higher)", () => {
+		// fileA: 10 edits, first_ts at 11:00 (later)
+		const fileAEvents: TraceLine[] = Array.from({ length: 10 }, (_, i) =>
+			preEvent({
+				ts: `2026-04-21T11:${String(i).padStart(2, "0")}:00.000Z`,
+				session_id: "S1",
+				tool: "Edit",
+				file: "src/a.ts",
+			}),
+		);
+		// fileB: 10 edits, first_ts at 09:00 (earlier) — should sort first
+		const fileBEvents: TraceLine[] = Array.from({ length: 10 }, (_, i) =>
+			preEvent({
+				ts: `2026-04-21T09:${String(i).padStart(2, "0")}:00.000Z`,
+				session_id: "S1",
+				tool: "Edit",
+				file: "src/b.ts",
+			}),
+		);
+		const findings = detectHotFiles({ events: [...fileAEvents, ...fileBEvents] });
+		expect(findings.length).toBe(2);
+		// Same count (10 each), so earlier first_ts wins
+		expect(findings[0]?.file).toBe("src/b.ts"); // first_ts 09:00
+		expect(findings[1]?.file).toBe("src/a.ts"); // first_ts 11:00
+	});
+
+	// Assertion 4d: tiebreak session_id asc when counts AND first_ts are identical.
+	test("equal counts and equal first_ts → ordered by session_id asc", () => {
+		// fileA in session "S2": 10 edits at 10:00
+		const fileAEvents: TraceLine[] = Array.from({ length: 10 }, (_, i) =>
+			preEvent({
+				ts: `2026-04-21T10:${String(i).padStart(2, "0")}:00.000Z`,
+				session_id: "S2",
+				tool: "Edit",
+				file: "src/a.ts",
+			}),
+		);
+		// fileB in session "S1": 10 edits at 10:00 (same first_ts, earlier session_id)
+		const fileBEvents: TraceLine[] = Array.from({ length: 10 }, (_, i) =>
+			preEvent({
+				ts: `2026-04-21T10:${String(i).padStart(2, "0")}:00.000Z`,
+				session_id: "S1",
+				tool: "Edit",
+				file: "src/b.ts",
+			}),
+		);
+		const findings = detectHotFiles({ events: [...fileAEvents, ...fileBEvents] });
+		expect(findings.length).toBe(2);
+		// Same count (10) and same first_ts, so session_id asc determines order
+		expect(findings[0]?.session_id).toBe("S1"); // "S1" < "S2"
+		expect(findings[1]?.session_id).toBe("S2");
+	});
+
+	// Assertion 5b: events with undefined file are skipped — no findings even above threshold.
+	test("12 Write events where file is undefined → zero findings (undefined file skipped)", () => {
+		const events: TraceLine[] = Array.from({ length: 12 }, (_, i) =>
+			preEvent({
+				ts: `2026-04-21T10:${String(i).padStart(2, "0")}:00.000Z`,
+				session_id: "S1",
+				tool: "Write",
+				file: undefined,
+			}),
+		);
+		expect(detectHotFiles({ events })).toEqual([]);
+	});
+
+	// Assertion 5c: mixed undefined + concrete — only concrete counted.
+	test("15 Write events, 5 with file undefined and 10 on concrete path → one finding with count 10", () => {
+		const concreteEvents: TraceLine[] = Array.from({ length: 10 }, (_, i) =>
+			preEvent({
+				ts: `2026-04-21T10:${String(i).padStart(2, "0")}:00.000Z`,
+				session_id: "S1",
+				tool: "Write",
+				file: "src/hot.ts",
+			}),
+		);
+		const nullFileEvents: TraceLine[] = Array.from({ length: 5 }, (_, i) =>
+			preEvent({
+				ts: `2026-04-21T11:${String(i).padStart(2, "0")}:00.000Z`,
+				session_id: "S1",
+				tool: "Write",
+				file: undefined,
+			}),
+		);
+		const findings = detectHotFiles({ events: [...concreteEvents, ...nullFileEvents] });
+		expect(findings.length).toBe(1);
+		expect(findings[0]?.file).toBe("src/hot.ts");
+		expect(findings[0]?.count).toBe(10); // undefined events excluded
+	});
+
+	// Assertion 4b: custom minEdits parameter is respected.
+	test("custom minEdits=5 → finds files at ≥5 edits", () => {
+		const events: TraceLine[] = Array.from({ length: 5 }, (_, i) =>
+			preEvent({
+				ts: `2026-04-21T10:${String(i).padStart(2, "0")}:00.000Z`,
+				session_id: "S1",
+				tool: "Edit",
+				file: "src/custom.ts",
+			}),
+		);
+		const findings = detectHotFiles({ events, minEdits: 5 });
+		expect(findings.length).toBe(1);
+		expect(findings[0]?.count).toBe(5);
+	});
+});
+
+describe("renderHotFiles — spec 029", () => {
+	// Assertion 6: empty findings → empty string.
+	test("empty findings → empty string (no header)", () => {
+		expect(renderHotFiles([])).toBe("");
+	});
+
+	// Assertion 7: non-empty findings → correct format.
+	test("one finding → starts with 'Hot files:\\n' and contains formatted line", () => {
+		const finding: HotFileFinding = {
+			session_id: "S1",
+			file: "content/posts/tdd-importance.mdx",
+			count: 24,
+			first_ts: "2026-04-21T10:00:00.000Z",
+			last_ts: "2026-04-21T10:23:00.000Z",
+		};
+		const out = renderHotFiles([finding]);
+		expect(out.startsWith("Hot files:\n")).toBe(true);
+		expect(out).toContain("[S1]");
+		expect(out).toContain("content/posts/tdd-importance.mdx");
+		expect(out).toContain("×24");
+	});
+
+	test("two findings → two lines after header", () => {
+		const findings: HotFileFinding[] = [
+			{
+				session_id: "S1",
+				file: "src/a.ts",
+				count: 15,
+				first_ts: "2026-04-21T10:00:00.000Z",
+				last_ts: "2026-04-21T10:14:00.000Z",
+			},
+			{
+				session_id: "S1",
+				file: "src/b.ts",
+				count: 10,
+				first_ts: "2026-04-21T09:00:00.000Z",
+				last_ts: "2026-04-21T09:09:00.000Z",
+			},
+		];
+		const out = renderHotFiles(findings);
+		const lines = out.split("\n");
+		expect(lines[0]).toBe("Hot files:");
+		expect(lines[1]).toMatch(/^\s+\[S1\] src\/a\.ts ×15$/);
+		expect(lines[2]).toMatch(/^\s+\[S1\] src\/b\.ts ×10$/);
+	});
+});
+
+describe("aggregate.hot_files + renderText 'Hot files:' section — spec 029", () => {
+	// Assertion 8: aggregate has hot_files field.
+	test("aggregate result has hot_files array populated from events", () => {
+		const ts = (n: number) => `2026-04-21T10:${String(n).padStart(2, "0")}:00.000Z`;
+		const events: TraceLine[] = Array.from({ length: 12 }, (_, i) =>
+			preEvent({
+				ts: ts(i),
+				session_id: "S1",
+				tool: "Write",
+				file: "content/posts/tdd-importance.mdx",
+			}),
+		);
+		const rep = aggregate({ events, repoRoot: "/tmp/fakerepo" });
+		expect(Array.isArray(rep.hot_files)).toBe(true);
+		expect(rep.hot_files.length).toBe(1);
+		expect(rep.hot_files[0]?.file).toBe("content/posts/tdd-importance.mdx");
+		expect(rep.hot_files[0]?.count).toBe(12);
+	});
+
+	// Assertion 9a: renderText includes Hot files: when hot_files non-empty.
+	test("renderText includes 'Hot files:' header when hot_files non-empty", () => {
+		const ts = (n: number) => `2026-04-21T10:${String(n).padStart(2, "0")}:00.000Z`;
+		const events: TraceLine[] = Array.from({ length: 10 }, (_, i) =>
+			preEvent({
+				ts: ts(i),
+				session_id: "S1",
+				tool: "Edit",
+				file: "content/posts/gap-registry.md",
+			}),
+		);
+		const rep = aggregate({ events, repoRoot: "/tmp/fakerepo" });
+		expect(rep.hot_files.length).toBeGreaterThan(0);
+		const text = renderText(rep);
+		expect(text).toContain("Hot files:");
+	});
+
+	// Assertion 9b: renderText omits Hot files: when hot_files empty.
+	test("renderText omits 'Hot files:' when hot_files is empty", () => {
+		const events: TraceLine[] = [
+			preEvent({
+				ts: "2026-04-21T10:00:00.000Z",
+				session_id: "S1",
+				tool: "Write",
+				file: "src/a.ts",
+			}),
+		];
+		const rep = aggregate({ events, repoRoot: "/tmp/fakerepo" });
+		expect(rep.hot_files).toEqual([]);
+		const text = renderText(rep);
+		expect(text).not.toContain("Hot files:");
 	});
 });

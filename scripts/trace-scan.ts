@@ -77,6 +77,14 @@ export interface BlockFinding {
 	first_ts: string;
 }
 
+export interface HotFileFinding {
+	session_id: string;
+	file: string;
+	count: number;
+	first_ts: string;
+	last_ts: string;
+}
+
 export interface SessionAgg {
 	session_id: string;
 	events: number;
@@ -97,6 +105,7 @@ export interface TraceScanReport {
 	drift: DriftFinding[];
 	retries: RetryFinding[];
 	blocks: BlockFinding[];
+	hot_files: HotFileFinding[];
 }
 
 const DAYS_RE = /^(\d+)d$/;
@@ -366,6 +375,66 @@ export function renderBlocks(findings: readonly BlockFinding[]): string {
 	return lines.join("\n");
 }
 
+/**
+ * detectHotFiles — per (session_id, file), count Write+Edit events.
+ * Emit a finding for any group whose count >= minEdits (default 10).
+ * Order: count desc, then first_ts asc, then session_id asc.
+ */
+export function detectHotFiles(params: {
+	events: readonly TraceLine[];
+	minEdits?: number;
+}): HotFileFinding[] {
+	const { events, minEdits = 10 } = params;
+	const map = new Map<
+		string,
+		{ session_id: string; file: string; count: number; first_ts: string; last_ts: string }
+	>();
+	for (const ev of events) {
+		if (ev.tool !== "Write" && ev.tool !== "Edit") continue;
+		if (ev.file === undefined || ev.file === null) continue;
+		const k = `${ev.session_id}\x00${ev.file}`;
+		const existing = map.get(k);
+		if (existing) {
+			existing.count += 1;
+			if (ev.ts < existing.first_ts) existing.first_ts = ev.ts;
+			if (ev.ts > existing.last_ts) existing.last_ts = ev.ts;
+		} else {
+			map.set(k, {
+				session_id: ev.session_id,
+				file: ev.file,
+				count: 1,
+				first_ts: ev.ts,
+				last_ts: ev.ts,
+			});
+		}
+	}
+	const findings: HotFileFinding[] = [];
+	for (const v of map.values()) {
+		if (v.count >= minEdits) findings.push(v);
+	}
+	findings.sort((a, b) => {
+		if (b.count !== a.count) return b.count - a.count;
+		const cmpTs = a.first_ts.localeCompare(b.first_ts);
+		if (cmpTs !== 0) return cmpTs;
+		return a.session_id.localeCompare(b.session_id);
+	});
+	return findings;
+}
+
+/**
+ * renderHotFiles — render a `Hot files:` section from HotFileFinding[].
+ * Returns empty string when findings is empty (no header emitted).
+ * Format per line: `  [<sid>] <file> ×<count>`
+ */
+export function renderHotFiles(findings: readonly HotFileFinding[]): string {
+	if (findings.length === 0) return "";
+	const lines: string[] = ["Hot files:"];
+	for (const f of findings) {
+		lines.push(`  [${f.session_id}] ${f.file} \xd7${f.count}`);
+	}
+	return lines.join("\n");
+}
+
 function groupBySession(events: readonly TraceLine[]): Map<string, TraceLine[]> {
 	const m = new Map<string, TraceLine[]>();
 	for (const ev of events) {
@@ -471,6 +540,7 @@ export function aggregate(params: { events: TraceLine[]; repoRoot: string }): Tr
 		drift: detectDrift({ events, allowedFiles: DEFAULT_ALLOWED_FILES, repoRoot }),
 		retries: detectRetryStorm({ events, threshold: 3 }),
 		blocks: parseBlocked(events),
+		hot_files: detectHotFiles({ events, minEdits: 10 }),
 	};
 }
 
@@ -556,6 +626,10 @@ export function renderText(report: TraceScanReport): string {
 	if (report.blocks.length > 0) {
 		lines.push("");
 		lines.push(renderBlocks(report.blocks));
+	}
+	if (report.hot_files.length > 0) {
+		lines.push("");
+		lines.push(renderHotFiles(report.hot_files));
 	}
 	return lines.join("\n");
 }
