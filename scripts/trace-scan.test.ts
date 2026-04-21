@@ -878,6 +878,97 @@ describe("detectHotFiles — spec 029", () => {
 		expect(detectHotFiles({ events: [...writeEvents, ...noiseEvents] })).toEqual([]);
 	});
 
+	// Assertion 4c: tiebreak first_ts asc when counts are equal.
+	test("equal counts → ordered by first_ts asc (earlier first_ts ranks higher)", () => {
+		// fileA: 10 edits, first_ts at 11:00 (later)
+		const fileAEvents: TraceLine[] = Array.from({ length: 10 }, (_, i) =>
+			preEvent({
+				ts: `2026-04-21T11:${String(i).padStart(2, "0")}:00.000Z`,
+				session_id: "S1",
+				tool: "Edit",
+				file: "src/a.ts",
+			}),
+		);
+		// fileB: 10 edits, first_ts at 09:00 (earlier) — should sort first
+		const fileBEvents: TraceLine[] = Array.from({ length: 10 }, (_, i) =>
+			preEvent({
+				ts: `2026-04-21T09:${String(i).padStart(2, "0")}:00.000Z`,
+				session_id: "S1",
+				tool: "Edit",
+				file: "src/b.ts",
+			}),
+		);
+		const findings = detectHotFiles({ events: [...fileAEvents, ...fileBEvents] });
+		expect(findings.length).toBe(2);
+		// Same count (10 each), so earlier first_ts wins
+		expect(findings[0]?.file).toBe("src/b.ts"); // first_ts 09:00
+		expect(findings[1]?.file).toBe("src/a.ts"); // first_ts 11:00
+	});
+
+	// Assertion 4d: tiebreak session_id asc when counts AND first_ts are identical.
+	test("equal counts and equal first_ts → ordered by session_id asc", () => {
+		// fileA in session "S2": 10 edits at 10:00
+		const fileAEvents: TraceLine[] = Array.from({ length: 10 }, (_, i) =>
+			preEvent({
+				ts: `2026-04-21T10:${String(i).padStart(2, "0")}:00.000Z`,
+				session_id: "S2",
+				tool: "Edit",
+				file: "src/a.ts",
+			}),
+		);
+		// fileB in session "S1": 10 edits at 10:00 (same first_ts, earlier session_id)
+		const fileBEvents: TraceLine[] = Array.from({ length: 10 }, (_, i) =>
+			preEvent({
+				ts: `2026-04-21T10:${String(i).padStart(2, "0")}:00.000Z`,
+				session_id: "S1",
+				tool: "Edit",
+				file: "src/b.ts",
+			}),
+		);
+		const findings = detectHotFiles({ events: [...fileAEvents, ...fileBEvents] });
+		expect(findings.length).toBe(2);
+		// Same count (10) and same first_ts, so session_id asc determines order
+		expect(findings[0]?.session_id).toBe("S1"); // "S1" < "S2"
+		expect(findings[1]?.session_id).toBe("S2");
+	});
+
+	// Assertion 5b: events with undefined file are skipped — no findings even above threshold.
+	test("12 Write events where file is undefined → zero findings (undefined file skipped)", () => {
+		const events: TraceLine[] = Array.from({ length: 12 }, (_, i) =>
+			preEvent({
+				ts: `2026-04-21T10:${String(i).padStart(2, "0")}:00.000Z`,
+				session_id: "S1",
+				tool: "Write",
+				file: undefined,
+			}),
+		);
+		expect(detectHotFiles({ events })).toEqual([]);
+	});
+
+	// Assertion 5c: mixed undefined + concrete — only concrete counted.
+	test("15 Write events, 5 with file undefined and 10 on concrete path → one finding with count 10", () => {
+		const concreteEvents: TraceLine[] = Array.from({ length: 10 }, (_, i) =>
+			preEvent({
+				ts: `2026-04-21T10:${String(i).padStart(2, "0")}:00.000Z`,
+				session_id: "S1",
+				tool: "Write",
+				file: "src/hot.ts",
+			}),
+		);
+		const nullFileEvents: TraceLine[] = Array.from({ length: 5 }, (_, i) =>
+			preEvent({
+				ts: `2026-04-21T11:${String(i).padStart(2, "0")}:00.000Z`,
+				session_id: "S1",
+				tool: "Write",
+				file: undefined,
+			}),
+		);
+		const findings = detectHotFiles({ events: [...concreteEvents, ...nullFileEvents] });
+		expect(findings.length).toBe(1);
+		expect(findings[0]?.file).toBe("src/hot.ts");
+		expect(findings[0]?.count).toBe(10); // undefined events excluded
+	});
+
 	// Assertion 4b: custom minEdits parameter is respected.
 	test("custom minEdits=5 → finds files at ≥5 edits", () => {
 		const events: TraceLine[] = Array.from({ length: 5 }, (_, i) =>
