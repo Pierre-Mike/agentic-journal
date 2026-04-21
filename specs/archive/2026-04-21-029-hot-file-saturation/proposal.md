@@ -1,13 +1,16 @@
 ---
 id: 029-hot-file-saturation
 title: Hot-file edit saturation detector
-status: active
+status: archived
 kind: code
 gate: scripts/trace-scan.test.ts
-created: 2026-04-21
+created: 2026-04-21T00:00:00.000Z
 owner: main
-depends_on: [011-trace-shape-v2, 028]
+depends_on:
+  - 011-trace-shape-v2
+  - 028
 supersedes: null
+archived: '2026-04-21'
 ---
 
 ## Intent
