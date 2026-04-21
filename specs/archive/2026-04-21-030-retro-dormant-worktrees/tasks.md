@@ -12,12 +12,12 @@ and `boundary`.
 Gate `scripts/smoke-retro-dormant.ts` is frozen — do NOT include in any task's
 `file_targets`.
 
-- [ ] 1. Write `scripts/retro-preflight.ts` with `detectDormantWorktrees()` export and CLI entrypoint
+- [x] 1. Write `scripts/retro-preflight.ts` with `detectDormantWorktrees()` export and CLI entrypoint
   - agent: main
   - depends: []
   - file_targets: [scripts/retro-preflight.ts]
   - boundary: [scripts/retro-preflight.ts]
-- [ ] 2. Amend `.claude/skills/retro/SKILL.md` Step 2 to invoke preflight and inline output
+- [x] 2. Amend `.claude/skills/retro/SKILL.md` Step 2 to invoke preflight and inline output
   - agent: main
   - depends: [1]
   - file_targets: [.claude/skills/retro/SKILL.md]

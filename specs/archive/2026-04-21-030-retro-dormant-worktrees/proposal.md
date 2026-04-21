@@ -1,16 +1,17 @@
 ---
 id: 030-retro-dormant-worktrees
 title: Surface dormant in-flight worktrees in /retro preconditions
-status: active
+status: archived
 kind: workflow
 gate: scripts/smoke-retro-dormant.ts
-created: 2026-04-21
+created: 2026-04-21T00:00:00.000Z
 owner: main
 depends_on:
   - 005-trace-scan
   - 011-trace-shape-v2
   - 027-dual-agent-tdd
 supersedes: null
+archived: '2026-04-21'
 ---
 
 ## Intent
