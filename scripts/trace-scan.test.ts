@@ -11,7 +11,10 @@ import {
 	detectDrift,
 	detectLoops,
 	detectRetryStorm,
+	parseBlocked,
 	parseSince,
+	renderBlocks,
+	renderText,
 	type TraceLine,
 	topN,
 } from "./trace-scan.ts";
@@ -530,5 +533,220 @@ describe("backward compat — old-shape TraceLine", () => {
 		};
 		expect(modern.span_id).toBe("abc");
 		expect(modern.status).toBe("ok");
+	});
+});
+
+/**
+ * Spec 028 — hook-block-observability. RED gate.
+ *
+ * Scanner must expose `parseBlocked` / `renderBlocks`, include a `blocks`
+ * array in the aggregate report, and `renderText()` must emit a `Blocks:`
+ * section grouped by (session_id, reason, file) when ≥1 block exists —
+ * and OMIT the header entirely when zero blocks exist.
+ */
+function blockedEvent(
+	partial: Partial<TraceLine> & Pick<TraceLine, "ts" | "session_id"> & { reason: string },
+): TraceLine {
+	const { reason, ...rest } = partial;
+	return {
+		event: "ToolBlocked",
+		agent_id: null,
+		status: "blocked",
+		tool: "Write",
+		file: "wrangler.toml",
+		...rest,
+		// reason is a first-class field on blocked events; keep it on the line.
+		// TraceLine schema will be widened in implementation to include `reason`.
+		...({ reason } as unknown as Partial<TraceLine>),
+	};
+}
+
+describe("parseBlocked — spec 028", () => {
+	test("collapses repeated (session, reason, file) triples into one finding with a count", () => {
+		const events: TraceLine[] = [
+			blockedEvent({
+				ts: "2026-04-20T10:00:00.000Z",
+				session_id: "S1",
+				reason:
+					"wrangler.toml is a protected file. Create an active spec that targets it before editing.",
+				tool: "Write",
+				file: "wrangler.toml",
+			}),
+			blockedEvent({
+				ts: "2026-04-20T10:00:05.000Z",
+				session_id: "S1",
+				reason:
+					"wrangler.toml is a protected file. Create an active spec that targets it before editing.",
+				tool: "Write",
+				file: "wrangler.toml",
+			}),
+			blockedEvent({
+				ts: "2026-04-20T10:00:10.000Z",
+				session_id: "S1",
+				reason: "Archived specs are immutable. Create a new spec that supersedes the previous one.",
+				tool: "Edit",
+				file: "specs/archive/2026-04-18-008-hook-fail-open/proposal.md",
+			}),
+		];
+		const findings = parseBlocked(events);
+		expect(findings.length).toBe(2);
+		const wrangler = findings.find((f) => f.file === "wrangler.toml");
+		expect(wrangler).toBeDefined();
+		expect(wrangler?.count).toBe(2);
+		expect(wrangler?.session_id).toBe("S1");
+		expect(wrangler?.reason).toContain("wrangler.toml is a protected file");
+	});
+
+	test("non-blocked events are ignored", () => {
+		const events: TraceLine[] = [
+			{
+				ts: "2026-04-20T10:00:00.000Z",
+				session_id: "S1",
+				event: "PreToolUse",
+				agent_id: null,
+				tool: "Write",
+				file: "src/a.ts",
+			},
+			{
+				ts: "2026-04-20T10:00:05.000Z",
+				session_id: "S1",
+				event: "PostToolUse",
+				agent_id: null,
+				tool: "Write",
+				file: "src/a.ts",
+				status: "ok",
+			},
+		];
+		expect(parseBlocked(events)).toEqual([]);
+	});
+
+	test("empty input → empty findings", () => {
+		expect(parseBlocked([])).toEqual([]);
+	});
+
+	test("different sessions stay in separate findings even with same reason+file", () => {
+		const events: TraceLine[] = [
+			blockedEvent({
+				ts: "2026-04-20T10:00:00.000Z",
+				session_id: "S1",
+				reason: "wrangler.toml is a protected file.",
+				file: "wrangler.toml",
+			}),
+			blockedEvent({
+				ts: "2026-04-20T10:00:05.000Z",
+				session_id: "S2",
+				reason: "wrangler.toml is a protected file.",
+				file: "wrangler.toml",
+			}),
+		];
+		const findings = parseBlocked(events);
+		expect(findings.length).toBe(2);
+	});
+});
+
+describe("renderBlocks — spec 028", () => {
+	test("renders each finding as `[<sid>] <reason> → <file> ×<count>` under a `Blocks:` header", () => {
+		const findings = parseBlocked([
+			blockedEvent({
+				ts: "2026-04-20T10:00:00.000Z",
+				session_id: "S1",
+				reason: "wrangler.toml is a protected file.",
+				file: "wrangler.toml",
+			}),
+			blockedEvent({
+				ts: "2026-04-20T10:00:05.000Z",
+				session_id: "S1",
+				reason: "wrangler.toml is a protected file.",
+				file: "wrangler.toml",
+			}),
+			blockedEvent({
+				ts: "2026-04-20T10:00:10.000Z",
+				session_id: "S1",
+				reason: "wrangler.toml is a protected file.",
+				file: "wrangler.toml",
+			}),
+		]);
+		const out = renderBlocks(findings);
+		expect(out).toContain("Blocks:");
+		expect(out).toContain("[S1]");
+		expect(out).toContain("wrangler.toml is a protected file.");
+		expect(out).toContain("→ wrangler.toml");
+		expect(out).toContain("×3");
+	});
+
+	test("ordered by count desc, then first-seen asc", () => {
+		const findings = parseBlocked([
+			blockedEvent({
+				ts: "2026-04-20T10:00:00.000Z",
+				session_id: "S1",
+				reason: "A",
+				file: "a.ts",
+			}),
+			blockedEvent({
+				ts: "2026-04-20T10:00:05.000Z",
+				session_id: "S1",
+				reason: "B",
+				file: "b.ts",
+			}),
+			blockedEvent({
+				ts: "2026-04-20T10:00:10.000Z",
+				session_id: "S1",
+				reason: "B",
+				file: "b.ts",
+			}),
+		]);
+		const out = renderBlocks(findings);
+		const idxB = out.indexOf("→ b.ts");
+		const idxA = out.indexOf("→ a.ts");
+		expect(idxB).toBeGreaterThan(-1);
+		expect(idxA).toBeGreaterThan(-1);
+		expect(idxB).toBeLessThan(idxA);
+	});
+
+	test("empty findings → empty string (no header)", () => {
+		const out = renderBlocks([]);
+		expect(out).toBe("");
+	});
+});
+
+describe("aggregate.blocks + renderText `Blocks:` section — spec 028", () => {
+	test("aggregate includes a `blocks` array surfaced by renderText", () => {
+		const events: TraceLine[] = [
+			blockedEvent({
+				ts: "2026-04-20T10:00:00.000Z",
+				session_id: "S1",
+				reason: "wrangler.toml is a protected file.",
+				file: "wrangler.toml",
+			}),
+			blockedEvent({
+				ts: "2026-04-20T10:00:05.000Z",
+				session_id: "S1",
+				reason: "wrangler.toml is a protected file.",
+				file: "wrangler.toml",
+			}),
+		];
+		const rep = aggregate({ events, repoRoot: "/tmp/fakerepo" });
+		expect(Array.isArray(rep.blocks)).toBe(true);
+		expect(rep.blocks.length).toBe(1);
+		const text = renderText(rep);
+		expect(text).toContain("Blocks:");
+		expect(text).toMatch(/\[S1\].*→ wrangler\.toml.*×2/);
+	});
+
+	test("zero blocks → no `Blocks:` header in renderText output", () => {
+		const events: TraceLine[] = [
+			{
+				ts: "2026-04-20T10:00:00.000Z",
+				session_id: "S1",
+				event: "PreToolUse",
+				agent_id: null,
+				tool: "Write",
+				file: "src/a.ts",
+			},
+		];
+		const rep = aggregate({ events, repoRoot: "/tmp/fakerepo" });
+		expect(rep.blocks).toEqual([]);
+		const text = renderText(rep);
+		expect(text).not.toContain("Blocks:");
 	});
 });

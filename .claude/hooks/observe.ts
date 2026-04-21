@@ -13,7 +13,7 @@
 
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import type { BaseEvent } from "./types";
+import type { BaseEvent, ToolEvent } from "./types";
 
 function genSpanId(): string | undefined {
 	try {
@@ -82,6 +82,38 @@ function inferStatus(
 	if (toolResponse === undefined) return "ok";
 	if (toolResponse.is_error === true) return "error";
 	return "ok";
+}
+
+/**
+ * Emit a ToolBlocked point-event to .claude/traces/<session>.jsonl.
+ * Never throws — mirrors emitTrace() never-throw contract.
+ * observe.ts is the single writer to .jsonl; enforce.ts must not call fs write functions directly.
+ */
+export function emitBlocked(
+	event: ToolEvent,
+	reason: string,
+	tool: string,
+	filePath: string,
+): void {
+	try {
+		const dir = join(event.cwd, ".claude", "traces");
+		if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+		const spanId = genSpanId();
+		const line = JSON.stringify({
+			ts: new Date().toISOString(),
+			session_id: event.session_id,
+			event: "ToolBlocked",
+			agent_id: event.agent_id ?? null,
+			span_id: spanId,
+			status: "blocked",
+			tool,
+			file: filePath,
+			reason,
+		});
+		appendFileSync(join(dir, `${event.session_id}.jsonl`), `${line}\n`);
+	} catch {
+		// trace emission must never break the harness
+	}
 }
 
 export function emitTrace(event: BaseEvent, extra: Record<string, unknown>): void {

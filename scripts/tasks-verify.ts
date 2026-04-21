@@ -108,8 +108,9 @@ async function verifyBoundaries({
 
 	// Union check: every changed file must match the union of all task
 	// boundaries (plus the spec's own directory — authoring spec docs is
-	// always allowed). This catches "orphan" edits that live outside every
-	// task's file_targets and would otherwise slip through the per-task check.
+	// always allowed). Gate paths are excluded: they are committed by the
+	// spec-tester before implementation begins and are intentionally not in
+	// any task boundary (they are frozen, not authored by the implementer).
 	const boundedTasks = tasks.filter(
 		(t): t is ParsedTask & { boundary: readonly string[] } => t.boundary !== undefined,
 	);
@@ -117,10 +118,12 @@ async function verifyBoundaries({
 		const specRelDir = spec.dir.startsWith(`${REPO_ROOT}/`)
 			? spec.dir.slice(REPO_ROOT.length + 1)
 			: spec.dir;
+		const gateSet = new Set(gatePaths(spec));
+		const eligibleChanges = changedFiles.filter((f) => !gateSet.has(f));
 		const unionBoundary = [...new Set(boundedTasks.flatMap((t) => t.boundary)), `${specRelDir}/**`];
 		const union = validateBoundary({
 			task: { boundary: unionBoundary },
-			changedFiles,
+			changedFiles: eligibleChanges,
 			repoRoot: REPO_ROOT,
 		});
 		if (!union.ok) {

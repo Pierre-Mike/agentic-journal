@@ -9,6 +9,8 @@
 			"!node_modules",
 			"!.wrangler",
 			"!.agentic",
+			"!.claude/traces",
+			"!.claude/sessions",
 			"!.claude/dashboard.html",
 			"!playwright-report",
 			"!test-results"
