@@ -1,6 +1,6 @@
 # Tasks
 
-Ordered. Gate `scripts/trace-scan.test.ts` is frozen by the judge and MUST NOT appear in any task's `file_targets`.
+Ordered. Gate files `scripts/trace-scan.test.ts` and `.claude/hooks/enforce.test.ts` are frozen by the judge and MUST NOT appear in any task's `file_targets`.
 
 - [ ] 1. Upgrade `block()` signature in `.claude/hooks/types.ts` to `block(event: ToolEvent, reason: string, filePath: string)`; call `emitBlocked(...)` before throwing `BlockError`.
   - agent: main
@@ -12,11 +12,11 @@ Ordered. Gate `scripts/trace-scan.test.ts` is frozen by the judge and MUST NOT a
   - depends: [1]
   - file_targets: [.claude/hooks/observe.ts]
   - boundary: [.claude/hooks/observe.ts]
-- [ ] 3. Update every `block(...)` call site in `.claude/hooks/enforce.ts` to pass `(event, reason, filePath)`; keep `enforce.test.ts` green.
+- [ ] 3. Update every `block(...)` call site in `.claude/hooks/enforce.ts` to pass `(event, reason, filePath)`. The gate file `.claude/hooks/enforce.test.ts` (spec 028 describe blocks) is frozen — do NOT edit it; the call-site change plus tasks 1-2 must satisfy the frozen assertions.
   - agent: main
   - depends: [1, 2]
   - file_targets: [.claude/hooks/enforce.ts]
-  - boundary: [.claude/hooks/enforce.ts, .claude/hooks/enforce.test.ts]
+  - boundary: [.claude/hooks/enforce.ts]
 - [ ] 4. Add `parseBlocked()` + `renderBlocks()` in `scripts/trace-scan.ts`; widen `TraceLine` with optional `reason`; extend `TraceScanReport` with `blocks: BlockFinding[]`; populate via `aggregate()`; surface in `renderText()` as a `Blocks:` section emitted only when non-empty.
   - agent: main
   - depends: [1, 2, 3]

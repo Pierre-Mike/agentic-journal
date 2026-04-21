@@ -155,6 +155,184 @@ describe(".claude/hooks.ts dispatcher (fail-closed)", () => {
 	});
 });
 
+describe("emitBlocked — spec 028", () => {
+	let tmpRoot: string;
+
+	afterEach(() => {
+		if (tmpRoot) rmSync(tmpRoot, { recursive: true, force: true });
+	});
+
+	function makeEvent(sessionId: string, cwd: string): ToolEvent {
+		return {
+			session_id: sessionId,
+			transcript_path: "",
+			cwd,
+			hook_event_name: "PreToolUse",
+			tool_name: "Write",
+			tool_input: { file_path: join(cwd, "wrangler.toml") },
+		};
+	}
+
+	test("appends a ToolBlocked line with status:blocked to .claude/traces/<session>.jsonl", async () => {
+		tmpRoot = mkdtempSync(join(tmpdir(), "emit-blocked-"));
+		const tracesDir = join(tmpRoot, ".claude", "traces");
+		mkdirSync(tracesDir, { recursive: true });
+		const sessionId = "sess-028-emit";
+		const event = makeEvent(sessionId, tmpRoot);
+		const { emitBlocked } = await import("./observe");
+		emitBlocked(event, "wrangler.toml is a protected file.", "Write", "wrangler.toml");
+		const { readFileSync: rfs } = await import("node:fs");
+		const lines = rfs(join(tracesDir, `${sessionId}.jsonl`), "utf-8")
+			.split("\n")
+			.filter(Boolean)
+			.map((l: string) => JSON.parse(l));
+		const blocked = lines.find((l: Record<string, unknown>) => l.event === "ToolBlocked");
+		expect(blocked).toBeDefined();
+		expect(blocked?.status).toBe("blocked");
+		expect(blocked?.reason).toBe("wrangler.toml is a protected file.");
+		expect(blocked?.file).toBe("wrangler.toml");
+	});
+
+	test("never throws when given malformed/missing input", async () => {
+		tmpRoot = mkdtempSync(join(tmpdir(), "emit-blocked-nothrow-"));
+		const { emitBlocked } = await import("./observe");
+		// null cwd should not throw
+		const badEvent = {
+			session_id: "",
+			transcript_path: "",
+			cwd: "/nonexistent-\x00-path",
+			hook_event_name: "PreToolUse",
+			tool_name: "Write",
+			tool_input: {},
+		} as ToolEvent;
+		expect(() => emitBlocked(badEvent, "", "", "")).not.toThrow();
+		// completely missing fields
+		expect(() =>
+			emitBlocked(
+				null as unknown as ToolEvent,
+				null as unknown as string,
+				null as unknown as string,
+				null as unknown as string,
+			),
+		).not.toThrow();
+	});
+
+	test("observe.ts is the single writer — enforce.ts does not import fs write functions directly", async () => {
+		// Read enforce.ts source and assert it does not call appendFileSync or writeFileSync
+		const { readFileSync: rfs } = await import("node:fs");
+		const enforceSrc = rfs(join(import.meta.dir, "enforce.ts"), "utf-8");
+		expect(enforceSrc).not.toMatch(/appendFileSync/);
+		expect(enforceSrc).not.toMatch(/writeFileSync/);
+		expect(enforceSrc).not.toMatch(/openSync/);
+		expect(enforceSrc).not.toMatch(/createWriteStream/);
+	});
+});
+
+describe("block() emit-before-throw — spec 028", () => {
+	let tmpRoot: string;
+
+	afterEach(() => {
+		if (tmpRoot) rmSync(tmpRoot, { recursive: true, force: true });
+	});
+
+	test("block() calls emitBlocked before throwing BlockError", async () => {
+		tmpRoot = mkdtempSync(join(tmpdir(), "block-emit-"));
+		const tracesDir = join(tmpRoot, ".claude", "traces");
+		mkdirSync(tracesDir, { recursive: true });
+		const sessionId = "sess-028-block";
+		const event: ToolEvent = {
+			session_id: sessionId,
+			transcript_path: "",
+			cwd: tmpRoot,
+			hook_event_name: "PreToolUse",
+			tool_name: "Write",
+			tool_input: { file_path: join(tmpRoot, "wrangler.toml") },
+		};
+		const { block } = await import("./types");
+		// block() must throw (BlockError or process.exit) after emitting
+		try {
+			block(event, "wrangler.toml is a protected file.", "wrangler.toml");
+		} catch {
+			// expected — either BlockError or process.exit stub
+		}
+		// The .jsonl must have a ToolBlocked line even though block() threw/exited
+		const { readFileSync: rfs, existsSync: efs } = await import("node:fs");
+		const jsonlPath = join(tracesDir, `${sessionId}.jsonl`);
+		expect(efs(jsonlPath)).toBe(true);
+		const lines = rfs(jsonlPath, "utf-8")
+			.split("\n")
+			.filter(Boolean)
+			.map((l: string) => JSON.parse(l));
+		expect(
+			lines.some(
+				(l: Record<string, unknown>) => l.event === "ToolBlocked" && l.status === "blocked",
+			),
+		).toBe(true);
+	});
+});
+
+describe("enforce.ts call-site integration — spec 028", () => {
+	let tmpRoot: string;
+
+	afterEach(() => {
+		if (tmpRoot) rmSync(tmpRoot, { recursive: true, force: true });
+	});
+
+	async function runDispatcherInDir(
+		stdin: string,
+		cwd: string,
+	): Promise<{ code: number; jsonlLines: Record<string, unknown>[] }> {
+		const { existsSync: efs, readdirSync: rdirs, readFileSync: rfs } = await import("node:fs");
+		const dispatcherPath = join(import.meta.dir, "..", "hooks.ts");
+		const proc = Bun.spawn(["bun", dispatcherPath], {
+			stdin: "pipe",
+			stdout: "pipe",
+			stderr: "pipe",
+			cwd,
+		});
+		proc.stdin.write(stdin);
+		await proc.stdin.end();
+		const code = await proc.exited;
+		const tracesDir = join(cwd, ".claude", "traces");
+		let jsonlLines: Record<string, unknown>[] = [];
+		if (efs(tracesDir)) {
+			for (const fname of rdirs(tracesDir)) {
+				if (!fname.endsWith(".jsonl")) continue;
+				const content = rfs(join(tracesDir, fname), "utf-8");
+				jsonlLines = jsonlLines.concat(
+					content
+						.split("\n")
+						.filter(Boolean)
+						.map((l: string) => JSON.parse(l)),
+				);
+			}
+		}
+		return { code, jsonlLines };
+	}
+
+	test("a blocked PreToolUse emits a ToolBlocked line whose reason and file match the rule that fired", async () => {
+		tmpRoot = mkdtempSync(join(tmpdir(), "enforce-integration-"));
+		// No active spec => wrangler.toml block fires
+		const { mkdirSync: mds } = await import("node:fs");
+		mds(join(tmpRoot, ".git"), { recursive: true });
+		const event = {
+			session_id: "sess-028-integration",
+			transcript_path: "",
+			cwd: tmpRoot,
+			hook_event_name: "PreToolUse",
+			tool_name: "Write",
+			tool_input: { file_path: join(tmpRoot, "wrangler.toml") },
+		};
+		const { code, jsonlLines } = await runDispatcherInDir(JSON.stringify(event), tmpRoot);
+		expect(code).toBe(2);
+		const blocked = jsonlLines.find((l) => l.event === "ToolBlocked");
+		expect(blocked).toBeDefined();
+		expect(typeof blocked?.reason).toBe("string");
+		expect((blocked?.reason as string).length).toBeGreaterThan(0);
+		expect(typeof blocked?.file).toBe("string");
+	});
+});
+
 describe("findFrozenGateForPath (spec 027 gate-freeze)", () => {
 	let tmpRoot: string;
 

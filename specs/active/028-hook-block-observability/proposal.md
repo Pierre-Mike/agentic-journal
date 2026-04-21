@@ -3,7 +3,9 @@ id: 028
 title: Emit ToolBlocked trace events for rule friction observability
 status: active
 kind: code
-gate: scripts/trace-scan.test.ts
+gate:
+  - scripts/trace-scan.test.ts
+  - .claude/hooks/enforce.test.ts
 created: 2026-04-20
 owner: main
 depends_on:
@@ -43,3 +45,5 @@ Make hook-enforced rule friction visible in traces, so `/retro` can measure whic
 ## Context
 
 Carries forward retrospective finding F1 from the 2026-04-20 `/retro` cycle (see `findings.md`). Depends on 008-hook-fail-open (established `process.exit(2)` as the only hook-block exit mechanic), 011-trace-shape-v2 (added the `status` enum that already reserves `"blocked"`), and 013-task-boundary-annotations (the `boundary:` field that future work will use to enrich block telemetry). Predecessor spec 027-dual-agent-tdd introduced `.gate-frozen` blocks — this spec makes those blocks (and every other hook-enforced rule) measurable.
+
+Gate widened in revision 2 after spec-judge rubric item 1 (attempt 1) flagged that scanner-only assertions left hook-side ACs (1, 2, 3) unreachable from synthetic `TraceLine[]` fixtures. `.claude/hooks/enforce.test.ts` is now co-frozen so that `block()`'s emit-before-throw contract, `emitBlocked()`'s never-throw invariant, and the single-writer (`observe.ts` only) rule are pinned at the hook seam.
