@@ -24,6 +24,18 @@ Retrospective closes the loop. Observability data only matters when it produces 
 
 Default: last 7 days. Respect `--since <duration>` if provided (e.g. `7d`, `30d`, `2026-04-01`).
 
+### Step 1.5 — Preflight: detect dormant worktrees
+
+Run:
+
+```bash
+bun scripts/retro-preflight.ts
+```
+
+If the output is non-empty, print it verbatim at the top of the retrospective report under the `Dormant in-flight specs:` header **before proceeding to findings**.
+
+Dormant specs block retrospective authorship. If dormant worktrees are found, surface them to the user and stop — do not proceed to Step 5 (author a new spec) until the dormant worktrees are resolved, unless `--force` is passed explicitly.
+
 ### Step 2 — Gather signal
 
 Read from four sources:
