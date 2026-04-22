@@ -50,7 +50,7 @@ The rest of `/do` runs as three serial subagent roles, orchestrated by the main 
 | Role | Agent | Model | Reads | Writes | Exits on |
 |---|---|---|---|---|---|
 | spec-tester | `spec-tester` | sonnet | proposal/design/tasks + tester-review.md (retry) | spec folder + gate files | RED commit |
-| spec-judge | `spec-judge` | opus | proposal.md + gate files ONLY | tester-review.md, .gate-frozen (PASS), blocker.md (3-strike FAIL) | verdict written |
+| spec-judge | `spec-judge` | opus | proposal.md + gate files ONLY | tester-review.md, .gate-frozen (PASS) | verdict written |
 | spec-implementer | `spec-implementer` | sonnet | proposal + design + frozen gate + review | everything except gate paths | Step 10 report |
 
 **Dispatch chain** (by kind):
@@ -85,12 +85,14 @@ while attempt <= 3:
   attempt += 1
 
 if not exists(`${spec_dir}/.gate-frozen`):
-  // judge wrote blocker.md; escalate without dispatching implementer
-  print_step_10_report(status="escalated")
-  return
-
-dispatch spec-implementer
-await completion  // implementer prints Step 10 report itself
+  // judge rejected all 3 tester attempts. tester-review.md has the
+  // ESCALATION header prepended. Fall through to Step 8 with --draft
+  // so the human reviews tester-review.md inside a normal PR view.
+  judge_rejected = true
+else:
+  judge_rejected = false
+  dispatch spec-implementer
+  await completion  // implementer prints Step 10 report itself
 ```
 
 **Dispatch mechanics**: each role is a subagent defined in `.claude/agents/<name>.md`. Invoke via:
@@ -113,7 +115,7 @@ The handoff prompt for each dispatch must be fully self-contained — the subage
 - **For spec-implementer** — note that the gate is frozen; the hook will enforce
 - **Termination** — "exit after <role-specific exit condition>. Do not `git pull`. Do not touch `main`."
 
-After the main session's orchestration loop ends, the final subagent's exit notification lands in the transcript. The main session prints the Step 10 report based on the status observed (complete / paused / escalated). Relay the report to the user verbatim.
+After the main session's orchestration loop ends, the final subagent's exit notification lands in the transcript. The main session prints the Step 10 report based on the status observed (complete / paused). Relay the report to the user verbatim.
 
 The steps below are executed by the subagents. Step 5 lives in spec-tester; Step 6 lives in spec-implementer.
 
@@ -167,7 +169,7 @@ while tasks remain unchecked:
   run: bun run tasks:verify
   if green → next task
   else → inspect output, adjust, re-edit
-  if stuck after 3 attempts → escalate (write blocker.md, stop)
+  if stuck after 3 attempts → escalate per spec-implementer.md (stop)
 ```
 
 Edit only files listed in the current task's `file_targets`. Respect `specs/constitution.md` — no `any`, no `as` outside tests, colocated tests, protected paths.
@@ -194,7 +196,11 @@ The script:
 
 ```bash
 git push -u origin spec/<slug>
+```
 
+**Branch A — implementer completed (normal path)**:
+
+```bash
 PR_URL=$(gh pr create --title "<kind>(<id>): <title>" --body "$(cat <<'EOF'
 ## Summary
 <one sentence of intent from proposal.md>
@@ -215,7 +221,29 @@ gh pr merge --auto --squash --delete-branch "$PR_URL"
 echo "✓ auto-merge queued for $PR_URL"
 ```
 
-If auto-merge is not enabled on the repo, `gh pr merge --auto` fails with a clear error. In that case: print the PR URL and skip to Step 10 with a note that auto-merge is unavailable. Do not attempt to merge directly.
+**Branch B — judge rejected 3 tester attempts (draft PR for review)**:
+
+```bash
+PR_URL=$(gh pr create --draft --title "<kind>(<id>): <title> [JUDGE-REJECTED]" --body "$(cat <<'EOF'
+## Summary
+Spec 030-style escalation: spec-judge rejected 3 tester attempts. No implementer ran. This draft PR is opened so the human can review `specs/active/<slug>/tester-review.md` (ESCALATION header at top) in a normal diff view with inline comments.
+
+## Spec
+- kind: <kind>
+- gate: <path>
+- status: RED — gate never reached GREEN because the judge rejected the tests
+
+## Resume paths
+1. Clarify intent in proposal.md and push — retry counter resets.
+2. Override the judge — manually touch `.gate-frozen` and push; a future /do resume dispatches the implementer.
+3. Abandon — close the PR and run `bun scripts/worktree-close.ts <slug>`.
+EOF
+)")
+echo "✓ draft PR opened for judge-rejected spec: $PR_URL"
+# Do NOT queue auto-merge for draft PRs.
+```
+
+If auto-merge is not enabled on the repo (branch A only), `gh pr merge --auto` fails with a clear error. In that case: print the PR URL and skip to Step 10 with a note that auto-merge is unavailable. Do not attempt to merge directly.
 
 ### Step 9 — Watch CI
 
@@ -237,7 +265,7 @@ The script fetches `gh pr checks` + `gh run view --log-failed` for every red job
 
 ### Step 10 — Report
 
-After the dispatch chain resolves, print one of three variants:
+After the dispatch chain resolves, print one of two variants:
 
 **On CI green + auto-merged**:
 ```
@@ -251,12 +279,12 @@ main is ahead of your local. Run:
 The post-merge hook will auto-clean the local worktree.
 ```
 
-**On CI red (no auto-merge)**:
+**On CI red OR judge rejected 3 tester attempts**:
 ```
 /do paused for <id>:
   branch: spec/<slug>
   PR: <url>  ← open, awaiting fix
-  CI: FAILED
+  CI: FAILED | (draft — judge rejected)
 
 failing checks:
   - <name>: <url>
@@ -265,22 +293,8 @@ failing checks:
 CI failure brief: .agentic/worktrees/<slug>/specs/active/<slug>/ci-failure.md
 
 main is unchanged. Investigate the brief, push fixes to spec/<slug>, or close the PR.
+If the judge rejected 3 tester attempts, see `tester-review.md` inside the spec folder for the revision brief.
 ```
-
-**On judge rejecting 3 tester attempts (NEW — spec 027)**:
-```
-/do escalated for <id>:
-  branch: spec/<slug>
-  PR: (none — judge rejected 3 tester attempts, no implementer ran)
-  Status: ESCALATED
-
-Blocker brief: .agentic/worktrees/<slug>/specs/active/<slug>/blocker.md
-
-main is unchanged. Review the blocker brief, pick a resume path (clarify intent,
-override judge, or abandon), then re-run /do <slug>.
-```
-
-The three variants signal different human next-actions. `complete` = nothing to do. `paused` = fix the code, push again. `escalated` = fix the intent or override the judge. Conflating them (e.g., reusing `paused` for escalation) hides which gate actually failed.
 
 Stop after printing the report. Do not pull, do not clean up the worktree — those happen on the user's next `git pull` (post-merge hook runs `sync` automatically).
 
@@ -308,9 +322,8 @@ To run multiple `/do` in parallel: dispatch each via the `Agent` tool in a singl
 
 ## Escalation
 
-Write `.agentic/worktrees/<slug>/blocker.md` and stop when:
-- Alignment cannot converge after three iterations on the same layer
-- Three consecutive `tasks:verify` failures with no progress
-- A required file edit would breach a constitutional axiom
+Judge-rejection escalation (3-strike FAIL on spec-tester) is folded into the Step 10 `paused` variant: the judge writes an `## ESCALATION — 3 attempts exhausted` header at the top of `tester-review.md`, and Step 8 opens a draft PR so the human reviews it in a normal PR view.
 
-The worktree + branch stay intact for human inspection. The PR is not opened.
+Implementer-side escalation (stuck after 3 `tasks:verify` failures or a required edit breaches an axiom) is covered in `.claude/agents/spec-implementer.md` — it writes its own sidecar artifact and stops, leaving the worktree + branch intact for human inspection. No PR is opened in that case.
+
+Alignment escalation (cannot converge after three iterations on the same layer) is owned by the `align` skill itself — surface the ambiguity back to the user and stop before Step 2.
