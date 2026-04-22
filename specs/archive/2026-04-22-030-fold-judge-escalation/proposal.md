@@ -1,13 +1,15 @@
 ---
 id: 030-fold-judge-escalation
 title: Fold judge-rejection escalation into paused report
-status: active
+status: archived
 kind: workflow
 gate: scripts/smoke-do-no-blocker.ts
-created: 2026-04-21
+created: 2026-04-21T00:00:00.000Z
 owner: main
-depends_on: [027-dual-agent-tdd]
+depends_on:
+  - 027-dual-agent-tdd
 supersedes: null
+archived: '2026-04-22'
 ---
 
 ## Intent

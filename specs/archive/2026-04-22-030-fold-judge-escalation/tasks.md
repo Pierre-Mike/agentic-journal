@@ -1,0 +1,22 @@
+# Tasks
+
+- [x] 1. Write the gate script in its RED state (script exists, asserts, exits 1 against current SKILL.md + spec-judge.md).
+  - agent: main
+  - depends: []
+  - file_targets: [scripts/smoke-do-no-blocker.ts]
+  - boundary: [scripts/smoke-do-no-blocker.ts]
+- [x] 2. Author the spec folder (proposal.md, design.md, tasks.md) inside the worktree.
+  - agent: main
+  - depends: []
+  - file_targets: [specs/active/030-fold-judge-escalation/proposal.md, specs/active/030-fold-judge-escalation/design.md, specs/active/030-fold-judge-escalation/tasks.md]
+  - boundary: [specs/active/030-fold-judge-escalation/**]
+- [x] 3. Edit `.claude/skills/do/SKILL.md`: remove all `blocker.md` references; delete Step 10 "escalated" variant; adjust Step 2.5 role table and pseudocode so judge rejection falls through to Step 8 with `gh pr create --draft`; append one-liner to Step 10 `paused` variant pointing at `tester-review.md`.
+  - agent: main
+  - depends: [1, 2]
+  - file_targets: [.claude/skills/do/SKILL.md]
+  - boundary: [.claude/skills/do/SKILL.md]
+- [x] 4. Edit `.claude/agents/spec-judge.md`: drop all `blocker.md` references; rewrite frontmatter description, Scope, 3-strike-FAIL block, `## blocker.md template` section (replaced by an `## ESCALATION header template` that prepends to tester-review.md), and the final Exit paragraph.
+  - agent: main
+  - depends: [1, 2]
+  - file_targets: [.claude/agents/spec-judge.md]
+  - boundary: [.claude/agents/spec-judge.md]
