@@ -2,9 +2,47 @@
 title: "Your computer is enough"
 date: 2026-04-22
 spec_id: 031-your-computer-is-enough
-summary: ""
+summary: "Local-first AI has crossed the good-enough threshold. The consequence is not that local AI is cool — it is that the cloud-thin-client reflex is now a design bug."
 tags: [local-first, ai-tooling, agentic-engineering]
 required_sections: [Intent, Why, What, How]
 ---
 
-<!-- RED — sections to follow -->
+## Intent
+
+Local AI inference crossed a threshold. Not a benchmark threshold — a design-relevant one. The models that fit on a consumer laptop are now good enough for the vast majority of daily knowledge work. That fact does not merely mean "local AI is viable." It means that software designed on the assumption that compute lives in a datacenter is now carrying a design bug.
+
+The reflex I want to name is the thin-client reflex: the habit of treating the user's machine as a display surface and all real work as something that happens elsewhere. That reflex was load-bearing for fifteen years. Today it is a holdover. Software that does not treat the user's CPU and GPU as a first-class execution target is leaving capability — and a whole category of possible apps — on the table.
+
+Your computer is enough.
+
+## Why
+
+The thin-client reflex had a good reason. For most of computing history, the gap between what ran on a server and what ran on a laptop was decisive. Inference on consumer hardware was a toy: slow, constrained, good for demos and nothing else. The rational design response was to put compute in the cloud and push the UI to the edge. The assumption baked into every SaaS architecture, every mobile app, every browser-first product is that compute is remote and the client is thin.
+
+That assumption is now stale. Not partially stale — stale enough that designing around it actively costs you.
+
+The costs are the obvious ones: latency, privacy, API bills that scale with usage rather than value. But the more interesting cost is architectural. When compute is remote, the only apps that can exist are apps that tolerate the latency, the privacy boundary, and the per-token price. When compute is local, a different set of apps becomes possible — apps that run tight loops between a model and local state, apps that handle data that should never leave the machine, apps that chain two models together without a round-trip to a datacenter between them. That is a different design space, not a cheaper version of the old one.
+
+The cloud-only reflex closes that space by default. That is the design bug.
+
+## What
+
+I run two workflows that would have been a SaaS stack eighteen months ago. Now they run entirely on my laptop.
+
+The first is LM Studio with MLX running GLM-4 as an orchestrator. A local model receives a task, decides which tool or sub-agent should handle which piece, and closes the loop without touching the network. The latency is low enough that the feedback cycle feels tight. There is no API bill, no rate limit, no data leaving the machine. The reason this works is that orchestration is not the hardest job in a pipeline — routing, decomposing, and assembling results does not require the largest model ever trained. A capable local model is sufficient, and sufficient is all you need.
+
+The second is Voice Ink feeding into GLM-4 as a post-transcription reviewer. Voice Ink captures and transcribes; the local model reads the transcript, disambiguates names that got phonetically mangled, repairs repetition artifacts, and extracts intent from the raw dictation. Two local models composed into a pipeline. The result is a clean, actionable note from a stream-of-consciousness recording — no cloud API, no manual cleanup, no SaaS subscription. The pipeline closes on my machine because both steps are small enough to run there.
+
+My computer is good enough for ~99% of what I actually do. I am not hedging that number. It is the right shape of claim for the lived experience.
+
+## How
+
+The implication for software design is a shift in where compute is assumed to live.
+
+Apps have been "a UI shell over a remote API call" for so long that the architecture feels natural. It is not natural — it is a workaround for hardware that could not do the job. Now that the hardware can do the job, the workaround is optional. The better default is to run compute locally and reach for the cloud only when there is a specific reason: a model that genuinely will not fit, a task that requires server-side state, a context that demands a datacenter's resources. Cloud-first becomes the exception that needs justification, not the baseline that gets inherited.
+
+The practical consequence is that CPU and GPU on a developer's machine are no longer afterthoughts. They are the first execution target. An accelerator is already sitting idle on every laptop in the stack. Software that ignores that is leaving a resource on the table.
+
+The architectural reason this keeps improving is mixture-of-experts routing. A monolithic model has to fit in memory whole; a MoE model activates a small set of specialized experts per token, which means the effective capability per parameter is higher and the hardware requirement per inference step is lower. As models are designed around this pattern, the threshold for "good enough on local hardware" moves in one direction. This is not a prediction about which model wins or when — it is a claim about the mechanism. The trend is structural, not contingent on a particular release.
+
+The best software uses what the user already has. For a decade, the user's machine was not enough, so the best software looked somewhere else. That changed. The design should follow.
