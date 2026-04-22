@@ -56,21 +56,23 @@ The rest of `/do` runs as three serial subagent roles, orchestrated by the main 
 **Dispatch chain** (by kind):
 
 ```
-code | rule | workflow    →  tester → judge (retry cap 3) → implementer
-writeup                    →  tester → implementer  (skip judge, skip .gate-frozen)
+code                              →  tester → judge (retry cap 3) → implementer
+rule | workflow | writeup         →  tester → implementer  (skip judge, skip .gate-frozen)
 ```
+
+The self-collusion gate matters only when a single agent writes BOTH the test and the production code that passes it — i.e. `kind: code`. For `rule` (lint rule + fixture), `workflow` (smoke script), and `writeup` (markdown sections), the gate is a fixture/script/section-shape check; test-implementation coupling is minimal, so the judge would add subagent token cost for near-zero safety gain.
 
 **Main-session pseudocode**:
 
 ```
 const spec_dir = `specs/active/${id}-${slug}`
 
-if kind === "writeup":
+if kind !== "code":
   dispatch spec-tester with aligned-plan handoff
   await completion
   dispatch spec-implementer
   await completion
-  return  // no judge for writeups; the prose IS the deliverable
+  return  // no judge for rule/workflow/writeup; the fixture/script/prose IS the deliverable
 
 attempt = 1
 review_brief = null
