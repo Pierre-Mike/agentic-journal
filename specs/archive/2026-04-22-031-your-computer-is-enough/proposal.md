@@ -1,13 +1,14 @@
 ---
 id: 031-your-computer-is-enough
 title: Your computer is enough
-status: active
+status: archived
 kind: writeup
 gate: content/posts/your-computer-is-enough.mdx
-created: 2026-04-22
+created: 2026-04-22T00:00:00.000Z
 owner: main
 depends_on: []
 supersedes: null
+archived: '2026-04-22'
 ---
 
 ## Intent
