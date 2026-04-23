@@ -7,12 +7,18 @@
  *  - validateTaskSchema(task) — checks shape of parsed tasks.md entries,
  *    including the new `boundary: string[]` field.
  *
+ * spec-032 RED additions:
+ *  - gateEntries() from scripts/_lib.ts (does not exist yet — RED)
+ *  - validateGateLevels() from scripts/spec-lint.ts (does not exist yet — RED)
+ *
  * Also exposes a default async function so this file works as a kind:rule gate
  * artifact (invoked by scripts/gates/rule.ts) — the default runs `bun test` on
  * this file and returns {pass, message}.
  */
 
 import { describe, expect, test } from "bun:test";
+// @ts-expect-error — gateEntries does not exist yet; RED state intentional
+import { gateEntries } from "./_lib.ts";
 import { validateBoundary, validateTaskSchema } from "./spec-lint.ts";
 
 /**
@@ -173,6 +179,128 @@ function registerTests(): void {
 			});
 			expect(result.warnings.length).toBe(1);
 			expect(result.warnings[0]).toMatch(/empty/i);
+		});
+	});
+
+	// ----------------------------------------------------------------
+	// spec-032 RED: gateEntries() — does not exist in _lib.ts yet
+	// These tests MUST fail until _lib.ts exports gateEntries().
+	// ----------------------------------------------------------------
+	describe("gateEntries — scalar gate (legacy lift)", () => {
+		test("scalar gate string → [{path, level:'unit'}]", () => {
+			// gateEntries is imported with @ts-expect-error above
+			// eslint-disable-next-line @typescript-eslint/no-unsafe-call
+			const entries = (gateEntries as (s: unknown) => unknown[])({
+				frontmatter: { gate: "scripts/foo.test.ts" },
+			});
+			expect(entries).toEqual([{ path: "scripts/foo.test.ts", level: "unit" }]);
+		});
+	});
+
+	describe("gateEntries — list gate", () => {
+		test("list gate with valid levels → passes through", () => {
+			// eslint-disable-next-line @typescript-eslint/no-unsafe-call
+			const entries = (gateEntries as (s: unknown) => unknown[])({
+				frontmatter: {
+					gate: [
+						{ path: "src/foo.test.ts", level: "unit" },
+						{ path: "scripts/smoke-foo.ts", level: "e2e" },
+					],
+				},
+			});
+			expect(entries).toEqual([
+				{ path: "src/foo.test.ts", level: "unit" },
+				{ path: "scripts/smoke-foo.ts", level: "e2e" },
+			]);
+		});
+
+		test("invalid level string → throws with message matching /unknown gate level/i", () => {
+			expect(() =>
+				(gateEntries as (s: unknown) => unknown[])({
+					frontmatter: {
+						gate: [{ path: "src/foo.test.ts", level: "bad-level" }],
+					},
+				}),
+			).toThrow(/unknown gate level/i);
+		});
+
+		test("duplicate path across entries → throws with message matching /duplicate gate path/i", () => {
+			expect(() =>
+				(gateEntries as (s: unknown) => unknown[])({
+					frontmatter: {
+						gate: [
+							{ path: "src/foo.test.ts", level: "unit" },
+							{ path: "src/foo.test.ts", level: "integration" },
+						],
+					},
+				}),
+			).toThrow(/duplicate gate path/i);
+		});
+	});
+
+	// ----------------------------------------------------------------
+	// spec-032 RED: validateGateLevels() — does not exist in spec-lint.ts yet
+	// These tests MUST fail until spec-lint.ts exports validateGateLevels().
+	// ----------------------------------------------------------------
+	describe("validateGateLevels — kind:code level coverage", () => {
+		// Dynamic import so the @ts-expect-error is scoped.
+		// At runtime the function won't exist → test will error (RED).
+		function getValidateGateLevels(): (opts: {
+			kind: string;
+			entries: { path: string; level: string }[];
+		}) => { errors: string[] } {
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			const mod = require("./spec-lint.ts") as Record<string, unknown>;
+			if (typeof mod.validateGateLevels !== "function") {
+				throw new Error(
+					"validateGateLevels is not exported from spec-lint.ts (RED — not yet implemented)",
+				);
+			}
+			return mod.validateGateLevels as (opts: {
+				kind: string;
+				entries: { path: string; level: string }[];
+			}) => { errors: string[] };
+		}
+
+		test("kind:code with only unit entries → error naming both required tiers", () => {
+			const validateGateLevels = getValidateGateLevels();
+			const result = validateGateLevels({
+				kind: "code",
+				entries: [{ path: "src/foo.test.ts", level: "unit" }],
+			});
+			expect(result.errors.length).toBeGreaterThan(0);
+			expect(result.errors[0]).toMatch(/integration|e2e/i);
+		});
+
+		test("kind:code with only integration entries → error naming unit required", () => {
+			const validateGateLevels = getValidateGateLevels();
+			const result = validateGateLevels({
+				kind: "code",
+				entries: [{ path: "scripts/smoke-foo.ts", level: "integration" }],
+			});
+			expect(result.errors.length).toBeGreaterThan(0);
+			expect(result.errors[0]).toMatch(/unit/i);
+		});
+
+		test("kind:code with unit + e2e → no errors", () => {
+			const validateGateLevels = getValidateGateLevels();
+			const result = validateGateLevels({
+				kind: "code",
+				entries: [
+					{ path: "src/foo.test.ts", level: "unit" },
+					{ path: "scripts/smoke-foo.ts", level: "e2e" },
+				],
+			});
+			expect(result.errors).toEqual([]);
+		});
+
+		test("kind:rule with only unit entries → no errors (not subject to level enforcement)", () => {
+			const validateGateLevels = getValidateGateLevels();
+			const result = validateGateLevels({
+				kind: "rule",
+				entries: [{ path: "scripts/spec-lint.test.ts", level: "unit" }],
+			});
+			expect(result.errors).toEqual([]);
 		});
 	});
 }
