@@ -30,12 +30,23 @@ If an axiom, rule, or transition can be checked deterministically, it MUST NOT b
 
 | Kind | Gate is |
 |---|---|
-| `code` | a test file (path in `gate:`) |
-| `rule` | a lint rule + fixtures (path in `gate:`) |
-| `workflow` | a smoke script (path in `gate:`) |
-| `writeup` | a markdown file with required sections (path in `gate:`) |
+| `code` | ≥1 `unit` test file AND ≥1 `integration\|e2e` test file (typed list in `gate:`) |
+| `rule` | a lint rule + fixtures (scalar or single-entry list in `gate:`) |
+| `workflow` | a smoke script (scalar or single-entry list in `gate:`) |
+| `writeup` | a markdown file with required sections (scalar or single-entry list in `gate:`) |
 
 Every spec must declare one `kind` and at least one `gate:`. No exceptions.
+
+`kind: code` specs must use the typed list form:
+```yaml
+gate:
+  - path: src/foo.test.ts
+    level: unit
+  - path: scripts/smoke-foo.ts
+    level: e2e
+```
+
+Other kinds accept a scalar path (legacy) or a single-entry list. The scalar form is lifted to `[{path, level: "unit"}]` internally.
 
 ## 5. TypeScript axioms
 

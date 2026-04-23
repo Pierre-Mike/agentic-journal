@@ -1,3 +1,4 @@
+// @no-test: integration CLI; exercises real git and filesystem state
 /**
  * Deterministic closer for an active spec.
  *
@@ -85,7 +86,7 @@ function parseTasks(tasksMdPath: string): TaskLine[] {
 			if (ft) {
 				current.file_targets = (ft[1] ?? "")
 					.split(",")
-					.map((s) => s.trim())
+					.map((s) => s.trim().replace(/^["']|["']$/g, ""))
 					.filter(Boolean);
 			}
 		}
