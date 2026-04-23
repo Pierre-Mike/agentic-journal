@@ -1,17 +1,18 @@
 ---
-id: "032"
+id: '032'
 title: Typed gates and sibling tests
-status: active
+status: archived
 kind: rule
 gate:
   - path: scripts/spec-lint.test.ts
     level: unit
   - path: scripts/sibling-test-hook.test.ts
     level: unit
-created: 2026-04-23
+created: 2026-04-23T00:00:00.000Z
 owner: main
 depends_on: []
 supersedes: null
+archived: '2026-04-23'
 ---
 
 ## Intent
