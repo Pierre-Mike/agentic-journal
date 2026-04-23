@@ -146,7 +146,7 @@ export function parseTasksFile(path: string): readonly ParsedTask[] {
 	const parseBracketList = (raw: string): string[] =>
 		raw
 			.split(",")
-			.map((s) => s.trim())
+			.map((s) => s.trim().replace(/^["']|["']$/g, ""))
 			.filter(Boolean);
 
 	for (let i = 0; i < lines.length; i++) {

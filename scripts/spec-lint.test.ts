@@ -3,6 +3,7 @@
  *
  * Covers:
  *  - validateBoundary({ task, changedFiles, repoRoot }) — glob-matches diff files
+ *    against a task's declared boundary globs (parseBracketList strips quotes).
  *    against a task's declared boundary globs.
  *  - validateTaskSchema(task) — checks shape of parsed tasks.md entries,
  *    including the new `boundary: string[]` field.
