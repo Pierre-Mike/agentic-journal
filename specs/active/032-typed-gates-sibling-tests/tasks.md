@@ -9,7 +9,7 @@
 - [ ] Extend spec-lint.ts with level-coverage, invalid-level, duplicate-path checks
     - agent: main
     - depends: [0]
-    - boundary: ["scripts/spec-lint.ts"]
+    - boundary: ["scripts/spec-lint.ts", "scripts/spec-complete.ts"]
     - file_targets: ["scripts/spec-lint.ts"]
 
 - [ ] Update tasks-verify.ts to iterate every gate entry
