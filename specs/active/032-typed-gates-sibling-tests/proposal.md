@@ -3,7 +3,11 @@ id: "032"
 title: Typed gates and sibling tests
 status: active
 kind: rule
-gate: scripts/spec-lint.test.ts
+gate:
+  - path: scripts/spec-lint.test.ts
+    level: unit
+  - path: scripts/sibling-test-hook.test.ts
+    level: unit
 created: 2026-04-23
 owner: main
 depends_on: []

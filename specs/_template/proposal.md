@@ -3,7 +3,14 @@ id: NNN-slug
 title: Short descriptive title
 status: active
 kind: code | rule | workflow | writeup
-gate: path/to/gate/artifact
+# kind:code requires ≥1 unit + ≥1 integration|e2e entry (typed list):
+gate:
+  - path: src/foo.test.ts
+    level: unit
+  - path: scripts/smoke-foo.ts
+    level: e2e
+# For non-code kinds, scalar (legacy) is accepted:
+#   gate: path/to/gate/artifact
 created: YYYY-MM-DD
 owner: main
 depends_on: []

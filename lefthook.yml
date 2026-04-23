@@ -18,6 +18,8 @@ pre-commit:
         if command -v gitleaks >/dev/null 2>&1; then
           gitleaks protect --staged --redact
         fi
+    sibling-test:
+      run: bun scripts/sibling-test-hook.ts
 
 pre-push:
   parallel: true

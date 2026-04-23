@@ -11,7 +11,6 @@
 
 import { describe, expect, test } from "bun:test";
 
-// @ts-expect-error — sibling-test-hook.ts does not exist yet; RED state intentional
 import { checkSiblingTests } from "./sibling-test-hook.ts";
 
 /**

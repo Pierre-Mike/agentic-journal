@@ -14,7 +14,7 @@
 
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { gatePaths, listActiveSpecs, listArchivedIds, VALID_KINDS } from "./_lib";
+import { gateEntries, listActiveSpecs, listArchivedIds, VALID_KINDS } from "./_lib";
 
 export interface ParsedTask {
 	readonly index: number;
@@ -104,6 +104,31 @@ export function validateTaskSchema(task: ParsedTask): SchemaReport {
 }
 
 /**
+ * Validate that a kind:code spec has ≥1 unit entry AND ≥1 integration|e2e entry.
+ * Non-code kinds are not subject to level enforcement.
+ *
+ * Pure — no IO.
+ */
+export function validateGateLevels({
+	kind,
+	entries,
+}: {
+	readonly kind: string;
+	readonly entries: readonly { path: string; level: string }[];
+}): { errors: string[] } {
+	if (kind !== "code") return { errors: [] };
+	const levels = entries.map((e) => e.level);
+	const hasUnit = levels.includes("unit");
+	const hasIntegrationOrE2E = levels.some((l) => l === "integration" || l === "e2e");
+	if (!hasUnit || !hasIntegrationOrE2E) {
+		return {
+			errors: [`kind=code requires ≥1 unit + ≥1 integration|e2e gate; got [${levels.join(", ")}]`],
+		};
+	}
+	return { errors: [] };
+}
+
+/**
  * Parse a tasks.md file into ParsedTask records. Matches spec-complete.ts's
  * parser but adds the `boundary:` line.
  */
@@ -179,11 +204,27 @@ function main(): void {
 				`${spec.slug}: invalid kind '${fm.kind}'. Expected one of ${VALID_KINDS.join(", ")}`,
 			);
 		}
-		for (const g of gatePaths(spec)) {
-			if (!existsSync(join(process.cwd(), g))) {
-				errors.push(`${spec.slug}: gate artifact missing at ${g}`);
+
+		// gateEntries validation: invalid levels, duplicate paths, level coverage
+		let entries: { path: string; level: string }[] = [];
+		try {
+			entries = [...gateEntries(spec)];
+		} catch (err) {
+			errors.push(`${spec.slug}: ${err instanceof Error ? err.message : String(err)}`);
+		}
+
+		for (const entry of entries) {
+			if (!existsSync(join(process.cwd(), entry.path))) {
+				errors.push(`${spec.slug}: gate artifact missing at ${entry.path}`);
 			}
 		}
+
+		// Level coverage check for kind:code
+		const levelReport = validateGateLevels({ kind: fm.kind, entries });
+		for (const e of levelReport.errors) {
+			errors.push(`${spec.slug}: ${e}`);
+		}
+
 		for (const dep of fm.depends_on) {
 			if (!allIds.has(dep)) {
 				errors.push(`${spec.slug}: depends_on references unknown spec '${dep}'`);

@@ -1,3 +1,4 @@
+// @no-test: integration CLI; exercises real git and filesystem — tested via bun run tasks:verify
 /**
  * Runs the gate for every active spec, dispatched on `kind`. Also enforces
  * per-task boundary annotations: if a task declares `boundary: [glob,...]`
@@ -8,11 +9,10 @@
  * Single source of truth for "is this spec done?"
  */
 
+import { existsSync } from "node:fs";
 import { join } from "node:path";
-import { gatePaths, listActiveSpecs, type Spec } from "./_lib";
-import { checkRule } from "./gates/rule";
+import { gateEntries, gatePaths, listActiveSpecs, type Spec } from "./_lib";
 import { checkWorkflow } from "./gates/smoke";
-import { checkCode } from "./gates/test";
 import { checkWriteup } from "./gates/writeup";
 import { type ParsedTask, parseTasksFile, validateBoundary } from "./spec-lint";
 
@@ -30,7 +30,7 @@ async function sh(cmd: readonly string[]): Promise<{ ok: boolean; out: string }>
 	return { ok: code === 0, out };
 }
 
-async function specCreationRef(specRelDir: string): Promise<string> {
+async function specCreationCommit(specRelDir: string): Promise<string | null> {
 	const { out } = await sh([
 		"git",
 		"log",
@@ -40,10 +40,22 @@ async function specCreationRef(specRelDir: string): Promise<string> {
 		`${specRelDir}/proposal.md`,
 	]);
 	const shas = out.split("\n").filter(Boolean);
-	const creationSha = shas[shas.length - 1];
+	return shas[shas.length - 1] ?? null;
+}
+
+async function specCreationRef(specRelDir: string): Promise<string> {
+	const sha = await specCreationCommit(specRelDir);
 	// Empty-tree ref: compare against everything
-	if (!creationSha) return "4b825dc642cb6eb9a060e54bf8d69288fbee4904";
-	return `${creationSha}^`;
+	if (!sha) return "4b825dc642cb6eb9a060e54bf8d69288fbee4904";
+	return `${sha}^`;
+}
+
+/** Files committed in the RED (spec creation) commit — tester artifacts, exempt from implementer boundary checks. */
+async function testerCommittedFiles(specRelDir: string): Promise<ReadonlySet<string>> {
+	const sha = await specCreationCommit(specRelDir);
+	if (!sha) return new Set();
+	const { out } = await sh(["git", "diff", "--name-only", `${sha}^`, sha]);
+	return new Set(out.split("\n").filter(Boolean));
 }
 
 async function changedFilesSince(ref: string): Promise<readonly string[]> {
@@ -51,18 +63,62 @@ async function changedFilesSince(ref: string): Promise<readonly string[]> {
 	return out.split("\n").filter(Boolean);
 }
 
-async function verifyGate(spec: Spec): Promise<GateResult> {
-	const paths = gatePaths(spec);
-	switch (spec.frontmatter.kind) {
-		case "code":
-			return checkCode(paths);
-		case "rule":
-			return checkRule(paths);
-		case "workflow":
-			return checkWorkflow(paths);
-		case "writeup":
-			return checkWriteup(paths);
+async function runGateEntry(entryPath: string): Promise<GateResult> {
+	const abs = join(REPO_ROOT, entryPath);
+	if (!existsSync(abs)) {
+		return { pass: false, message: `gate artifact missing at ${entryPath}` };
 	}
+	if (entryPath.endsWith(".test.ts")) {
+		const proc = Bun.spawn(["bun", "test", abs], { stdout: "inherit", stderr: "inherit" });
+		const code = await proc.exited;
+		return {
+			pass: code === 0,
+			message: code === 0 ? `tests pass (${entryPath})` : `tests failed (${entryPath})`,
+		};
+	}
+	if (entryPath.endsWith(".ts")) {
+		const proc = Bun.spawn(["bun", abs], { stdout: "inherit", stderr: "inherit" });
+		const code = await proc.exited;
+		return {
+			pass: code === 0,
+			message: code === 0 ? `script pass (${entryPath})` : `script failed (${entryPath})`,
+		};
+	}
+	return {
+		pass: false,
+		message: `unknown gate file extension for ${entryPath} — only .ts files are supported`,
+	};
+}
+
+async function verifyGate(spec: Spec): Promise<GateResult> {
+	// For workflow and writeup kinds, keep using the existing specialized checkers
+	switch (spec.frontmatter.kind) {
+		case "workflow":
+			return checkWorkflow(gatePaths(spec));
+		case "writeup":
+			return checkWriteup(gatePaths(spec));
+	}
+
+	// For code and rule kinds: iterate every gate entry
+	let entries: { path: string; level: string }[];
+	try {
+		entries = [...gateEntries(spec)];
+	} catch (err) {
+		return {
+			pass: false,
+			message: `invalid gate: ${err instanceof Error ? err.message : String(err)}`,
+		};
+	}
+
+	if (entries.length === 0) {
+		return { pass: false, message: "no gate entries defined" };
+	}
+
+	for (const entry of entries) {
+		const result = await runGateEntry(entry.path);
+		if (!result.pass) return result;
+	}
+	return { pass: true, message: `${entries.length} gate(s) pass` };
 }
 
 /**
@@ -118,8 +174,11 @@ async function verifyBoundaries({
 		const specRelDir = spec.dir.startsWith(`${REPO_ROOT}/`)
 			? spec.dir.slice(REPO_ROOT.length + 1)
 			: spec.dir;
-		const gateSet = new Set(gatePaths(spec));
-		const eligibleChanges = changedFiles.filter((f) => !gateSet.has(f));
+		// Exclude all files committed by the tester in the RED (spec creation) commit.
+		// This covers the gate files and any other tester artifacts that are intentionally
+		// outside task boundaries.
+		const testerFiles = await testerCommittedFiles(specRelDir);
+		const eligibleChanges = changedFiles.filter((f) => !testerFiles.has(f));
 		const unionBoundary = [...new Set(boundedTasks.flatMap((t) => t.boundary)), `${specRelDir}/**`];
 		const union = validateBoundary({
 			task: { boundary: unionBoundary },

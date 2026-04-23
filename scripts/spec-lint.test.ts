@@ -17,7 +17,6 @@
  */
 
 import { describe, expect, test } from "bun:test";
-// @ts-expect-error — gateEntries does not exist yet; RED state intentional
 import { gateEntries } from "./_lib.ts";
 import { validateBoundary, validateTaskSchema } from "./spec-lint.ts";
 
