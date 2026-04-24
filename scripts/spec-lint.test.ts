@@ -12,6 +12,9 @@
  *  - gateEntries() from scripts/_lib.ts (does not exist yet — RED)
  *  - validateGateLevels() from scripts/spec-lint.ts (does not exist yet — RED)
  *
+ * spec-033 RED additions:
+ *  - detectDuplicateIds() from scripts/spec-lint.ts (does not exist yet — RED)
+ *
  * Also exposes a default async function so this file works as a kind:rule gate
  * artifact (invoked by scripts/gates/rule.ts) — the default runs `bun test` on
  * this file and returns {pass, message}.
@@ -20,6 +23,9 @@
 import { describe, expect, test } from "bun:test";
 import { gateEntries } from "./_lib.ts";
 import { validateBoundary, validateTaskSchema } from "./spec-lint.ts";
+
+// spec-033: detectDuplicateIds does not exist yet — import will resolve at
+// runtime via getDetectDuplicateIds() helper below (RED).
 
 /**
  * When this module is imported by the kind:rule gate (not under the test
@@ -301,6 +307,98 @@ function registerTests(): void {
 				entries: [{ path: "scripts/spec-lint.test.ts", level: "unit" }],
 			});
 			expect(result.errors).toEqual([]);
+		});
+	});
+
+	// ----------------------------------------------------------------
+	// spec-033 RED: detectDuplicateIds() — does not exist in spec-lint.ts yet.
+	// These tests MUST fail until spec-lint.ts exports detectDuplicateIds().
+	// ----------------------------------------------------------------
+	describe("detectDuplicateIds — rejects duplicate spec IDs across active and archive", () => {
+		/**
+		 * Retrieve detectDuplicateIds from spec-lint.ts at runtime so that the
+		 * import error is scoped to this describe block (RED behaviour: the
+		 * function does not exist yet).
+		 *
+		 * Expected signature:
+		 *   detectDuplicateIds(slugs: string[]): { errors: string[] }
+		 *
+		 * `slugs` is the union of active folder basenames (e.g. "033-spec-lint-duplicate-ids")
+		 * and archive folder basenames with the date prefix stripped
+		 * (e.g. "2026-04-21-030-retro-dormant-worktrees" → "030-retro-dormant-worktrees").
+		 * The function groups slugs by their leading \d+ and emits one error per
+		 * colliding NNN in the format:
+		 *   "duplicate spec id NNN: <slug-a>, <slug-b>"
+		 */
+		function getDetectDuplicateIds(): (slugs: string[]) => { errors: string[] } {
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			const mod = require("./spec-lint.ts") as Record<string, unknown>;
+			if (typeof mod.detectDuplicateIds !== "function") {
+				throw new Error(
+					"detectDuplicateIds is not exported from spec-lint.ts (RED — not yet implemented)",
+				);
+			}
+			return mod.detectDuplicateIds as (slugs: string[]) => { errors: string[] };
+		}
+
+		test("no duplicates → no errors", () => {
+			const detectDuplicateIds = getDetectDuplicateIds();
+			const result = detectDuplicateIds([
+				"001-reading-time-on-posts",
+				"002-evals-importance",
+				"030-retro-dormant-worktrees",
+			]);
+			expect(result.errors).toEqual([]);
+		});
+
+		test("two active slugs share NNN → error names both slugs", () => {
+			const detectDuplicateIds = getDetectDuplicateIds();
+			const result = detectDuplicateIds([
+				"030-retro-dormant-worktrees",
+				"030-fold-judge-escalation",
+			]);
+			expect(result.errors.length).toBeGreaterThan(0);
+			expect(result.errors[0]).toMatch(/duplicate spec id 030/i);
+			expect(result.errors[0]).toContain("030-retro-dormant-worktrees");
+			expect(result.errors[0]).toContain("030-fold-judge-escalation");
+		});
+
+		test("active slug and archive slug share NNN → error names both slugs", () => {
+			const detectDuplicateIds = getDetectDuplicateIds();
+			// Archive entries arrive with date prefix already stripped by caller
+			const result = detectDuplicateIds([
+				"030-retro-dormant-worktrees",
+				"030-fold-judge-escalation",
+				"030-skip-judge-rule-workflow",
+			]);
+			expect(result.errors.length).toBeGreaterThan(0);
+			// All three slugs share 030; error must name them all
+			const combined = result.errors.join("\n");
+			expect(combined).toMatch(/030/);
+			expect(combined).toContain("030-retro-dormant-worktrees");
+			expect(combined).toContain("030-fold-judge-escalation");
+			expect(combined).toContain("030-skip-judge-rule-workflow");
+		});
+
+		test("error format: 'duplicate spec id NNN: slug-a, slug-b'", () => {
+			const detectDuplicateIds = getDetectDuplicateIds();
+			const result = detectDuplicateIds(["007-alpha", "007-beta"]);
+			expect(result.errors.length).toBe(1);
+			expect(result.errors[0]).toMatch(/^duplicate spec id 007:/i);
+		});
+
+		test("multiple distinct NNN collisions → one error per NNN", () => {
+			const detectDuplicateIds = getDetectDuplicateIds();
+			const result = detectDuplicateIds([
+				"005-workflow-canvas",
+				"005-trace-scan",
+				"030-retro-dormant-worktrees",
+				"030-fold-judge-escalation",
+			]);
+			expect(result.errors.length).toBe(2);
+			const combined = result.errors.join("\n");
+			expect(combined).toMatch(/005/);
+			expect(combined).toMatch(/030/);
 		});
 	});
 }
