@@ -1,5 +1,5 @@
 ---
-id: '032'
+id: '035'
 title: Typed gates and sibling tests
 status: archived
 kind: rule

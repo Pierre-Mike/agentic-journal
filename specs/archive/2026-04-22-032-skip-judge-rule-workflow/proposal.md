@@ -1,5 +1,5 @@
 ---
-id: 030-skip-judge-rule-workflow
+id: 032-skip-judge-rule-workflow
 title: Skip judge for rule and workflow specs
 status: archived
 kind: workflow

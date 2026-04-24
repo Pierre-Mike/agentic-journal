@@ -12,7 +12,7 @@
  * CLI entrypoint exits non-zero on any schema error (warnings only log).
  */
 
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { gateEntries, listActiveSpecs, listArchivedIds, VALID_KINDS } from "./_lib";
 
@@ -101,6 +101,37 @@ export function validateTaskSchema(task: ParsedTask): SchemaReport {
 	}
 
 	return { errors, warnings };
+}
+
+/**
+ * Detect duplicate spec IDs across a union of active and archive slugs.
+ *
+ * `slugs` is a flat list of normalised slug strings — active folder basenames
+ * (e.g. "033-spec-lint-duplicate-ids") and archive folder basenames with the
+ * date prefix already stripped (e.g. "030-retro-dormant-worktrees").
+ *
+ * Groups by leading \d+ and emits one error per colliding NNN:
+ *   "duplicate spec id NNN: slug-a, slug-b"
+ *
+ * Pure — no IO.
+ */
+export function detectDuplicateIds(slugs: readonly string[]): { errors: string[] } {
+	const byId = new Map<string, string[]>();
+	for (const slug of slugs) {
+		const match = slug.match(/^(\d+)/);
+		if (!match) continue;
+		const nnn = match[1] ?? "";
+		const existing = byId.get(nnn) ?? [];
+		existing.push(slug);
+		byId.set(nnn, existing);
+	}
+	const errors: string[] = [];
+	for (const [nnn, owners] of byId) {
+		if (owners.length > 1) {
+			errors.push(`duplicate spec id ${nnn}: ${owners.join(", ")}`);
+		}
+	}
+	return { errors };
 }
 
 /**
@@ -196,6 +227,18 @@ function main(): void {
 	const active = listActiveSpecs();
 	const archivedIds = listArchivedIds();
 	const allIds = new Set([...active.map((s) => s.frontmatter.id), ...archivedIds]);
+
+	// Duplicate-ID check: union of active slugs + archive folder names (date prefix stripped)
+	const archiveDir = join(process.cwd(), "specs", "archive");
+	const archiveFolderNames: string[] = existsSync(archiveDir)
+		? readdirSync(archiveDir).filter((n) => !n.startsWith("."))
+		: [];
+	const normalizedArchiveSlugs = archiveFolderNames.map((n) =>
+		n.replace(/^\d{4}-\d{2}-\d{2}-/, ""),
+	);
+	const activeSlugs = active.map((s) => s.slug);
+	const duplicateReport = detectDuplicateIds([...activeSlugs, ...normalizedArchiveSlugs]);
+	for (const e of duplicateReport.errors) errors.push(e);
 
 	for (const spec of active) {
 		const fm = spec.frontmatter;

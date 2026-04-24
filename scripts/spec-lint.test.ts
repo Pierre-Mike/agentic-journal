@@ -12,8 +12,8 @@
  *  - gateEntries() from scripts/_lib.ts (does not exist yet — RED)
  *  - validateGateLevels() from scripts/spec-lint.ts (does not exist yet — RED)
  *
- * spec-033 RED additions:
- *  - detectDuplicateIds() from scripts/spec-lint.ts (does not exist yet — RED)
+ * spec-033 RED additions (now GREEN):
+ *  - detectDuplicateIds() from scripts/spec-lint.ts
  *
  * Also exposes a default async function so this file works as a kind:rule gate
  * artifact (invoked by scripts/gates/rule.ts) — the default runs `bun test` on
