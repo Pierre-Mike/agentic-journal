@@ -1,5 +1,5 @@
 ---
-id: 005-workflow-canvas
+id: 036-workflow-canvas
 title: Canvas explaining the agentic workflow
 status: archived
 kind: workflow

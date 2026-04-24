@@ -1,5 +1,5 @@
 ---
-id: 031-your-computer-is-enough
+id: 034-your-computer-is-enough
 title: Your computer is enough
 status: archived
 kind: writeup
