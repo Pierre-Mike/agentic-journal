@@ -1,13 +1,14 @@
 ---
 id: 033-spec-lint-duplicate-ids
 title: Spec-lint rejects duplicate spec IDs
-status: active
+status: archived
 kind: rule
 gate: scripts/spec-lint.test.ts
-created: 2026-04-24
+created: 2026-04-24T00:00:00.000Z
 owner: main
 depends_on: []
 supersedes: null
+archived: '2026-04-24'
 ---
 
 ## Intent
