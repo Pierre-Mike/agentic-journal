@@ -25,17 +25,17 @@ Parallel-safe siblings are marked `[P]`.
   - depends: [T1]
   - file_targets: [specs/archive/2026-04-22-032-skip-judge-rule-workflow/proposal.md]
   - boundary: [specs/archive/**]
-- [ ] T5. [P] Archive rename: 031-your-computer-is-enough → 034
+- [x] T5. [P] Archive rename: 031-your-computer-is-enough → 034
   - agent: main
   - depends: [T1]
   - file_targets: [specs/archive/2026-04-22-034-your-computer-is-enough/proposal.md]
   - boundary: [specs/archive/**]
-- [ ] T6. [P] Archive rename: 032-typed-gates-sibling-tests → 035
+- [x] T6. [P] Archive rename: 032-typed-gates-sibling-tests → 035
   - agent: main
   - depends: [T1]
   - file_targets: [specs/archive/2026-04-23-035-typed-gates-sibling-tests/proposal.md]
   - boundary: [specs/archive/**]
-- [ ] T7. Verify gate green
+- [x] T7. Verify gate green
   - agent: main
   - depends: [T2, T3, T4, T5, T6]
   - file_targets: []
