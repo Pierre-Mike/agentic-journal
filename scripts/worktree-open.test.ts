@@ -8,7 +8,6 @@
  */
 
 import { expect, test } from "bun:test";
-// @ts-expect-error — openWorktree does not exist yet (RED)
 import { openWorktree } from "./worktree-open";
 
 // ---------------------------------------------------------------------------
