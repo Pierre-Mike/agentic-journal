@@ -1,7 +1,7 @@
 ---
-id: "037"
+id: '037'
 title: Inject process and fs ports into worktree scripts
-status: active
+status: archived
 kind: code
 gate:
   - path: scripts/worktree-open.test.ts
@@ -10,10 +10,12 @@ gate:
     level: unit
   - path: scripts/smoke-worktree-ports.ts
     level: integration
-created: 2026-04-24
+created: 2026-04-24T00:00:00.000Z
 owner: main
-depends_on: ["035"]
+depends_on:
+  - '035'
 supersedes: null
+archived: '2026-04-25'
 ---
 
 ## Intent
