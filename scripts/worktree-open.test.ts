@@ -1,86 +1,135 @@
 /**
- * Colocated tests for `scripts/worktree-open.ts` (025).
+ * Unit tests for the `openWorktree` policy extracted from worktree-open.ts (spec 037).
  *
- * Two cases:
- *   1. Shape — reads the script source and asserts the three-landmark order
- *      (git worktree add → bun install --frozen-lockfile → success print).
- *      Fast regression fence.
- *   2. Behavior — spawns the script against a random tmp slug and asserts
- *      `node_modules/@astrojs/cloudflare/package.json` exists in the new
- *      worktree. Tears down the worktree and branch in afterAll.
+ * All git and fs operations are replaced by in-memory fakes — no Bun.spawn calls.
+ *
+ * RED: fails until openWorktree is exported from worktree-open.ts with the
+ * Process + Fs port injection signature.
  */
 
-import { afterAll, expect, test } from "bun:test";
-import { randomBytes } from "node:crypto";
-import { existsSync, readFileSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { expect, test } from "bun:test";
+import { openWorktree } from "./worktree-open";
 
-const SCRIPT_PATH = "scripts/worktree-open.ts";
-const WORKTREE_ROOT = ".agentic/worktrees";
-// Absolute path to THIS test's sibling script — so the behavior test spawns
-// the working-tree version under test, not whatever's on main.
-const ABS_SCRIPT_PATH = resolve(dirname(import.meta.path), "worktree-open.ts");
+// ---------------------------------------------------------------------------
+// Fake adapters (test-local, not exported)
+// ---------------------------------------------------------------------------
 
-/**
- * Resolve the main repo root (the common git dir's parent). When this test
- * runs from a git worktree, `process.cwd()` is the worktree — but the
- * script under test refuses unless invoked against `main` in the main
- * working tree. `git rev-parse --path-format=absolute --git-common-dir`
- * gives us the `.git` dir of the main checkout; its parent is the repo
- * root.
- */
-function mainRepoRoot(): string {
-	const res = Bun.spawnSync(["git", "rev-parse", "--git-common-dir"], {
-		stdout: "pipe",
-		stderr: "pipe",
-	});
-	const gitDir = new TextDecoder().decode(res.stdout).trim();
-	// gitDir may be relative or absolute. Normalize via dirname.
-	const abs = gitDir.startsWith("/") ? gitDir : join(process.cwd(), gitDir);
-	return abs.replace(/\/\.git\/?$/, "").replace(/\/\.git$/, "");
+type FakeProcessScript = Record<string, { ok: boolean; stdout: string }>;
+
+function fakeProcess(scripted: FakeProcessScript) {
+	return {
+		async run(
+			cmd: readonly string[],
+			_opts?: { cwd?: string },
+		): Promise<{ ok: boolean; stdout: string }> {
+			const key = cmd.join(" ");
+			// biome-ignore lint/style/noNonNullAssertion: key membership asserted on prior line
+			if (key in scripted) return scripted[key]!;
+			// Default: succeed with empty output for unscripted calls
+			return { ok: true, stdout: "" };
+		},
+	};
 }
 
-test("install step sits between git worktree add and success print", () => {
-	const src = readFileSync(SCRIPT_PATH, "utf8");
-	const addIdx = src.indexOf(`"git", "worktree", "add"`);
-	const installIdx = src.indexOf(`"bun", "install", "--frozen-lockfile"`);
-	const printIdx = src.indexOf("worktree ready at");
-	expect(addIdx).toBeGreaterThan(-1);
-	expect(installIdx).toBeGreaterThan(addIdx);
-	expect(printIdx).toBeGreaterThan(installIdx);
-});
+function fakeFs(opts: { existing?: string[] } = {}) {
+	const existing = new Set(opts.existing ?? []);
+	return {
+		exists(path: string): boolean {
+			return existing.has(path);
+		},
+	};
+}
 
-// --- behavior case ---
-const slug = `worktree-open-test-${randomBytes(4).toString("hex")}`;
-const repoRoot = mainRepoRoot();
-const worktreePath = join(repoRoot, WORKTREE_ROOT, slug);
-const branch = `spec/${slug}`;
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
 
-afterAll(async () => {
-	try {
-		await Bun.spawn(["git", "worktree", "remove", "--force", worktreePath], {
-			cwd: repoRoot,
-			stdout: "ignore",
-			stderr: "ignore",
-		}).exited;
-	} catch {}
-	try {
-		await Bun.spawn(["git", "branch", "-D", branch], {
-			cwd: repoRoot,
-			stdout: "ignore",
-			stderr: "ignore",
-		}).exited;
-	} catch {}
-});
+const REPO_ROOT = "/fake/repo";
+const SLUG = "my-feature";
+const WORKTREE_PATH = `${REPO_ROOT}/.agentic/worktrees/${SLUG}`;
+const BRANCH = `spec/${SLUG}`;
 
-test("opens a worktree with populated node_modules", async () => {
-	const proc = Bun.spawn(["bun", ABS_SCRIPT_PATH, slug], {
-		cwd: repoRoot,
-		stdout: "pipe",
-		stderr: "pipe",
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+
+test("openWorktree returns ok:false with reason /not on main/ when not on main branch", async () => {
+	const proc = fakeProcess({
+		"git status --porcelain": { ok: true, stdout: "" },
+		"git branch --show-current": { ok: true, stdout: "some-other-branch" },
 	});
-	const exitCode = await proc.exited;
-	expect(exitCode).toBe(0);
-	const depMarker = join(worktreePath, "node_modules", "@astrojs", "cloudflare", "package.json");
-	expect(existsSync(depMarker)).toBe(true);
-}, 60_000);
+	const fs = fakeFs();
+
+	const result = await openWorktree({ slug: SLUG, repoRoot: REPO_ROOT, proc, fs });
+
+	expect(result.ok).toBe(false);
+	if (!result.ok) {
+		expect(result.reason).toMatch(/not on main/i);
+	}
+});
+
+test("openWorktree returns ok:false with reason /uncommit/ when there are uncommitted changes", async () => {
+	const proc = fakeProcess({
+		"git status --porcelain": { ok: true, stdout: " M some-file.ts" },
+		"git branch --show-current": { ok: true, stdout: "main" },
+	});
+	const fs = fakeFs();
+
+	const result = await openWorktree({ slug: SLUG, repoRoot: REPO_ROOT, proc, fs });
+
+	expect(result.ok).toBe(false);
+	if (!result.ok) {
+		expect(result.reason).toMatch(/uncommit/i);
+	}
+});
+
+test("openWorktree returns ok:false with reason /already exists/ when worktree dir exists", async () => {
+	const proc = fakeProcess({
+		"git status --porcelain": { ok: true, stdout: "" },
+		"git branch --show-current": { ok: true, stdout: "main" },
+	});
+	const fs = fakeFs({ existing: [WORKTREE_PATH] });
+
+	const result = await openWorktree({ slug: SLUG, repoRoot: REPO_ROOT, proc, fs });
+
+	expect(result.ok).toBe(false);
+	if (!result.ok) {
+		expect(result.reason).toMatch(/already exists/i);
+	}
+});
+
+test("openWorktree returns ok:true with path on happy path (fresh branch, clean main)", async () => {
+	const proc = fakeProcess({
+		"git status --porcelain": { ok: true, stdout: "" },
+		"git branch --show-current": { ok: true, stdout: "main" },
+		[`git show-ref --verify --quiet refs/heads/${BRANCH}`]: { ok: false, stdout: "" },
+		[`git worktree add ${WORKTREE_PATH} -b ${BRANCH} main`]: { ok: true, stdout: "" },
+		"bun install --frozen-lockfile": { ok: true, stdout: "" },
+	});
+	const fs = fakeFs();
+
+	const result = await openWorktree({ slug: SLUG, repoRoot: REPO_ROOT, proc, fs });
+
+	expect(result.ok).toBe(true);
+	if (result.ok) {
+		expect(result.path).toBe(WORKTREE_PATH);
+	}
+});
+
+test("openWorktree reuses existing branch (skips -b flag) when branch already exists", async () => {
+	const proc = fakeProcess({
+		"git status --porcelain": { ok: true, stdout: "" },
+		"git branch --show-current": { ok: true, stdout: "main" },
+		[`git show-ref --verify --quiet refs/heads/${BRANCH}`]: { ok: true, stdout: "" },
+		[`git worktree add ${WORKTREE_PATH} ${BRANCH}`]: { ok: true, stdout: "" },
+		"bun install --frozen-lockfile": { ok: true, stdout: "" },
+	});
+	const fs = fakeFs();
+
+	const result = await openWorktree({ slug: SLUG, repoRoot: REPO_ROOT, proc, fs });
+
+	expect(result.ok).toBe(true);
+	if (result.ok) {
+		expect(result.path).toBe(WORKTREE_PATH);
+	}
+});
