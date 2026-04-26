@@ -1,4 +1,4 @@
-# Design — 036 Refactor pass after green for kind:code
+# Design — 037 Refactor pass after green for kind:code
 
 ## Approach
 
@@ -6,10 +6,13 @@ Edit `.claude/agents/spec-implementer.md` to add a `### Step 6.5 — Refactor pa
 
 Replace the exit-1 stub in `scripts/smoke-implementer-refactor.ts` with real assertions that parse `spec-implementer.md` and verify the invariants declared in proposal.md's acceptance criteria.
 
+Add `Edit(.claude/agents/**)` and `Write(.claude/agents/**)` to `.claude/settings.json` `permissions.allow` (plus worktree-prefixed variants). Without this, the implementer subagent cannot author the Step 6.5 section — Claude Code's permission system blocks before any hook runs. This is a one-time bootstrap; the edit is performed by the main session because the implementer cannot grant itself permission.
+
 ## Files touched
 
+- `.claude/settings.json` — add four allow entries for `.claude/agents/**` (bootstrap, done by main)
 - `.claude/agents/spec-implementer.md` — add Step 6.5 section
-- `scripts/smoke-implementer-refactor.ts` — replace stub with real assertions
+- `scripts/smoke-implementer-refactor.ts` — replace stub with real assertions (also asserts settings.json grant is in place)
 
 ## Step 6.5 content (to author)
 

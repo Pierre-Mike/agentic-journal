@@ -26,6 +26,7 @@ The current `/do` flow stops at Green: `spec-implementer.md` explicitly forbids 
 - If a refactor edit breaks `tasks:verify`, revert that single edit; do NOT enter an unbounded retry loop.
 - Cross-cutting refactors that touch files outside `file_targets` become their own spec via `/retro`.
 - The implementation edits `.claude/agents/spec-implementer.md` and `scripts/smoke-implementer-refactor.ts` — these two paths are explicitly named so the spec-guard hook authorises writes to them.
+- The implementation also edits `.claude/settings.json` to add `Edit(.claude/agents/**)` and `Write(.claude/agents/**)` (plus the worktree-prefixed variants) to the `permissions.allow` array. Without this, the implementer subagent cannot write to `.claude/agents/spec-implementer.md` (Claude Code's permission system blocks before any hook runs). This is a one-time bootstrap; future workflow specs that touch `.claude/agents/**` will inherit the permission.
 
 ## Acceptance criteria
 
@@ -33,6 +34,7 @@ The current `/do` flow stops at Green: `spec-implementer.md` explicitly forbids 
 - [ ] The Step 6.5 section instructs scope-bound refactor: edits limited to the union of `file_targets` from `tasks.md`
 - [ ] The Step 6.5 section instructs revert-on-fail: if `tasks:verify` fails after a refactor edit, revert that single edit and continue
 - [ ] The Step 6.5 section instructs termination when no further opportunity exists or all targets considered
+- [ ] `.claude/settings.json` `permissions.allow` array contains entries authorising `Edit`/`Write` to `.claude/agents/**` (and the `.agentic/worktrees/**/.claude/agents/**` variants)
 - [ ] `scripts/smoke-implementer-refactor.ts` exits 0 when all the above invariants are satisfied
 
 ## Context

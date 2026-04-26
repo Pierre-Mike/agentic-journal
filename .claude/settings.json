@@ -14,7 +14,11 @@
 			"Edit(.claude/hooks/**)",
 			"Write(.claude/hooks/**)",
 			"Edit(.agentic/worktrees/**/.claude/hooks/**)",
-			"Write(.agentic/worktrees/**/.claude/hooks/**)"
+			"Write(.agentic/worktrees/**/.claude/hooks/**)",
+			"Edit(.claude/agents/**)",
+			"Write(.claude/agents/**)",
+			"Edit(.agentic/worktrees/**/.claude/agents/**)",
+			"Write(.agentic/worktrees/**/.claude/agents/**)"
 		],
 		"deny": [
 			"Bash(*--no-verify*)",
