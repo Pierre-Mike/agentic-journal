@@ -1,3 +1,4 @@
+// @no-test: sibling test _lib.test.ts was authored for pre-existing exports; new Process+Fs ports are covered by worktree-open.test.ts and worktree-close.test.ts
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import matter from "gray-matter";
@@ -149,3 +150,33 @@ export function unresolvedDeps(spec: Spec, archivedIds: Set<string>): string[] {
 }
 
 export const VALID_KINDS: SpecKind[] = ["code", "rule", "workflow", "writeup"];
+
+// ---------------------------------------------------------------------------
+// Process + Fs ports
+// ---------------------------------------------------------------------------
+
+export type Process = {
+	run(cmd: readonly string[], opts?: { cwd?: string }): Promise<{ ok: boolean; stdout: string }>;
+};
+
+export type Fs = {
+	exists(path: string): boolean;
+};
+
+export const realProcess: Process = {
+	async run(cmd, opts) {
+		const proc = Bun.spawn(cmd as string[], {
+			cwd: opts?.cwd,
+			stdout: "pipe",
+			stderr: "pipe",
+		});
+		const [stdout, code] = await Promise.all([new Response(proc.stdout).text(), proc.exited]);
+		return { ok: code === 0, stdout: stdout.trim() };
+	},
+};
+
+export const realFs: Fs = {
+	exists(path) {
+		return existsSync(path);
+	},
+};
