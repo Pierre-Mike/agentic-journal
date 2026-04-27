@@ -1,3 +1,4 @@
+// @no-test: sibling test worktree-close.test.ts was authored by the spec tester and is already committed
 /**
  * Close one or more worktrees whose spec branches have been merged into main.
  *
@@ -11,43 +12,15 @@
  *   - Removes the worktree directory and deletes the local branch
  */
 
-import { existsSync } from "node:fs";
 import { join } from "node:path";
+import { type Fs, type Process, realFs, realProcess } from "./_lib";
 
-async function sh(
-	cmd: string[],
-	opts: { silent?: boolean; cwd?: string } = {},
-): Promise<{ ok: boolean; out: string }> {
-	const proc = Bun.spawn(cmd, {
-		stdout: opts.silent ? "pipe" : "inherit",
-		stderr: opts.silent ? "pipe" : "inherit",
-		cwd: opts.cwd,
-	});
-	const out = opts.silent ? await new Response(proc.stdout).text() : "";
-	return { ok: (await proc.exited) === 0, out: out.trim() };
-}
-
-async function listSpecBranches(): Promise<string[]> {
-	const all = await sh(["git", "branch", "--list", "spec/*", "--format=%(refname:short)"], {
-		silent: true,
-	});
-	return all.out
-		.split("\n")
-		.map((b) => b.trim())
-		.filter(Boolean);
-}
-
-/**
- * A branch is "merged" if either:
- *   - it is an ancestor of main (classic merge), or
- *   - GitHub reports a merged PR with this branch as head (covers squash/rebase merges).
- */
-async function isMerged(branch: string): Promise<boolean> {
-	const ancestry = await sh(["git", "branch", "--merged", "main"], { silent: true });
-	const ancestorBranches = ancestry.out.split("\n").map((b) => b.trim().replace(/^\*\s*/, ""));
+async function isMergedWith(branch: string, repoRoot: string, proc: Process): Promise<boolean> {
+	const ancestry = await proc.run(["git", "branch", "--merged", "main"], { cwd: repoRoot });
+	const ancestorBranches = ancestry.stdout.split("\n").map((b) => b.trim().replace(/^\*\s*/, ""));
 	if (ancestorBranches.includes(branch)) return true;
 
-	const pr = await sh(
+	const pr = await proc.run(
 		[
 			"gh",
 			"pr",
@@ -61,27 +34,26 @@ async function isMerged(branch: string): Promise<boolean> {
 			"-q",
 			".[0].number",
 		],
-		{ silent: true },
+		{ cwd: repoRoot },
 	);
-	return pr.ok && pr.out.length > 0;
+	return pr.ok && pr.stdout.length > 0;
 }
 
-async function listMergedSpecBranches(): Promise<string[]> {
-	const specs = await listSpecBranches();
-	const results = await Promise.all(specs.map(async (b) => ((await isMerged(b)) ? b : null)));
-	return results.filter((b): b is string => b !== null);
-}
-
-async function closeOne(slug: string, repoRoot: string): Promise<{ ok: boolean; reason?: string }> {
+export async function closeWorktree(deps: {
+	slug: string;
+	repoRoot: string;
+	proc: Process;
+	fs: Fs;
+}): Promise<{ ok: true } | { ok: false; reason: string }> {
+	const { slug, repoRoot, proc, fs } = deps;
 	const worktreePath = join(repoRoot, ".agentic", "worktrees", slug);
 	const branch = `spec/${slug}`;
 
-	if (!existsSync(worktreePath)) {
-		// Zombie reconcile: worktree dir is gone but the branch may still
-		// exist. If the branch is merged, delete it and continue. If not,
-		// refuse — don't destroy unpushed work from a manually-cleaned dir.
-		if (await isMerged(branch)) {
-			const del = await sh(["git", "branch", "-D", branch]);
+	if (!fs.exists(worktreePath)) {
+		// Zombie reconcile: dir gone but branch may still exist.
+		// If merged, delete the branch. If not merged, refuse.
+		if (await isMergedWith(branch, repoRoot, proc)) {
+			const del = await proc.run(["git", "branch", "-D", branch], { cwd: repoRoot });
 			if (!del.ok) {
 				return { ok: false, reason: `branch '${branch}' deletion failed` };
 			}
@@ -93,45 +65,66 @@ async function closeOne(slug: string, repoRoot: string): Promise<{ ok: boolean; 
 		};
 	}
 
-	const status = await sh(["git", "status", "--porcelain"], {
-		silent: true,
-		cwd: worktreePath,
-	});
-	if (status.out.length > 0) {
+	// Check for uncommitted changes inside the worktree
+	const status = await proc.run(["git", "status", "--porcelain"], { cwd: worktreePath });
+	if (status.stdout.length > 0) {
 		return { ok: false, reason: "worktree has uncommitted changes" };
 	}
 
-	if (!(await isMerged(branch))) {
+	if (!(await isMergedWith(branch, repoRoot, proc))) {
 		return { ok: false, reason: `branch '${branch}' not merged into main` };
 	}
 
-	const removeResult = await sh(["git", "worktree", "remove", worktreePath]);
+	const removeResult = await proc.run(["git", "worktree", "remove", worktreePath], {
+		cwd: repoRoot,
+	});
 	if (!removeResult.ok) {
 		return { ok: false, reason: "git worktree remove failed" };
 	}
 
 	// -D (force) because squash/rebase merges leave the local branch non-ancestor
-	// of main even though the PR is merged. isMerged() already verified that.
-	const deleteBranch = await sh(["git", "branch", "-D", branch]);
+	// of main even though the PR is merged. isMergedWith() already verified that.
+	const deleteBranch = await proc.run(["git", "branch", "-D", branch], { cwd: repoRoot });
 	if (!deleteBranch.ok) {
-		return { ok: false, reason: `worktree removed but branch '${branch}' deletion failed` };
+		return {
+			ok: false,
+			reason: `worktree removed but branch '${branch}' deletion failed`,
+		};
 	}
 
 	return { ok: true };
 }
 
+async function listSpecBranches(proc: Process, repoRoot: string): Promise<string[]> {
+	const all = await proc.run(["git", "branch", "--list", "spec/*", "--format=%(refname:short)"], {
+		cwd: repoRoot,
+	});
+	return all.stdout
+		.split("\n")
+		.map((b) => b.trim())
+		.filter(Boolean);
+}
+
+async function listMergedSpecBranches(proc: Process, repoRoot: string): Promise<string[]> {
+	const specs = await listSpecBranches(proc, repoRoot);
+	const results = await Promise.all(
+		specs.map(async (b) => ((await isMergedWith(b, repoRoot, proc)) ? b : null)),
+	);
+	return results.filter((b): b is string => b !== null);
+}
+
 async function main(): Promise<void> {
 	const repoRoot = process.cwd();
 	const arg = process.argv[2];
+	const proc = realProcess;
+	const fs = realFs;
 
-	// Reconcile stale .git/worktrees/* admin dirs before any listing, so
-	// listMergedSpecBranches() sees an authoritative snapshot and no later
-	// step trips on a "prunable" entry.
-	await sh(["git", "worktree", "prune"], { silent: true });
+	// Reconcile stale .git/worktrees/* admin dirs before any listing
+	await proc.run(["git", "worktree", "prune"], { cwd: repoRoot });
 
 	if (arg) {
 		// Single-slug strict mode
-		const result = await closeOne(arg, repoRoot);
+		const result = await closeWorktree({ slug: arg, repoRoot, proc, fs });
 		if (result.ok) {
 			console.log(`✓ closed spec/${arg}`);
 		} else {
@@ -142,7 +135,7 @@ async function main(): Promise<void> {
 	}
 
 	// Auto-detect mode: close every merged spec branch
-	const mergedSpecs = await listMergedSpecBranches();
+	const mergedSpecs = await listMergedSpecBranches(proc, repoRoot);
 	if (mergedSpecs.length === 0) {
 		console.log("no merged spec branches to close.");
 		return;
@@ -152,7 +145,7 @@ async function main(): Promise<void> {
 	let anyFail = false;
 	for (const branch of mergedSpecs) {
 		const slug = branch.replace(/^spec\//, "");
-		const result = await closeOne(slug, repoRoot);
+		const result = await closeWorktree({ slug, repoRoot, proc, fs });
 		if (result.ok) {
 			console.log(`  ✓ ${branch}`);
 		} else {
@@ -163,4 +156,6 @@ async function main(): Promise<void> {
 	if (anyFail) process.exit(1);
 }
 
-await main();
+if (import.meta.main) {
+	await main();
+}
