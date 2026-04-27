@@ -1,6 +1,6 @@
 // @no-test: smoke script — tested by bun run tasks:verify
 /**
- * Gate for spec 037-refactor-pass-after-green.
+ * Gate for spec 038-refactor-pass-after-green.
  *
  * Asserts that:
  *   1. .claude/agents/spec-implementer.md contains a Step 6.5 heading
