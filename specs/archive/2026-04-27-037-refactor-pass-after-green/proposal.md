@@ -1,14 +1,15 @@
 ---
 id: 037-refactor-pass-after-green
-title: Refactor pass after green for kind:code
-status: active
+title: 'Refactor pass after green for kind:code'
+status: archived
 kind: workflow
 gate: scripts/smoke-implementer-refactor.ts
-created: 2026-04-26
+created: 2026-04-26T00:00:00.000Z
 owner: main
 depends_on:
   - 027-dual-agent-tdd
 supersedes: null
+archived: '2026-04-27'
 ---
 
 ## Intent
