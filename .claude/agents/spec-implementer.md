@@ -51,6 +51,19 @@ Rules:
 - Do NOT manually tick `- [x]` in `tasks.md`. `spec-complete` does that from git truth.
 - Respect `specs/constitution.md`: no `any`, no `as` outside tests, colocated tests, protected paths.
 
+### Step 6.5 — Refactor pass (kind: code only)
+
+Skip this step for kind: rule, kind: workflow, and kind: writeup.
+
+After `bun run tasks:verify` first goes green, run a single refactor pass. The four decisions behind this step: (1) inline in spec-implementer rather than a separate subagent — refactor self-collusion is weaker than test-design collusion, and a fourth agent would triple token cost for marginal gain; (2) scope-bound to `file_targets` only — aligns with the existing "no opportunistic refactor" rule and keeps every cleanup traceable to a spec; (3) revert-on-fail rather than retry-to-green — keeps the pass bounded, not a second implementation phase; (4) kind:code only — rule/workflow/writeup specs have no source code to refactor, the gate artifact IS the deliverable.
+
+1. Identify the union of all `file_targets` declared across this spec's `tasks.md` entries. These are the only files in scope.
+2. For each file in scope, consider one refactor opportunity at a time (rename, extract, simplify, remove duplication). Apply if clearly beneficial.
+3. After every edit, re-run `bun run tasks:verify`. If it fails, revert that single file (`git checkout HEAD -- <file>`) and move on.
+4. Terminate when no further opportunity exists or all files in scope have been considered.
+5. Do NOT edit files outside the `file_targets` union. Cross-cutting refactors become their own spec via /retro.
+6. Do NOT retry to green after a revert — the refactor pass is bounded, not a second implementation phase.
+
 ### Step 7 — Close the spec
 
 When every task's `file_targets` has been modified (committed) AND `bun run tasks:verify` is green:
