@@ -6,9 +6,7 @@
 import { describe, expect, it } from "bun:test";
 import type { Spec } from "./_lib";
 
-// Import under test — will fail until formatSpecLine is exported from spec-status.ts.
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-expect-error formatSpecLine not yet exported
+// Import under test.
 import { formatSpecLine } from "./spec-status";
 
 // ---------------------------------------------------------------------------
