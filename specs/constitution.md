@@ -98,6 +98,33 @@ Three possible outcomes per slice, all exit 0:
 
 Scope guard: the replanner has Read/Edit on the spec folder only and Bash limited to `git diff`/`log`/`show`/`add`/`commit`. It cannot mutate source code, gate files, sentinels, or any non-spec path. See `.claude/agents/spec-replanner.md` for the full contract.
 
+### Auto-pilot mode (`/do-auto`)
+
+`/do-auto <intent>` is the headless variant of `/do`. It replaces the interactive `align` interview with the `auto-aligner` subagent (sonnet, single-shot) plus an ambiguity gate.
+
+Flow:
+
+```
+intent → auto-aligner → .agentic/last-alignment.md
+                          │
+                          ├─ status: confirmed + confidence: high
+                          │     → /do-auto runs Steps 3-10 (worktree, scaffold,
+                          │       slice loop, close, push, PR)
+                          │
+                          └─ status: needs-human (or confidence: low)
+                                → /do-auto exits 0 without scaffolding;
+                                  morning digest surfaces the row
+```
+
+The `auto-aligner` writes to a single mailbox path (`.agentic/last-alignment.md`, same as the human-driven `align` skill from spec 043). Frontmatter schema is shared and validated by `scripts/check-alignment-mailbox.ts`. `/do-auto` reads the mailbox via `scripts/do-auto-branch.ts` (`parseAlignmentAndBranch`) and branches deterministically.
+
+Hard rules:
+- **Auto-aligner is the only judgment point** — `/do-auto` never scaffolds without first dispatching it
+- **`needs-human` is non-blocking** — `/do-auto` exits 0; no worktree opens; nothing on `main`
+- **No human prompts** — every step that would prompt in `/do` either succeeds via the aligner's confidence assessment or soft-escalates to a sidecar artifact
+
+Headless invocation: `claude -p --max-turns 100 "/do-auto <intent>"`. See `.claude/skills/do-auto/SKILL.md` for the full skill and `.claude/agents/auto-aligner.md` for the aligner's contract.
+
 ## 5. TypeScript axioms
 
 - `strict: true`, `noUncheckedIndexedAccess: true`
