@@ -1,4 +1,27 @@
 /**
- * Gate for spec 042 slice 2: red-proof.ts smoke/e2e — end-to-end invocation on fixture gate.
- * Stub — spec-tester will overwrite with RED smoke assertions before slice 2 dispatch.
+ * red-proof.ts — stubs only.
+ * Implementations land in slice 2 after spec-judge freezes slice 1.
  */
+
+export interface PickRunnerResult {
+	cmd: string[];
+	runnable: boolean;
+}
+
+export interface FormatProofInput {
+	exitCode: number;
+	command: string[];
+	durationMs: number;
+	stderr: string;
+	stdout: string;
+}
+
+/** Pure: maps a gate path to the runner command. No spawn. */
+export function pickRunner(_gatePath: string): PickRunnerResult {
+	throw new Error("not implemented");
+}
+
+/** Pure: formats a proof record as the canonical text block. */
+export function formatProof(_input: FormatProofInput): string {
+	throw new Error("not implemented");
+}
