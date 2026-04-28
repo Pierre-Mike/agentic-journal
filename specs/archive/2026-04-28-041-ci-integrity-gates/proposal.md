@@ -1,13 +1,15 @@
 ---
 id: 041-ci-integrity-gates
-title: Close CI integrity gaps — run tests, gate deploy, pin bun, e2e against build
-status: active
+title: 'Close CI integrity gaps — run tests, gate deploy, pin bun, e2e against build'
+status: archived
 kind: workflow
 gate: scripts/smoke-ci-gates.ts
-created: 2026-04-28
+created: 2026-04-28T00:00:00.000Z
 owner: main
-depends_on: [020-deploy-env-fix]
+depends_on:
+  - 020-deploy-env-fix
 supersedes: null
+archived: '2026-04-28'
 ---
 
 ## Intent
