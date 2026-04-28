@@ -159,6 +159,16 @@ async function main(): Promise<void> {
 				}
 				process.exit(1);
 			}
+
+			// 0.5. Outer gate sentinel must also be present
+			const outerFrozenPath = join(specDir, ".gate-frozen-outer");
+			if (!existsSync(outerFrozenPath)) {
+				console.error(
+					`✖ kind:code spec requires the outer gate sentinel (.gate-frozen-outer) before closing.`,
+				);
+				console.error(`  Outer gate path (from proposal.md): ${spec.frontmatter.gate}`);
+				process.exit(1);
+			}
 		}
 	}
 
