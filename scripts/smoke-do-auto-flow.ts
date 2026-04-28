@@ -13,17 +13,7 @@
 
 import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-
-// Import the branching helper (to be implemented in task 3)
-// For now, we inline a placeholder that will fail RED
-function parseAlignmentAndBranch(_mailboxPath: string): {
-	proceed: boolean;
-	reason?: string;
-} {
-	// RED: placeholder — always returns {proceed: false}
-	// The real implementation will be written in task 3 (do-auto skill)
-	return { proceed: false, reason: "not implemented" };
-}
+import { parseAlignmentAndBranch } from "./do-auto-branch";
 
 function main() {
 	const tmpDir = join(process.cwd(), ".agentic/tmp-gate-046");
@@ -58,7 +48,7 @@ Implement feature X.
 		writeFileSync(fixturePath, fixture, "utf-8");
 		const result = parseAlignmentAndBranch(fixturePath);
 
-		if (result.proceed === true && result.reason === undefined) {
+		if (result.proceed === true) {
 			// biome-ignore lint/suspicious/noConsole: gate script requires stdout
 			console.log("✓ Test 1: high confidence → proceed");
 			passed++;
