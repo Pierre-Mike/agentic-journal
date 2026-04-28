@@ -75,6 +75,17 @@ const hasHeadSlot = Astro.slots.has("head");
 			h1, h2, h3 { line-height: 1.2; }
 			code { background: var(--code-bg); padding: 0.1em 0.3em; border-radius: 3px; }
 			pre { background: var(--code-bg); padding: 1rem; overflow-x: auto; border-radius: 4px; }
+			pre, pre code { background: var(--code-bg); }
+			[data-theme="light"] .astro-code,
+			[data-theme="light"] .astro-code span {
+				color: var(--shiki-light) !important;
+				background-color: var(--code-bg) !important;
+			}
+			[data-theme="dark"] .astro-code,
+			[data-theme="dark"] .astro-code span {
+				color: var(--shiki-dark) !important;
+				background-color: var(--code-bg) !important;
+			}
 			header, footer { color: var(--muted); font-size: 0.9rem; margin: 2rem 0; }
 			header.site-header {
 				display: flex;
