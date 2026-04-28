@@ -19,8 +19,8 @@ Ordered checklist. Each task declares its `agent`, `depends`, `gate`, `file_targ
 - [ ] 3. Update /do SKILL.md Step 6 pseudocode with proof step
   - agent: main
   - depends: []
-  - gate: .claude/agents/spec-judge.md
+  - gate: scripts/smoke-spec-doc-shape.ts
   - file_targets: [.claude/skills/do/SKILL.md, .claude/agents/spec-judge.md]
-  - boundary: [.claude/skills/do/SKILL.md, .claude/agents/spec-judge.md]
+  - boundary: [.claude/skills/do/SKILL.md, .claude/agents/spec-judge.md, scripts/smoke-spec-doc-shape.ts]
 
 Task box ticking happens via `scripts/tasks-verify.ts`, not manually.
