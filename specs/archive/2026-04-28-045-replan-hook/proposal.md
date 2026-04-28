@@ -1,13 +1,15 @@
 ---
 id: 045-replan-hook
 title: post-slice re-plan hook
-status: active
+status: archived
 kind: workflow
 gate: scripts/smoke-replan-flow.ts
-created: 2026-04-28
+created: 2026-04-28T00:00:00.000Z
 owner: main
-depends_on: [044-bdd-outer-gate]
+depends_on:
+  - 044-bdd-outer-gate
 supersedes: null
+archived: '2026-04-28'
 ---
 
 ## Intent
