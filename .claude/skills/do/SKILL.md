@@ -167,6 +167,14 @@ for slice N = 1..taskCount:
   while attempt <= 3:
     spec-tester (slice N)  → writes gate file for task N, commits RED
                               commit: "spec(<id>): RED — slice N — <task title>"
+    // RED-proof step: run the gate to confirm it fails before freezing
+    bun scripts/red-proof.ts <id> <N> <gate-path>
+    // artifact: specs/active/<id>/red-proof-N.txt
+    // exit_code branches:
+    //   0   → gate passed (not RED) → auto-FAIL: judge skipped, mark tester attempt failed
+    //   124 → timeout               → log artifact, continue to spec-judge for human review
+    //   127 → unknown runner        → log artifact, continue to spec-judge for human review
+    //   else → RED confirmed        → continue
     spec-judge (slice N)   → reviews gate file for task N
                               PASS → touches .gate-frozen-N → break
                               FAIL → writes tester-review-N.md, attempt++
