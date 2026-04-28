@@ -12,6 +12,6 @@ dist
 .claude/sessions
 .claude/dashboard.html
 .claude/scheduled_tasks.lock
-.agentic/worktrees
+.agentic/
 playwright-report/
 test-results/
