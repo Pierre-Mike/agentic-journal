@@ -18,7 +18,11 @@
 			"Edit(.claude/agents/**)",
 			"Write(.claude/agents/**)",
 			"Edit(.agentic/worktrees/**/.claude/agents/**)",
-			"Write(.agentic/worktrees/**/.claude/agents/**)"
+			"Write(.agentic/worktrees/**/.claude/agents/**)",
+			"Edit(.claude/skills/**)",
+			"Write(.claude/skills/**)",
+			"Edit(.agentic/worktrees/**/.claude/skills/**)",
+			"Write(.agentic/worktrees/**/.claude/skills/**)"
 		],
 		"deny": [
 			"Bash(*--no-verify*)",
