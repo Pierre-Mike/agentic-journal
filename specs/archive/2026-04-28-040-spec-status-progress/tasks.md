@@ -1,12 +1,12 @@
 # Tasks
 
-- [ ] 1. Add sliceProgress() helper to _lib.ts
+- [x] 1. Add sliceProgress() helper to _lib.ts
   - agent: main
   - depends: []
   - gate: scripts/_lib.test.ts
   - file_targets: [scripts/_lib.ts, scripts/_lib.test.ts]
   - boundary: [scripts/_lib.ts, scripts/_lib.test.ts]
-- [ ] 2. Wire sliceProgress into spec-status output
+- [x] 2. Wire sliceProgress into spec-status output
   - agent: main
   - depends: [1]
   - gate: scripts/spec-status.test.ts

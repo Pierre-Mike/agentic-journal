@@ -1,9 +1,8 @@
 ---
 id: 040-spec-status-progress
 title: Show slice-RED progress in spec-status
-status: active
+status: archived
 kind: code
-# kind:code — per-task gates declared in tasks.md; list below is a human-readable summary only
 gate:
   - path: scripts/_lib.test.ts
     level: unit
@@ -15,6 +14,7 @@ depends_on:
   - '035'
   - 039-slice-red-tdd
 supersedes: null
+archived: '2026-04-28'
 ---
 
 ## Intent
