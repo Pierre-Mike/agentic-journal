@@ -1,10 +1,10 @@
 # Tasks — 046-do-auto-headless
 
-- [ ] 1. Write gate fixture (RED until tasks 2-3 land)
+- [ ] 1. Write gate fixture + shared branching helper (RED until tasks 2-3 land)
   - agent: main
   - depends: []
-  - file_targets: [scripts/smoke-do-auto-flow.ts]
-  - boundary: [scripts/smoke-do-auto-flow.ts]
+  - file_targets: [scripts/smoke-do-auto-flow.ts, scripts/do-auto-branch.ts]
+  - boundary: [scripts/smoke-do-auto-flow.ts, scripts/do-auto-branch.ts]
 
 - [ ] 2. Write auto-aligner agent
   - agent: main
