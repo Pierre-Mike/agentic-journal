@@ -3,7 +3,9 @@
 /**
  * Gate smoke check for alignment.md files.
  *
- * Usage: bun scripts/check-alignment-mailbox.ts <path-to-alignment.md>
+ * Usage:
+ *   bun scripts/check-alignment-mailbox.ts <path-to-alignment.md>
+ *   bun scripts/check-alignment-mailbox.ts  (defaults to this spec's alignment.md)
  *
  * Validates:
  * - YAML frontmatter with 4 required keys: created, status, confidence, intent_hash
@@ -12,7 +14,8 @@
  * Exits 0 on valid, non-zero with stderr message on invalid.
  */
 
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 
 const REQUIRED_FRONTMATTER_KEYS = ["created", "status", "confidence", "intent_hash"];
 const REQUIRED_H2_SECTIONS = [
@@ -22,20 +25,32 @@ const REQUIRED_H2_SECTIONS = [
 	"Non-obvious Decisions",
 ];
 
+function findRepoRoot(): string {
+	let dir = process.cwd();
+	while (true) {
+		if (existsSync(join(dir, ".git"))) return dir;
+		const parent = dirname(dir);
+		if (parent === dir) throw new Error("Could not find repo root (.git directory)");
+		dir = parent;
+	}
+}
+
 function main() {
 	const args = process.argv.slice(2);
 
+	let filePath: string;
 	if (args.length === 0) {
-		// biome-ignore lint/suspicious/noConsole: CLI script requires stderr output
-		console.error("Usage: bun scripts/check-alignment-mailbox.ts <path-to-alignment.md>");
-		process.exit(1);
-	}
-
-	const filePath = args[0];
-	if (!filePath) {
-		// biome-ignore lint/suspicious/noConsole: CLI script requires stderr output
-		console.error("Missing file path argument");
-		process.exit(1);
+		// Workflow gate mode: default to this spec's alignment.md
+		const repoRoot = findRepoRoot();
+		filePath = join(repoRoot, "specs/active/043-persist-alignment-mailbox/alignment.md");
+	} else {
+		const argPath = args[0];
+		if (!argPath) {
+			// biome-ignore lint/suspicious/noConsole: CLI script requires stderr output
+			console.error("Missing file path argument");
+			process.exit(1);
+		}
+		filePath = argPath;
 	}
 
 	let content: string;
