@@ -1,7 +1,7 @@
 ---
 id: 039-slice-red-tdd
 title: Slice-RED TDD with judge per slice
-status: active
+status: archived
 kind: workflow
 gate: scripts/smoke-slice-red.ts
 created: 2026-04-28T00:00:00.000Z
@@ -12,6 +12,7 @@ depends_on:
   - '035'
   - 038-refactor-pass-after-green
 supersedes: null
+archived: '2026-04-28'
 ---
 
 ## Intent
