@@ -143,11 +143,20 @@ Inside the worktree, write in this order. `proposal.md` comes first because the 
 
 **5a. `proposal.md`** — based on `specs/_template/proposal.md`. Fill frontmatter (id, title, status=active, kind, gate, created, owner=main, depends_on, supersedes=null). Body: Intent, Constraints, Acceptance criteria (as `- [ ]`), Context.
 
-**5b. Gate artifact (RED)** — For `kind: rule | workflow | writeup` only: failing test file / empty writeup / not-yet-implemented rule / exit-1 smoke. See `specs/constitution.md` §4 for per-kind details. For `kind: code`, skip — per-task gates are written in Step 6 per-slice.
+**5b. `alignment.md`** — copy `.agentic/last-alignment.md` (the mailbox written by the `align` skill at the end of its 4-layer flow) into the spec folder. Canonical intent record consumed by `spec-tester`, `spec-judge`, and auto-pilot agents — they read it instead of relying on conversation context.
 
-**5c. `design.md`** — Approach, Files touched, Decisions, Out of scope. Skip empty sections.
+```bash
+cp .agentic/last-alignment.md specs/active/<id>-<slug>/alignment.md
+bun scripts/check-alignment-mailbox.ts specs/active/<id>-<slug>/alignment.md
+```
 
-**5d. `tasks.md`** — ordered, typed. Each task declares `agent: main`, `depends: []`, `file_targets: [...]`, `boundary: [...]`. For `kind: code` specs, each task also declares `gate: <path>` — the gate file for that slice. Mark `[P]` on parallel-safe siblings.
+If the mailbox is missing or fails the validator, abort — the spec was launched without a fresh `align` run. Re-run `align` (which writes the mailbox) before retrying `/do`.
+
+**5c. Gate artifact (RED)** — For `kind: rule | workflow | writeup` only: failing test file / empty writeup / not-yet-implemented rule / exit-1 smoke. See `specs/constitution.md` §4 for per-kind details. For `kind: code`, skip — per-task gates are written in Step 6 per-slice.
+
+**5d. `design.md`** — Approach, Files touched, Decisions, Out of scope. Skip empty sections.
+
+**5e. `tasks.md`** — ordered, typed. Each task declares `agent: main`, `depends: []`, `file_targets: [...]`, `boundary: [...]`. For `kind: code` specs, each task also declares `gate: <path>` — the gate file for that slice. Mark `[P]` on parallel-safe siblings.
 
 Commit the scaffold on the spec branch:
 ```bash
