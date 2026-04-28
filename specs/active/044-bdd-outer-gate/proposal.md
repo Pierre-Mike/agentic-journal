@@ -35,3 +35,5 @@ Add a top-level (BDD-style) acceptance gate per spec, distinct from per-slice ga
 ## Context
 
 Builds on spec 043 (persist-alignment-mailbox) which ensures `alignment.md` is available for gate validation. The outer gate is scoped to `alignment.md` — it tests the spec's integrated behavior as stated in the alignment document. Per-slice gates remain scoped to individual task boundaries.
+
+Files touched: `.claude/agents/spec-tester.md`, `.claude/agents/spec-judge.md`, `.claude/skills/do/SKILL.md`, `scripts/spec-complete.ts`, `specs/constitution.md`.
