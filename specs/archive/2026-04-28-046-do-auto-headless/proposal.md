@@ -1,13 +1,15 @@
 ---
 id: 046-do-auto-headless
 title: headless /do-auto + ambiguity gate
-status: active
+status: archived
 kind: workflow
 gate: scripts/smoke-do-auto-flow.ts
-created: 2026-04-28
+created: 2026-04-28T00:00:00.000Z
 owner: main
-depends_on: [045-replan-hook]
+depends_on:
+  - 045-replan-hook
 supersedes: null
+archived: '2026-04-28'
 ---
 
 ## Intent
