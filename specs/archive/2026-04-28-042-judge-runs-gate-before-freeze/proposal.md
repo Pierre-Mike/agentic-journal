@@ -1,9 +1,8 @@
 ---
 id: 042-judge-runs-gate-before-freeze
 title: Judge runs gate before freezing
-status: active
+status: archived
 kind: code
-# kind:code — per-task gates declared in tasks.md; list below is a human-readable derived summary only.
 gate:
   - path: scripts/red-proof.test.ts
     level: unit
@@ -11,11 +10,12 @@ gate:
     level: e2e
   - path: .claude/agents/spec-judge.md
     level: integration
-created: 2026-04-28
+created: 2026-04-28T00:00:00.000Z
 owner: main
 depends_on:
   - 039-slice-red-tdd
 supersedes: null
+archived: '2026-04-28'
 ---
 
 ## Intent
