@@ -84,17 +84,70 @@ export interface RunProofResult {
 	stdout: string;
 }
 
+const TAIL_LINES = 200;
+
+function tailTruncate(text: string): string {
+	const lines = text.split("\n");
+	// If the text ends with a newline, the last element is ""; don't count it as a line
+	const hasTrailingNewline = text.endsWith("\n");
+	const contentLines = hasTrailingNewline ? lines.slice(0, -1) : lines;
+	if (contentLines.length <= TAIL_LINES) return text;
+	const kept = contentLines.slice(contentLines.length - TAIL_LINES);
+	return `... (truncated, kept last ${TAIL_LINES} lines)\n${kept.join("\n")}${hasTrailingNewline ? "\n" : ""}`;
+}
+
 /**
  * Spawns the gate process, captures stderr+stdout, enforces timeout.
  * - stderr and stdout are each truncated to the last 200 lines.
  * - If truncated, a marker line is prepended: `... (truncated, kept last 200 lines)`
  * - Timeout kills the process and returns exitCode 124.
  * - Always resolves (never rejects).
- *
- * NOT YET IMPLEMENTED — throws to keep gate RED.
  */
-export async function runProof(_input: RunProofInput): Promise<RunProofResult> {
-	throw new Error("runProof: not implemented (slice 2)");
+export async function runProof(input: RunProofInput): Promise<RunProofResult> {
+	const { gatePath, cwd, timeoutMs = 60_000 } = input;
+	const { runnable, cmd } = pickRunner(gatePath);
+
+	if (!runnable) {
+		return {
+			exitCode: 127,
+			command: [],
+			durationMs: 0,
+			stderr: "",
+			stdout: "",
+		};
+	}
+
+	const start = Date.now();
+
+	const proc = Bun.spawn(cmd, {
+		cwd,
+		stdout: "pipe",
+		stderr: "pipe",
+	});
+
+	let timedOut = false;
+	const timer = setTimeout(() => {
+		timedOut = true;
+		proc.kill();
+	}, timeoutMs);
+
+	const [exitCode, stdoutBuf, stderrBuf] = await Promise.all([
+		proc.exited,
+		new Response(proc.stdout).text(),
+		new Response(proc.stderr).text(),
+	]);
+
+	clearTimeout(timer);
+
+	const durationMs = Date.now() - start;
+
+	return {
+		exitCode: timedOut ? 124 : exitCode,
+		command: cmd,
+		durationMs,
+		stderr: tailTruncate(stderrBuf),
+		stdout: tailTruncate(stdoutBuf),
+	};
 }
 
 // ---------------------------------------------------------------------------
