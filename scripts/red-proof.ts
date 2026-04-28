@@ -62,9 +62,7 @@ export function formatProof(input: FormatProofInput): string {
 }
 
 // ---------------------------------------------------------------------------
-// Slice 2: runProof — spawn + capture + truncation + timeout
-// NOT YET IMPLEMENTED. The smoke entry below will fail (non-zero exit) until
-// this is implemented.
+// runProof — spawn + capture + truncation + timeout
 // ---------------------------------------------------------------------------
 
 export interface RunProofInput {
@@ -151,14 +149,12 @@ export async function runProof(input: RunProofInput): Promise<RunProofResult> {
 }
 
 // ---------------------------------------------------------------------------
-// Smoke entry — gate for spec 042 slice 2
+// Smoke entry
 //
-// When run as: bun run scripts/red-proof.ts <gatePath> [outPath]
+// Usage: bun run scripts/red-proof.ts <gatePath> [outPath]
 //   1. Calls runProof({ gatePath, cwd, timeoutMs: 60_000 })
-//   2. Writes red-proof-N.txt to outPath (default: cwd/red-proof-smoke.txt)
-//   3. Exits 0 on success (proof file is the artifact)
-//
-// While runProof is not implemented, this exits non-zero (RED).
+//   2. Writes formatProof output to outPath (default: cwd/red-proof-smoke.txt)
+//   3. Always exits 0 — proof file is the artifact
 // ---------------------------------------------------------------------------
 
 if (import.meta.main) {
@@ -174,13 +170,7 @@ if (import.meta.main) {
 
 	try {
 		const result = await runProof({ gatePath, cwd, timeoutMs: 60_000 });
-		const text = formatProof({
-			exitCode: result.exitCode,
-			command: result.command,
-			durationMs: result.durationMs,
-			stderr: result.stderr,
-			stdout: result.stdout,
-		});
+		const text = formatProof(result);
 		await Bun.write(outPath, text);
 		process.stdout.write(`red-proof written to ${outPath}\n`);
 		process.exit(0);
