@@ -180,3 +180,50 @@ export const realFs: Fs = {
 		return existsSync(path);
 	},
 };
+
+// ---------------------------------------------------------------------------
+// Slice-RED helpers
+// ---------------------------------------------------------------------------
+
+export interface TaskGateEntry {
+	readonly ordinal: number;
+	readonly gatePath: string;
+	readonly frozen: boolean;
+}
+
+/**
+ * Parse the `gate:` field from each task in a `tasks.md` file.
+ * Returns one entry per task that declares a `gate:` field, with ordinals
+ * starting at 1. The `frozen` field is true if the corresponding
+ * `.gate-frozen-N` sentinel file exists in `specDir`.
+ *
+ * Only applies to `kind: code` specs. For other kinds, returns [].
+ */
+export function taskGates(specDir: string): readonly TaskGateEntry[] {
+	const tasksPath = join(specDir, "tasks.md");
+	if (!existsSync(tasksPath)) return [];
+
+	const lines = readFileSync(tasksPath, "utf-8").split("\n");
+	const entries: TaskGateEntry[] = [];
+	let ordinal = 0;
+	let inTask = false;
+
+	for (const line of lines) {
+		const taskMatch = line.match(/^- \[[ x]\]\s+.+$/);
+		if (taskMatch) {
+			inTask = true;
+			continue;
+		}
+		if (!inTask) continue;
+		const gateMatch = line.match(/^\s+-\s+gate:\s*(.+)$/);
+		if (gateMatch) {
+			ordinal += 1;
+			const gatePath = (gateMatch[1] ?? "").trim();
+			const sentinelPath = join(specDir, `.gate-frozen-${ordinal}`);
+			const frozen = existsSync(sentinelPath);
+			entries.push({ ordinal, gatePath, frozen });
+		}
+	}
+
+	return entries;
+}

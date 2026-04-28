@@ -401,6 +401,76 @@ function registerTests(): void {
 			expect(combined).toMatch(/030/);
 		});
 	});
+
+	// ----------------------------------------------------------------
+	// spec-039: parseTasksFile captures per-task gate: field
+	// ----------------------------------------------------------------
+	describe("parseTasksFile — gate: field parsing (spec-039)", () => {
+		function getParseTasksFile(): (
+			path: string,
+		) => readonly { gate?: string | undefined; title: string; file_targets: readonly string[] }[] {
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			const mod = require("./spec-lint.ts") as Record<string, unknown>;
+			if (typeof mod.parseTasksFile !== "function") {
+				throw new Error("parseTasksFile is not exported from spec-lint.ts");
+			}
+			return mod.parseTasksFile as (
+				path: string,
+			) => readonly { gate?: string | undefined; title: string; file_targets: readonly string[] }[];
+		}
+
+		test("task with gate: field is parsed correctly", () => {
+			const parseTasksFile = getParseTasksFile();
+			const { writeFileSync, mkdtempSync } = require("node:fs") as typeof import("node:fs");
+			const { join } = require("node:path") as typeof import("node:path");
+			const { tmpdir } = require("node:os") as typeof import("node:os");
+			const tmp = mkdtempSync(join(tmpdir(), "spec-lint-gate-test-"));
+			const tasksPath = join(tmp, "tasks.md");
+			writeFileSync(
+				tasksPath,
+				[
+					"# Tasks",
+					"",
+					"- [ ] 1. First slice",
+					"  - agent: main",
+					"  - depends: []",
+					"  - gate: scripts/smoke-foo.ts",
+					"  - file_targets: [src/foo.ts]",
+					"  - boundary: [src/foo.ts]",
+					"",
+				].join("\n"),
+			);
+			const tasks = parseTasksFile(tasksPath);
+			expect(tasks.length).toBe(1);
+			expect(tasks[0]?.gate).toBe("scripts/smoke-foo.ts");
+			expect(tasks[0]?.title).toBe("1. First slice");
+		});
+
+		test("task without gate: field has gate undefined", () => {
+			const parseTasksFile = getParseTasksFile();
+			const { writeFileSync, mkdtempSync } = require("node:fs") as typeof import("node:fs");
+			const { join } = require("node:path") as typeof import("node:path");
+			const { tmpdir } = require("node:os") as typeof import("node:os");
+			const tmp = mkdtempSync(join(tmpdir(), "spec-lint-no-gate-test-"));
+			const tasksPath = join(tmp, "tasks.md");
+			writeFileSync(
+				tasksPath,
+				[
+					"# Tasks",
+					"",
+					"- [ ] 1. Non-code task",
+					"  - agent: main",
+					"  - depends: []",
+					"  - file_targets: [scripts/foo.ts]",
+					"  - boundary: [scripts/foo.ts]",
+					"",
+				].join("\n"),
+			);
+			const tasks = parseTasksFile(tasksPath);
+			expect(tasks.length).toBe(1);
+			expect(tasks[0]?.gate).toBeUndefined();
+		});
+	});
 }
 
 /**

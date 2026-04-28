@@ -5,9 +5,11 @@
  *   - wrangler.toml requires an active spec targeting it
  *   - content/posts/*.mdx requires an active spec of kind:writeup targeting it
  *   - specs/archive/** is immutable
- *   - A spec's `gate:` path is frozen once `.gate-frozen` sentinel exists
- *     (spec 027-dual-agent-tdd — prevents the spec-implementer from editing
- *     tests the spec-judge has already approved)
+ *   - A spec's per-task gate path is frozen once `.gate-frozen-N` sentinel
+ *     exists for that slice (spec 039-slice-red-tdd — prevents the
+ *     spec-implementer from editing tests the spec-judge has already approved)
+ *   - Bare `.gate-frozen` is inert — never created, never checked after
+ *     spec 039 migration.
  *
  * Fail-closed discipline (spec 008-hook-fail-open):
  *   Claude Code only treats exit code 2 as "block"; any other non-zero exit
@@ -32,31 +34,30 @@ function findRepoRoot(filePath: string, fallback: string): string {
 	}
 }
 
-function parseGatePaths(proposalBody: string): string[] {
-	const singleMatch = proposalBody.match(/^gate:\s*(.+)$/m);
-	if (singleMatch) {
-		const val = singleMatch[1].trim();
-		if (val.length > 0 && !val.startsWith("-")) return [val];
+function parseTaskGatePaths(tasksBody: string): string[] {
+	const paths: string[] = [];
+	const lines = tasksBody.split("\n");
+	for (const line of lines) {
+		const m = line.match(/^\s+-\s+gate:\s*(.+)$/);
+		if (m) {
+			const p = (m[1] ?? "").trim();
+			if (p) paths.push(p);
+		}
 	}
-	const multiMatch = proposalBody.match(/^gate:\s*\n((?:\s+-\s+.+\n?)+)/m);
-	if (multiMatch) {
-		return multiMatch[1]
-			.split("\n")
-			.map((l) => l.replace(/^\s*-\s+/, "").trim())
-			.filter(Boolean);
-	}
-	return [];
+	return paths;
 }
 
 /**
- * Returns the slug of the active spec whose gate is frozen AND matches
- * `filePath`, or null if no such spec exists. The spec's `.gate-frozen`
- * sentinel must exist in its folder for the freeze to be in effect.
+ * Finds the active spec whose per-task gate path matches `filePath` AND whose
+ * corresponding `.gate-frozen-N` sentinel exists. Returns the match with slice
+ * ordinal and sentinel path, or null if no frozen slice matches.
+ *
+ * Bare `.gate-frozen` (without ordinal) is inert — never checked.
  */
-export function findFrozenGateForPath(
+export function findSliceForPath(
 	cwd: string,
 	filePath: string,
-): { slug: string; gatePath: string } | null {
+): { slug: string; gatePath: string; ordinal: number; sentinelPath: string } | null {
 	const repoRoot = findRepoRoot(filePath, cwd);
 	const activeDir = join(repoRoot, "specs", "active");
 	if (!existsSync(activeDir)) return null;
@@ -64,16 +65,25 @@ export function findFrozenGateForPath(
 	const relTarget = absTarget.startsWith(`${repoRoot}/`)
 		? absTarget.slice(repoRoot.length + 1)
 		: absTarget;
+
 	for (const slug of readdirSync(activeDir)) {
 		if (slug.startsWith("_") || slug.startsWith(".")) continue;
 		const specDir = join(activeDir, slug);
-		const proposal = join(specDir, "proposal.md");
-		const frozen = join(specDir, ".gate-frozen");
-		if (!existsSync(proposal) || !existsSync(frozen)) continue;
-		const body = readFileSync(proposal, "utf-8");
-		for (const gatePath of parseGatePaths(body)) {
-			if (gatePath === relTarget || gatePath === absTarget) {
-				return { slug, gatePath };
+		const tasksPath = join(specDir, "tasks.md");
+		if (!existsSync(tasksPath)) continue;
+
+		const tasksBody = readFileSync(tasksPath, "utf-8");
+		const gatePaths = parseTaskGatePaths(tasksBody);
+
+		for (let i = 0; i < gatePaths.length; i++) {
+			const gp = gatePaths[i];
+			if (!gp) continue;
+			if (gp !== relTarget && gp !== absTarget) continue;
+			const ordinal = i + 1;
+			const sentinelName = `.gate-frozen-${ordinal}`;
+			const sentinelPath = join(specDir, sentinelName);
+			if (existsSync(sentinelPath)) {
+				return { slug, gatePath: gp, ordinal, sentinelPath };
 			}
 		}
 	}
@@ -84,11 +94,11 @@ function enforce(event: ToolEvent): void {
 	const filePath = event.tool_input.file_path as string | undefined;
 	if (!filePath) return;
 
-	const frozen = findFrozenGateForPath(event.cwd, filePath);
-	if (frozen) {
+	const frozenSlice = findSliceForPath(event.cwd, filePath);
+	if (frozenSlice) {
 		block(
 			event,
-			`spec ${frozen.slug} gate is frozen; edits to ${frozen.gatePath} are not allowed until the spec is archived or specs/active/${frozen.slug}/.gate-frozen is manually removed.`,
+			`spec ${frozenSlice.slug} slice ${frozenSlice.ordinal} gate is frozen; edits to ${frozenSlice.gatePath} are not allowed until the spec is archived or ${frozenSlice.sentinelPath} is manually removed.`,
 			filePath,
 		);
 	}

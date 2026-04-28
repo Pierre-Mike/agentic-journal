@@ -11,7 +11,7 @@
 
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import { gateEntries, gatePaths, listActiveSpecs, type Spec } from "./_lib";
+import { gateEntries, gatePaths, listActiveSpecs, type Spec, taskGates } from "./_lib";
 import { checkWorkflow } from "./gates/smoke";
 import { checkWriteup } from "./gates/writeup";
 import { type ParsedTask, parseTasksFile, validateBoundary } from "./spec-lint";
@@ -99,7 +99,26 @@ async function verifyGate(spec: Spec): Promise<GateResult> {
 			return checkWriteup(gatePaths(spec));
 	}
 
-	// For code and rule kinds: iterate every gate entry
+	// For kind:code: use slice-aware gate verification if per-task gates exist
+	if (spec.frontmatter.kind === "code") {
+		const slices = taskGates(spec.dir);
+		if (slices.length > 0) {
+			// Scaffold state: no slices frozen yet — return green (RED is correct)
+			const frozenSlices = slices.filter((s) => s.frozen);
+			if (frozenSlices.length === 0) {
+				return { pass: true, message: "scaffold state — no slices frozen yet (RED is correct)" };
+			}
+			// Enforce only frozen slices; skip unfrozen (still RED)
+			for (const slice of slices) {
+				if (!slice.frozen) continue; // unfrozen slice: skip (RED is correct)
+				const result = await runGateEntry(slice.gatePath);
+				if (!result.pass) return result;
+			}
+			return { pass: true, message: `${frozenSlices.length} frozen slice gate(s) pass` };
+		}
+	}
+
+	// For code and rule kinds (no per-task gates): iterate every gate entry
 	let entries: { path: string; level: string }[];
 	try {
 		entries = [...gateEntries(spec)];

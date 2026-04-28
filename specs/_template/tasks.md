@@ -15,17 +15,24 @@ and `boundary`.
     justify in design.md.
   - Missing `boundary:` is currently a deprecation warning, not an error.
     Add one to every new task.
+- `gate:` (kind:code specs only) — the gate file for this task's slice. The
+  spec-tester writes this file in RED form for slice N; the spec-judge reviews
+  it and touches `.gate-frozen-N` on PASS; the spec-implementer makes it green.
+  Gate paths must be unique within the spec; ordinals 1..N must be contiguous.
+  Non-code specs (rule/workflow/writeup) do NOT declare per-task `gate:` fields.
 
 Parallel-safe siblings are marked `[P]`.
 
 - [ ] 1. First task
   - agent: main
   - depends: []
+  - gate: src/foo.test.ts
   - file_targets: [path/to/file.ts]
   - boundary: [path/to/file.ts]
 - [ ] 2a. [P] Parallel task A
   - agent: main
   - depends: [1]
+  - gate: scripts/smoke-foo-integration.ts
   - file_targets: [path/to/a.ts]
   - boundary: [path/to/a.ts, path/to/a.test.ts]
 - [ ] 2b. [P] Parallel task B

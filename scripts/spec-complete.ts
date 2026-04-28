@@ -12,7 +12,7 @@
 
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { basename, join } from "node:path";
-import { loadSpec } from "./_lib";
+import { loadSpec, taskGates } from "./_lib";
 
 interface TaskLine {
 	index: number;
@@ -141,6 +141,26 @@ async function main(): Promise<void> {
 	}
 
 	console.log(`→ closing spec ${spec.frontmatter.id}`);
+
+	// 0. For kind:code specs: all .gate-frozen-N sentinels must be present
+	if (spec.frontmatter.kind === "code") {
+		const slices = taskGates(specDir);
+		if (slices.length > 0) {
+			const missing = slices.filter((s) => !s.frozen);
+			if (missing.length > 0) {
+				console.error(
+					`✖ kind:code spec requires all per-slice sentinels to be present before closing.`,
+				);
+				console.error(
+					`  Missing .gate-frozen-N for ordinal(s): ${missing.map((s) => s.ordinal).join(", ")}`,
+				);
+				for (const s of missing) {
+					console.error(`    .gate-frozen-${s.ordinal} (gate: ${s.gatePath})`);
+				}
+				process.exit(1);
+			}
+		}
+	}
 
 	// 1. Gate must be green
 	console.log("\n[1/4] verifying gate…");
