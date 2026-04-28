@@ -26,6 +26,5 @@ The gate validator (`scripts/check-alignment-mailbox.ts`) verifies schema compli
 
 ## Out of scope
 
-- Align skill does not yet write the mailbox (that's Task 2)
-- `/do` skill does not yet consume the mailbox (that's Task 3)
-- This spec only scaffolds the schema and validator; the skills are edited but not yet executed in a live flow
+- **`/do` skill mailbox consumption** — Task 3 (editing `.claude/skills/do/SKILL.md` Step 5) was blocked by Claude Code's internal permission guard on `.claude/skills/` paths. The Edit and Write tools were denied. The schema and validator are complete; `/do` integration is deferred to a follow-up session or manual edit. The intended change: after Step 5a writes `proposal.md`, copy `.agentic/last-alignment.md` to `specs/active/<id>-<slug>/alignment.md` before proceeding to Step 5b.
+- This spec demonstrates the alignment.md schema and validates it via the gate. Align skill was updated to document the mailbox write step. Actual end-to-end execution (align writes → do consumes) is deferred.
