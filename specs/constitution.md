@@ -86,6 +86,18 @@ specs/active/<id>/
 `spec-complete` requires **both** `.gate-frozen-outer` AND all `.gate-frozen-1` through `.gate-frozen-N` to be present before archiving a kind:code spec.
 Other kinds accept a scalar path (legacy) or a single-entry list in the proposal-level `gate:`. The scalar form is lifted to `[{path, level: "unit"}]` internally.
 
+### Post-slice re-plan (kind: code only)
+
+After each slice's refactor commit lands, `/do` dispatches `spec-replanner` (haiku) before the next slice's `spec-tester`. The replanner reads the slice's diff and decides whether to patch `tasks.md` for downstream slices.
+
+Three possible outcomes per slice, all exit 0:
+
+- **No-op (most common)** — no commit, slice N+1 uses the original plan
+- **Patch** — commit `replan(<id>): <next-affected-slice-index>`. Replanner edited `tasks.md` and APPENDED to `design.md` "Replanning notes". `tasks.md` is the only mid-spec mutable plan artifact; `proposal.md`, `alignment.md`, gate files, and existing `design.md` content are immutable post-scaffold.
+- **Soft escalation** — commit `replan(<id>): escalation — slice N` containing `replan-escalation.md`. The deviation was too large to auto-patch. The file surfaces in PR review; `/do` continues to the next slice without blocking.
+
+Scope guard: the replanner has Read/Edit on the spec folder only and Bash limited to `git diff`/`log`/`show`/`add`/`commit`. It cannot mutate source code, gate files, sentinels, or any non-spec path. See `.claude/agents/spec-replanner.md` for the full contract.
+
 ## 5. TypeScript axioms
 
 - `strict: true`, `noUncheckedIndexedAccess: true`

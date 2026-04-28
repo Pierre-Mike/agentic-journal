@@ -192,9 +192,38 @@ for slice N = 1..taskCount:
                                 commits GREEN: "code(<id>): GREEN — slice N — <task title>"
                                 refactor pass scoped to task N file_targets
                                 commits refactor: "refactor(<id>): slice N"
+  spec-replanner (slice N)   → diffs slice N's impl vs design.md
+                                if downstream tasks invalidated → patches tasks.md
+                                  + appends design.md "Replanning notes"
+                                  commits: "replan(<id>): <next-affected-slice>"
+                                if deviation too large → writes replan-escalation.md
+                                  commits: "replan(<id>): escalation — slice N"
+                                else → no commit, exit silently
 ```
 
 Sentinels: `.gate-frozen-N` (zero-byte, created by spec-judge on PASS for slice N, inside `specs/active/<id>/`). Bare `.gate-frozen` (no ordinal) is inert — never created, never read.
+
+**Replanner dispatch (after refactor commit, before slice N+1's tester):**
+
+```
+const sha_before_red = git rev-parse HEAD~3        // before RED commit
+const sha_after_refactor = git rev-parse HEAD      // current HEAD
+const file_targets = parse from tasks.md task N
+
+dispatch spec-replanner
+  prompt:
+    spec_id: <id>-<slug>
+    slice_ordinal: N
+    sha_range: <sha_before_red>..<sha_after_refactor>
+    file_targets: <list>
+  await completion
+  // replanner exits 0 in all cases. Outcomes are visible in git log:
+  //   replan(<id>): K        → tasks.md patched, slice K+ uses new plan
+  //   replan(<id>): esc...   → replan-escalation.md surfaces in PR for human
+  //   no commit               → no re-plan needed (most common)
+```
+
+The replanner is `kind: workflow`'s scope-narrowed equivalent for code specs: it is the only role allowed to edit `tasks.md` mid-spec (after the scaffold commit). spec-tester and spec-implementer cannot. spec-judge has no Bash. See `.claude/agents/spec-replanner.md` for the full role contract.
 
 **For non-code kinds — standard work loop:**
 
