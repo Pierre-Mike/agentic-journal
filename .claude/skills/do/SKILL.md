@@ -135,9 +135,9 @@ bun scripts/worktree-open.ts <slug>
 
 Script creates `.agentic/worktrees/<slug>/` on branch `spec/<slug>` from `main`. All subsequent edits use absolute paths under that directory.
 
-### Step 5 — Scaffold the spec (proposal + design + tasks — no gate files yet for kind:code)
+### Step 5 — Scaffold the spec (proposal + outer gate + design + tasks for kind:code)
 
-Step 5 is **scaffold-only** for `kind: code` specs. The spec-tester writes `proposal.md`, `design.md`, and `tasks.md` here. Gate files are NOT written in Step 5 — they are written one at a time per slice in Step 6. For non-code kinds (rule/workflow/writeup), the gate artifact is also written in Step 5 (legacy batch-RED path).
+Step 5 scaffolds the spec structure AND the **outer gate** for `kind: code`. The spec-tester writes `proposal.md`, the outer gate file (from `gate:` frontmatter), `design.md`, and `tasks.md`. Per-slice gates are written one at a time in Step 6. For non-code kinds (rule/workflow/writeup), the gate artifact is also written in Step 5 (legacy batch-RED path).
 
 Inside the worktree, write in this order. `proposal.md` comes first because the pre-tool-use write guard only allows edits to protected paths (`content/posts/*.mdx`, `wrangler.toml`) once an active spec targets them.
 
@@ -152,7 +152,7 @@ bun scripts/check-alignment-mailbox.ts specs/active/<id>-<slug>/alignment.md
 
 If the mailbox is missing or fails the validator, abort — the spec was launched without a fresh `align` run. Re-run `align` (which writes the mailbox) before retrying `/do`.
 
-**5c. Gate artifact (RED)** — For `kind: rule | workflow | writeup` only: failing test file / empty writeup / not-yet-implemented rule / exit-1 smoke. See `specs/constitution.md` §4 for per-kind details. For `kind: code`, skip — per-task gates are written in Step 6 per-slice.
+**5c. Gate artifact (RED)** — For `kind: code`: the outer gate file (path from `gate:` frontmatter in `proposal.md`), written in RED form by spec-tester at scaffold. This is the BDD acceptance test scoped to `alignment.md`. For `kind: rule | workflow | writeup`: failing test file / empty writeup / not-yet-implemented rule / exit-1 smoke. See `specs/constitution.md` §4 for per-kind details. Per-slice gates for kind:code are written in Step 6.
 
 **5d. `design.md`** — Approach, Files touched, Decisions, Out of scope. Skip empty sections.
 
@@ -223,7 +223,7 @@ bun run spec:complete <slug>
 `<slug>` accepts either the full directory name (`002-evals-importance`) or a bare slug (`evals-importance`). Bare slugs resolve by suffix-match; ambiguous matches error out.
 
 The script:
-- Re-verifies the gate
+- Re-verifies the gate (for kind:code, both outer gate and all per-slice gates must be GREEN)
 - Ticks tasks whose `file_targets` were modified in git
 - Archives the spec folder
 - Commits with a conventional message
