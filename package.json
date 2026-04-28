@@ -6,7 +6,7 @@
 	"scripts": {
 		"dev": "astro dev",
 		"build": "astro build",
-		"preview": "astro preview",
+		"preview": "wrangler dev --local --port 4321",
 		"deploy": "wrangler deploy",
 		"typecheck": "astro check && tsc --noEmit",
 		"lint": "biome check --write --no-errors-on-unmatched",
