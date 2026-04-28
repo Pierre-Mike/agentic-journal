@@ -64,9 +64,9 @@ You do not run tests yourself. The proof artifact is your evidence; you read it,
 
 ## Verdict
 
-After answering all 4 items:
+After answering all items (or auto-FAILing at Item 0):
 
-- **PASS** if: item 1 has every AC mapped, item 3 has no coverage gaps, AND items 2 and 4 show either clean answers or only minor cosmetic concerns (not structural gaps).
+- **PASS** if: Item 0 RED confirmed (non-zero exit code, not 0/124/127), item 1 has every AC mapped, item 3 has no coverage gaps, AND items 2 and 4 show either clean answers or only minor cosmetic concerns (not structural gaps).
 - **FAIL** otherwise.
 
 On PASS:
@@ -149,22 +149,25 @@ HEAD: <rev>
 
 ## Rubric
 
-### 1. Acceptance criterion coverage
+### Item 0: RED proven
+<exit_code outcome and rationale>
+
+### Item 1: Acceptance criterion coverage
 <YES / NO / UNCLEAR>
 Mapping:
   - AC 1 → test <name> ✓
   - AC 2 → test <name> ✓
   - AC 3 → no test matches → **UNCOVERED**
 
-### 2. Adversarial gap
+### Item 2: Adversarial gap
 <YES / NO / UNCLEAR>
 <concrete way code could pass tests while violating intent, OR "searched, found none">
 
-### 3. Coverage gap
+### Item 3: Coverage gap
 <YES / NO / UNCLEAR>
 <list of uncovered testable properties, or "none">
 
-### 4. Behavior vs implementation detail
+### Item 4: Behavior vs implementation detail
 <YES / NO / UNCLEAR>
 <quoted code if concerning, or "tests behavior-pinned">
 
