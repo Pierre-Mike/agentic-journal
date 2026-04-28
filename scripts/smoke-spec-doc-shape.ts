@@ -30,8 +30,10 @@ function extractSection(doc: string, headingPattern: RegExp): string | null {
 	let headingLevel = 0;
 
 	for (let i = 0; i < lines.length; i++) {
-		const m = lines[i].match(/^(#{1,6})\s+/);
-		if (m && headingPattern.test(lines[i])) {
+		const line = lines[i];
+		if (line === undefined) continue;
+		const m = line.match(/^(#{1,6})\s+/);
+		if (m?.[1] && headingPattern.test(line)) {
 			startLine = i + 1; // body starts after the heading line
 			headingLevel = m[1].length;
 			break;
@@ -42,12 +44,14 @@ function extractSection(doc: string, headingPattern: RegExp): string | null {
 
 	const bodyLines: string[] = [];
 	for (let i = startLine; i < lines.length; i++) {
-		const m = lines[i].match(/^(#{1,6})\s+/);
-		if (m && m[1].length <= headingLevel) {
+		const line = lines[i];
+		if (line === undefined) continue;
+		const m = line.match(/^(#{1,6})\s+/);
+		if (m?.[1] && m[1].length <= headingLevel) {
 			// reached a sibling or parent heading — stop
 			break;
 		}
-		bodyLines.push(lines[i]);
+		bodyLines.push(line);
 	}
 
 	return bodyLines.join("\n");
@@ -95,7 +99,8 @@ async function main(): Promise<void> {
 	} else {
 		// AC9b: heading itself should contain "RED proven"
 		const item0HeadingMatch = judgeContent.match(/^#{1,4}\s+(Item 0[^\n]*)/im);
-		if (!item0HeadingMatch || !/RED\s+proven/i.test(item0HeadingMatch[1])) {
+		const item0Heading = item0HeadingMatch?.[1];
+		if (!item0Heading || !/RED\s+proven/i.test(item0Heading)) {
 			miss('spec-judge.md: Item 0 heading missing "RED proven" label');
 		}
 
