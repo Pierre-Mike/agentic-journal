@@ -12,9 +12,9 @@ Ordered checklist. Each task declares its `agent`, `depends`, `gate`, `file_targ
 - [ ] 2. Output truncation + timeout semantics in red-proof.ts (extend test matrix)
   - agent: main
   - depends: [1]
-  - gate: scripts/red-proof.ts
-  - file_targets: [scripts/red-proof.ts, scripts/red-proof.test.ts]
-  - boundary: [scripts/red-proof.ts, scripts/red-proof.test.ts]
+  - gate: scripts/red-proof.spawn.test.ts
+  - file_targets: [scripts/red-proof.ts, scripts/red-proof.spawn.test.ts]
+  - boundary: [scripts/red-proof.ts, scripts/red-proof.spawn.test.ts]
 
 - [ ] 3. Update /do SKILL.md Step 6 pseudocode with proof step
   - agent: main
