@@ -1,0 +1,20 @@
+- [ ] 1. Add unit-test step to ci.yml check job
+  - agent: main
+  - depends: []
+  - file_targets: [.github/workflows/ci.yml]
+  - boundary: [.github/workflows/ci.yml]
+- [ ] 2. Gate deploy.yml on a check job
+  - agent: main
+  - depends: [1]
+  - file_targets: [.github/workflows/deploy.yml]
+  - boundary: [.github/workflows/deploy.yml]
+- [ ] 3. Pin bun-version across all workflows [P]
+  - agent: main
+  - depends: []
+  - file_targets: [.github/workflows/ci.yml, .github/workflows/deploy.yml, .github/workflows/preview.yml, .github/workflows/on-spec.yml]
+  - boundary: [.github/workflows/ci.yml, .github/workflows/deploy.yml, .github/workflows/preview.yml, .github/workflows/on-spec.yml]
+- [ ] 4. Switch playwright e2e to built artifact [P]
+  - agent: main
+  - depends: []
+  - file_targets: [playwright.config.ts]
+  - boundary: [playwright.config.ts]
