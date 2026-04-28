@@ -14,13 +14,14 @@
 
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { gateEntries, listActiveSpecs, listArchivedIds, VALID_KINDS } from "./_lib";
+import { gateEntries, listActiveSpecs, listArchivedIds, taskGates, VALID_KINDS } from "./_lib";
 
 export interface ParsedTask {
 	readonly index: number;
 	readonly title: string;
 	readonly file_targets: readonly string[];
 	readonly boundary?: readonly string[] | undefined;
+	readonly gate?: string | undefined;
 }
 
 export interface SchemaReport {
@@ -172,6 +173,7 @@ export function parseTasksFile(path: string): readonly ParsedTask[] {
 		title: string;
 		file_targets: string[];
 		boundary: string[] | undefined;
+		gate: string | undefined;
 	} | null = null;
 
 	const parseBracketList = (raw: string): string[] =>
@@ -190,12 +192,14 @@ export function parseTasksFile(path: string): readonly ParsedTask[] {
 					title: current.title,
 					file_targets: current.file_targets,
 					boundary: current.boundary,
+					gate: current.gate,
 				});
 			current = {
 				index: i,
 				title: taskMatch[2] ?? "",
 				file_targets: [],
 				boundary: undefined,
+				gate: undefined,
 			};
 			continue;
 		}
@@ -208,6 +212,11 @@ export function parseTasksFile(path: string): readonly ParsedTask[] {
 		const bd = line.match(/^\s+-\s+boundary:\s*\[(.*)\]$/);
 		if (bd) {
 			current.boundary = parseBracketList(bd[1] ?? "");
+			continue;
+		}
+		const gt = line.match(/^\s+-\s+gate:\s*(.+)$/);
+		if (gt) {
+			current.gate = (gt[1] ?? "").trim();
 		}
 	}
 	if (current) {
@@ -216,6 +225,7 @@ export function parseTasksFile(path: string): readonly ParsedTask[] {
 			title: current.title,
 			file_targets: current.file_targets,
 			boundary: current.boundary,
+			gate: current.gate,
 		});
 	}
 	return tasks;
@@ -276,10 +286,33 @@ function main(): void {
 
 		// Tasks schema
 		const tasksPath = join(spec.dir, "tasks.md");
-		for (const task of parseTasksFile(tasksPath)) {
+		const parsedTasks = parseTasksFile(tasksPath);
+		for (const task of parsedTasks) {
 			const report = validateTaskSchema(task);
 			for (const e of report.errors) errors.push(`${spec.slug}: ${e}`);
 			for (const w of report.warnings) warnings.push(`${spec.slug}: ${w}`);
+		}
+
+		// Per-task gate validation for kind:code specs
+		if (fm.kind === "code") {
+			const sliceGates = taskGates(spec.dir);
+			// Validate contiguous ordinals 1..N
+			for (let i = 0; i < sliceGates.length; i++) {
+				const entry = sliceGates[i];
+				if (entry && entry.ordinal !== i + 1) {
+					errors.push(
+						`${spec.slug}: per-task gate ordinals must be contiguous from 1 (got ordinal ${entry.ordinal} at position ${i + 1})`,
+					);
+				}
+			}
+			// Validate uniqueness of gate paths
+			const seen = new Set<string>();
+			for (const entry of sliceGates) {
+				if (seen.has(entry.gatePath)) {
+					errors.push(`${spec.slug}: duplicate per-task gate path '${entry.gatePath}'`);
+				}
+				seen.add(entry.gatePath);
+			}
 		}
 	}
 

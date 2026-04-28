@@ -30,23 +30,42 @@ If an axiom, rule, or transition can be checked deterministically, it MUST NOT b
 
 | Kind | Gate is |
 |---|---|
-| `code` | ≥1 `unit` test file AND ≥1 `integration\|e2e` test file (typed list in `gate:`) |
+| `code` | per-task `gate:` fields in `tasks.md` (slice-RED TDD, one gate per task) |
 | `rule` | a lint rule + fixtures (scalar or single-entry list in `gate:`) |
 | `workflow` | a smoke script (scalar or single-entry list in `gate:`) |
 | `writeup` | a markdown file with required sections (scalar or single-entry list in `gate:`) |
 
 Every spec must declare one `kind` and at least one `gate:`. No exceptions.
 
-`kind: code` specs must use the typed list form:
-```yaml
-gate:
-  - path: src/foo.test.ts
-    level: unit
-  - path: scripts/smoke-foo.ts
-    level: e2e
+### Slice-RED TDD (kind: code only)
+
+`kind: code` specs use per-slice red-green-refactor TDD. Each task in `tasks.md` declares its own `gate:` field — the gate file the spec-tester writes in failing form for that slice. The spec-judge reviews each slice gate and writes `.gate-frozen-N` (zero-byte sentinel) on PASS, where N is the task ordinal (1-indexed, contiguous).
+
+```
+specs/active/<id>/
+  .gate-frozen-1   ← spec-judge approved slice 1
+  .gate-frozen-2   ← spec-judge approved slice 2
+  .gate-frozen-N   ← spec-judge approved slice N
 ```
 
-Other kinds accept a scalar path (legacy) or a single-entry list. The scalar form is lifted to `[{path, level: "unit"}]` internally.
+Rules:
+- Gate paths must be unique within the spec; ordinals 1..N must be contiguous.
+- `spec-complete` requires all `.gate-frozen-1` through `.gate-frozen-N` to be present.
+- `tasks-verify` skips unfrozen slices (RED is correct); enforces only frozen slices.
+- The hook (`enforce.ts`) blocks writes to a slice's gate path when `.gate-frozen-N` exists. Bare `.gate-frozen` (no ordinal) is inert — never created, never read.
+- Non-code specs (rule/workflow/writeup) do NOT use per-task `gate:` fields; they keep the legacy single-gate batch-RED path (no judge, no slice sentinels).
+
+`kind: code` tasks.md example:
+```markdown
+- [ ] 1. First task
+  - gate: src/foo.test.ts
+  - file_targets: [src/foo.ts]
+  - boundary: [src/foo.ts, src/foo.test.ts]
+```
+
+The proposal-level `gate:` for kind:code is a human-readable derived summary of per-task gates; it is NOT a source of truth and is not enforced by spec-lint.
+
+Other kinds accept a scalar path (legacy) or a single-entry list in the proposal-level `gate:`. The scalar form is lifted to `[{path, level: "unit"}]` internally.
 
 ## 5. TypeScript axioms
 

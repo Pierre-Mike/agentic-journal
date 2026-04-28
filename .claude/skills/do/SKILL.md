@@ -135,34 +135,51 @@ bun scripts/worktree-open.ts <slug>
 
 Script creates `.agentic/worktrees/<slug>/` on branch `spec/<slug>` from `main`. All subsequent edits use absolute paths under that directory.
 
-### Step 5 — Author the spec (RED)
+### Step 5 — Scaffold the spec (proposal + design + tasks — no gate files yet for kind:code)
+
+Step 5 is **scaffold-only** for `kind: code` specs. The spec-tester writes `proposal.md`, `design.md`, and `tasks.md` here. Gate files are NOT written in Step 5 — they are written one at a time per slice in Step 6. For non-code kinds (rule/workflow/writeup), the gate artifact is also written in Step 5 (legacy batch-RED path).
 
 Inside the worktree, write in this order. `proposal.md` comes first because the pre-tool-use write guard only allows edits to protected paths (`content/posts/*.mdx`, `wrangler.toml`) once an active spec targets them.
 
 **5a. `proposal.md`** — based on `specs/_template/proposal.md`. Fill frontmatter (id, title, status=active, kind, gate, created, owner=main, depends_on, supersedes=null). Body: Intent, Constraints, Acceptance criteria (as `- [ ]`), Context.
 
-**5b. Gate artifact (RED)** — failing test file / empty writeup / not-yet-implemented rule / exit-1 smoke. See `specs/constitution.md` §4 for per-kind details.
+**5b. Gate artifact (RED)** — For `kind: rule | workflow | writeup` only: failing test file / empty writeup / not-yet-implemented rule / exit-1 smoke. See `specs/constitution.md` §4 for per-kind details. For `kind: code`, skip — per-task gates are written in Step 6 per-slice.
 
 **5c. `design.md`** — Approach, Files touched, Decisions, Out of scope. Skip empty sections.
 
-**5d. `tasks.md`** — ordered, typed. Each task declares `agent: main`, `depends: []`, `file_targets: [...]`. Mark `[P]` on parallel-safe siblings.
+**5d. `tasks.md`** — ordered, typed. Each task declares `agent: main`, `depends: []`, `file_targets: [...]`, `boundary: [...]`. For `kind: code` specs, each task also declares `gate: <path>` — the gate file for that slice. Mark `[P]` on parallel-safe siblings.
 
-Validate inside the worktree:
-```bash
-cd .agentic/worktrees/<slug>
-bun run spec:lint
-bun run tasks:verify   # expected to fail — RED is correct
-```
-
-Commit the RED state on the spec branch:
+Commit the scaffold on the spec branch:
 ```bash
 git add -A
-git commit -m "spec(<id>): RED — <title>"
+git commit -m "spec(<id>): scaffold — <title>"
 ```
 
-### Step 6 — Work the spec
+### Step 6 — Per-slice loop (kind: code) / Work the spec (non-code kinds)
 
-Loop, inside the worktree:
+**For `kind: code` specs — per-slice TDD loop:**
+
+Each task in `tasks.md` declares its own `gate:` path. `/do` runs an N-iteration loop where one slice = one full TDD micro-cycle (spec-tester writes test → spec-judge reviews → spec-implementer makes green → refactor pass):
+
+```
+for slice N = 1..taskCount:
+  attempt = 1
+  while attempt <= 3:
+    spec-tester (slice N)  → writes gate file for task N, commits RED
+                              commit: "spec(<id>): RED — slice N — <task title>"
+    spec-judge (slice N)   → reviews gate file for task N
+                              PASS → touches .gate-frozen-N → break
+                              FAIL → writes tester-review-N.md, attempt++
+  if !.gate-frozen-N after 3 attempts → ESCALATION, draft PR
+  spec-implementer (slice N) → makes slice N green
+                                commits GREEN: "code(<id>): GREEN — slice N — <task title>"
+                                refactor pass scoped to task N file_targets
+                                commits refactor: "refactor(<id>): slice N"
+```
+
+Sentinels: `.gate-frozen-N` (zero-byte, created by spec-judge on PASS for slice N, inside `specs/active/<id>/`). Bare `.gate-frozen` (no ordinal) is inert — never created, never read.
+
+**For non-code kinds — standard work loop:**
 
 ```
 while tasks remain unchecked:

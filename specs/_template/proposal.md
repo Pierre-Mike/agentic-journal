@@ -3,7 +3,13 @@ id: NNN-slug
 title: Short descriptive title
 status: active
 kind: code | rule | workflow | writeup
-# kind:code requires ≥1 unit + ≥1 integration|e2e entry (typed list):
+# kind:code uses slice-RED TDD: each task in tasks.md declares its own gate:
+# field. The proposal-level gate: below is a human-readable derived summary
+# of per-task gates — NOT a source of truth. spec-lint does not enforce it
+# for kind:code. For non-code kinds (rule/workflow/writeup), the proposal-level
+# gate: remains the authoritative single gate.
+#
+# kind:code example (per-task gates declared in tasks.md, listed here for readability):
 gate:
   - path: src/foo.test.ts
     level: unit
