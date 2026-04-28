@@ -125,6 +125,43 @@ Only after the user confirms the corrected section does the flow continue.
 
 ---
 
+## Final Step — Write Alignment Mailbox
+
+After all four layers (Goal, Big Picture, Straightforward Details, Non-obvious Decisions) are confirmed, write the alignment to `.agentic/last-alignment.md` in this exact format:
+
+```yaml
+---
+created: <ISO 8601 timestamp>
+status: confirmed
+confidence: high
+intent_hash: <first 12 hex chars of sha256(original user intent string)>
+---
+
+## Goal
+
+<confirmed goal text>
+
+## Big Picture
+
+<confirmed big picture text, including any ASCII diagrams>
+
+## Straightforward Details
+
+<confirmed straightforward details text, including any ASCII diagrams>
+
+## Non-obvious Decisions
+
+<confirmed non-obvious decisions text, including any ASCII diagrams>
+```
+
+**Compute `intent_hash`**: Take the original user intent string (the first message the user sent to `/align`, before any clarification), hash it with SHA-256, and take the first 12 hex characters.
+
+**File location**: Always write to `.agentic/last-alignment.md` at the repo root. Overwrite any existing file (single-slot mailbox).
+
+**After writing**: Confirm to the user that the alignment was saved to `.agentic/last-alignment.md`.
+
+---
+
 ## Confirmation Format
 
 Every confirmation uses exactly two options — never three, never open-ended:
