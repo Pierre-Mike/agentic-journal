@@ -30,7 +30,7 @@ If an axiom, rule, or transition can be checked deterministically, it MUST NOT b
 
 | Kind | Gate is |
 |---|---|
-| `code` | per-task `gate:` fields in `tasks.md` (slice-RED TDD, one gate per task) |
+| `code` | outer gate (`proposal.md` frontmatter `gate:`) + per-task `gate:` fields in `tasks.md` (slice-RED TDD) |
 | `rule` | a lint rule + fixtures (scalar or single-entry list in `gate:`) |
 | `workflow` | a smoke script (scalar or single-entry list in `gate:`) |
 | `writeup` | a markdown file with required sections (scalar or single-entry list in `gate:`) |
@@ -63,8 +63,27 @@ Rules:
   - boundary: [src/foo.ts, src/foo.test.ts]
 ```
 
-The proposal-level `gate:` for kind:code is a human-readable derived summary of per-task gates; it is NOT a source of truth and is not enforced by spec-lint.
+The proposal-level `gate:` for kind:code is the **outer gate** (BDD acceptance test, source of truth, enforced by spec-complete). Per-task gates in `tasks.md` are the per-slice gates.
 
+
+### Outer gate (kind: code)
+
+For `kind: code` specs, the `gate:` field in `proposal.md` frontmatter is the **outer gate** — a BDD acceptance test scoped to `alignment.md` that verifies the spec's integrated behavior. This is distinct from per-slice gates:
+
+- **Outer gate** (`proposal.md` frontmatter `gate:`): tests the spec as a whole; scaffolded at Step 5; reviewed by spec-judge against `alignment.md`; must be GREEN before archive.
+- **Per-slice gates** (`tasks.md` per-task `gate:`): test individual slice boundaries; one per task; reviewed by spec-judge per slice; each must be GREEN and frozen (`.gate-frozen-N`) before archive.
+
+The outer gate catches integration gaps where per-slice gates all pass but the spec's stated outcome is broken.
+
+Sentinels:
+```
+specs/active/<id>/
+  .gate-frozen-outer  ← spec-judge approved outer gate
+  .gate-frozen-1      ← spec-judge approved slice 1
+  .gate-frozen-N      ← spec-judge approved slice N
+```
+
+`spec-complete` requires **both** `.gate-frozen-outer` AND all `.gate-frozen-1` through `.gate-frozen-N` to be present before archiving a kind:code spec.
 Other kinds accept a scalar path (legacy) or a single-entry list in the proposal-level `gate:`. The scalar form is lifted to `[{path, level: "unit"}]` internally.
 
 ## 5. TypeScript axioms
