@@ -7,7 +7,10 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import { gateEntries, gatePaths, isReady, unresolvedDeps } from "./_lib.ts";
+import { closeSync, mkdtempSync, openSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { gateEntries, gatePaths, isReady, sliceProgress, unresolvedDeps } from "./_lib.ts";
 
 const makeSpec = (gate: unknown, depends_on: string[] = []) => ({
 	slug: "test",
@@ -104,5 +107,57 @@ describe("unresolvedDeps", () => {
 
 	test("missing dep → listed", () => {
 		expect(unresolvedDeps(makeSpec("x.ts", ["001", "002"]), new Set(["001"]))).toEqual(["002"]);
+	});
+});
+
+// ---------------------------------------------------------------------------
+// sliceProgress — RED tests (spec 040, slice 1)
+// ---------------------------------------------------------------------------
+
+function makeFixtureSpecDir(kind: string, taskCount: number, frozenOrdinals: number[]): string {
+	const dir = mkdtempSync(join(tmpdir(), "spec-040-"));
+
+	const proposalMd = `---\nid: 099-test\ntitle: test\nstatus: active\nkind: ${kind}\ngate: scripts/foo.test.ts\ncreated: 2026-01-01\nowner: main\ndepends_on: []\nsupersedes: null\n---\n\n## Intent\n\ntest fixture\n`;
+	writeFileSync(join(dir, "proposal.md"), proposalMd, "utf-8");
+
+	const taskLines: string[] = ["# Tasks", ""];
+	for (let i = 1; i <= taskCount; i++) {
+		taskLines.push(`- [ ] ${i}. Task ${i}`);
+		taskLines.push(`  - agent: main`);
+		taskLines.push(`  - gate: scripts/task${i}.test.ts`);
+	}
+	writeFileSync(join(dir, "tasks.md"), taskLines.join("\n") + "\n", "utf-8");
+
+	for (const ordinal of frozenOrdinals) {
+		closeSync(openSync(join(dir, `.gate-frozen-${ordinal}`), "w"));
+	}
+
+	return dir;
+}
+
+describe("sliceProgress", () => {
+	test("kind:code, 3 tasks, 0 frozen → { frozen: 0, total: 3 }", () => {
+		const dir = makeFixtureSpecDir("code", 3, []);
+		expect(sliceProgress({ specDir: dir })).toEqual({ frozen: 0, total: 3 });
+	});
+
+	test("kind:code, 3 tasks, 2 frozen → { frozen: 2, total: 3 }", () => {
+		const dir = makeFixtureSpecDir("code", 3, [1, 2]);
+		expect(sliceProgress({ specDir: dir })).toEqual({ frozen: 2, total: 3 });
+	});
+
+	test("kind:code, 3 tasks, all 3 frozen → { frozen: 3, total: 3 }", () => {
+		const dir = makeFixtureSpecDir("code", 3, [1, 2, 3]);
+		expect(sliceProgress({ specDir: dir })).toEqual({ frozen: 3, total: 3 });
+	});
+
+	test("kind:rule → null", () => {
+		const dir = makeFixtureSpecDir("rule", 2, []);
+		expect(sliceProgress({ specDir: dir })).toBeNull();
+	});
+
+	test("kind:code, 0 tasks with gate fields → null", () => {
+		const dir = makeFixtureSpecDir("code", 0, []);
+		expect(sliceProgress({ specDir: dir })).toBeNull();
 	});
 });

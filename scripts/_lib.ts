@@ -191,6 +191,30 @@ export interface TaskGateEntry {
 	readonly frozen: boolean;
 }
 
+// ---------------------------------------------------------------------------
+// sliceProgress — spec 040
+// ---------------------------------------------------------------------------
+
+export interface SliceProgress {
+	readonly frozen: number;
+	readonly total: number;
+}
+
+/**
+ * Returns `{ frozen, total }` for kind:code specs with per-task gates.
+ * Returns null if the spec is not kind:code or has no per-task gate fields.
+ */
+export function sliceProgress({ specDir }: { specDir: string }): SliceProgress | null {
+	const spec = loadSpec(specDir);
+	if (!spec || spec.frontmatter.kind !== "code") return null;
+
+	const slices = taskGates(specDir);
+	if (slices.length === 0) return null;
+
+	const frozen = slices.filter((s) => s.frozen).length;
+	return { frozen, total: slices.length };
+}
+
 /**
  * Parse the `gate:` field from each task in a `tasks.md` file.
  * Returns one entry per task that declares a `gate:` field, with ordinals
