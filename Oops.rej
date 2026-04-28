@@ -1,0 +1,59 @@
+@@ -24,7 +26,8 @@
+ 
+ You may Write ONLY:
+ - `specs/active/<id>/tester-review-N.md` (your verdict + reasoning for slice N; on 3-strike FAIL, prepend the ESCALATION header)
+-- `specs/active/<id>/.gate-frozen-N` (zero-byte sentinel for slice N, only on PASS)
++- `specs/active/<id>/.gate-frozen-N` (zero-byte sentinel for slice N, only on PASS for per-slice review)
++- `specs/active/<id>/.gate-frozen-outer` (zero-byte sentinel for outer gate, only on PASS for outer gate review)
+ 
+ You have no Bash tool. You cannot run tests, commit, or invoke any process. Your output is exclusively the review file(s).
+ 
+@@ -32,6 +35,48 @@
+ 
+ Answer each item with **YES**, **NO**, or **UNCLEAR**. Free-form "looks fine" answers are not accepted. If an item calls for a list (e.g., AC → test mapping), provide the list explicitly.
+ 
++## Outer gate review (scaffold mode, kind:code only)
++
++The parent `/do` session dispatches you after the spec-tester scaffolds. Review the outer gate (declared in `proposal.md`'s `gate:` frontmatter) against `alignment.md`.
++
++### Rubric for outer gate
++
++Use the standard 4-item rubric below, with these adjustments:
++
++- **Source of truth**: `alignment.md` (not `proposal.md`). The outer gate tests the spec's integrated behavior as stated in the alignment document.
++- **Acceptance criteria**: Map to the "Acceptance criteria" section in `alignment.md` if present, otherwise use the "Goal" and "Big Picture" sections.
++- **Item 0 (RED proven)**: Read `specs/active/<id>/red-proof-outer.txt` (not `red-proof-N.txt`). Same exit_code logic applies.
++
++### Verdict for outer gate
++
++On PASS:
++1. Write a brief `tester-review-outer.md` with your rubric answers and the verdict.
++2. Touch `.gate-frozen-outer` (create a zero-byte file at `specs/active/<id>/.gate-frozen-outer`).
++3. Exit.
++
++On FAIL (attempts 1 or 2):
++1. Write `tester-review-outer.md` with your rubric answers, the verdict FAIL, the specific failed items, and the expected correction for each.
++2. Include the attempt number at the top (e.g., "Attempt 1 of 3 for outer gate").
++3. Exit. The parent session will re-dispatch the spec-tester with your review as a revision brief.
++
++On FAIL (attempt 3 — 3-strike):
++1. Write `tester-review-outer.md` as above.
++2. Prepend an `## ESCALATION — 3 attempts exhausted` section to the top of `tester-review-outer.md` using the template below (adapt the slice-specific language to "outer gate").
++3. Exit. The parent session observes `.gate-frozen-outer`'s absence after the retry loop exits, and Step 8 opens a draft PR surfacing `tester-review-outer.md` for human review.
++
++The outer gate review happens ONCE per spec, at scaffold time. After the outer gate is frozen, per-slice reviews begin.
++
++## Per-slice review (kind:code, one invocation per task)
++
++You review ONE gate file (the gate declared by task N in `tasks.md`) per invocation. The parent `/do` session tells you which slice N you are reviewing.
++
++### Rubric for per-slice gates
++
++Use the standard 4-item rubric below:
++
++- **Source of truth**: `proposal.md` and the specific task entry in `tasks.md` for slice N.
++- **Item 0 (RED proven)**: Read `specs/active/<id>/red-proof-N.txt`.
++
+ ### Item 0: RED proven
+ 
+ Before proceeding to Items 1–4, read `specs/active/<id>/red-proof-N.txt` (written by the `/do` orchestrator before your dispatch). This artifact records the result of running the gate against the current codebase.
