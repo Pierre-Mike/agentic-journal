@@ -79,7 +79,9 @@ jobs:
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           ISSUE_BODY: ${{ github.event.issue.body }}
         run: |
-          claude -p "/do-auto $ISSUE_BODY" || true
+          claude -p "/do-auto $ISSUE_BODY" \
+            --allowedTools "Bash(git:*),Bash(gh:*),Bash(bun:*),Bash(mkdir:*),Bash(mv:*),Bash(cp:*),Bash(rm:*),Edit,Write,Read,Glob,Grep" \
+            || true
           if [ -f .agentic/last-alignment.md ]; then
             CONF=$(grep -E '^confidence:' .agentic/last-alignment.md | awk '{print $2}')
           else
