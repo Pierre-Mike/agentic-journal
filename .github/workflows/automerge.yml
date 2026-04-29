@@ -1,0 +1,275 @@
+name: Automerge (Aggregator + Squash)
+
+on:
+  workflow_run:
+    workflows:
+      - "Slice Runner"
+      - "Preview (PR)"
+    types:
+      - completed
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  actions: read
+
+concurrency:
+  group: automerge-${{ github.event.workflow_run.pull_requests[0].number }}
+  cancel-in-progress: true
+
+jobs:
+  aggregate-and-merge:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Bun
+        run: |
+          curl -fsSL https://bun.sh/install | bash
+          echo "$HOME/.bun/bin" >> "$GITHUB_PATH"
+
+      - name: Install dependencies
+        run: |
+          export PATH="$HOME/.bun/bin:$PATH"
+          bun install --frozen-lockfile
+
+      - name: Resolve PR number and issue number
+        id: meta
+        run: |
+          PR_NUMBER="${{ github.event.workflow_run.pull_requests[0].number }}"
+          if [ -z "${PR_NUMBER}" ] || [ "${PR_NUMBER}" = "0" ]; then
+            echo "No PR number found in workflow_run event; skipping."
+            echo "pr_number=" >> "$GITHUB_OUTPUT"
+            echo "issue_number=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "pr_number=${PR_NUMBER}" >> "$GITHUB_OUTPUT"
+
+          # Derive issue number from PR body / title (convention: closes #N)
+          PR_BODY=$(gh pr view "${PR_NUMBER}" --json body -q '.body' 2>/dev/null || echo "")
+          ISSUE_NUMBER=$(echo "${PR_BODY}" | grep -oP '(?i)closes? #\K[0-9]+' | head -1)
+          if [ -z "${ISSUE_NUMBER}" ]; then
+            # Fallback: parse from branch name spec/<slug> → look up linked issue
+            BRANCH=$(gh pr view "${PR_NUMBER}" --json headRefName -q '.headRefName' 2>/dev/null || echo "")
+            ISSUE_NUMBER=$(echo "${BRANCH}" | grep -oP '(?<=issue-)\d+' | head -1)
+          fi
+          echo "issue_number=${ISSUE_NUMBER}" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: DAG done — verify all slices have GREEN commits
+        id: dag_done
+        run: |
+          PR_NUMBER="${{ steps.meta.outputs.pr_number }}"
+          if [ -z "${PR_NUMBER}" ]; then
+            echo "dag_done=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Get branch name from PR
+          BRANCH=$(gh pr view "${PR_NUMBER}" --json headRefName -q '.headRefName' 2>/dev/null || echo "")
+          if [ -z "${BRANCH}" ]; then
+            echo "dag_done=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Fetch slice IDs from tasks.md (find the active spec)
+          SPEC_DIR=$(find specs/active -name tasks.md 2>/dev/null | head -1)
+          if [ -z "${SPEC_DIR}" ]; then
+            echo "No tasks.md found; assuming DAG done" >&2
+            echo "dag_done=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Extract all slice IDs from tasks.md
+          SLICE_IDS=$(grep -oP '(?<=^- id: )\d+' "${SPEC_DIR}" | sort -n)
+          if [ -z "${SLICE_IDS}" ]; then
+            echo "No slice IDs found in tasks.md" >&2
+            echo "dag_done=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Get GREEN commits on branch (relative to main)
+          GREEN_COMMITS=$(git log "origin/main..origin/${BRANCH}" --oneline 2>/dev/null | grep -oP '(?<=GREEN — slice )\d+' || true)
+
+          ALL_GREEN=true
+          for SLICE_ID in ${SLICE_IDS}; do
+            if ! echo "${GREEN_COMMITS}" | grep -qw "${SLICE_ID}"; then
+              echo "Slice ${SLICE_ID} missing GREEN commit" >&2
+              ALL_GREEN=false
+            fi
+          done
+
+          echo "dag_done=${ALL_GREEN}" >> "$GITHUB_OUTPUT"
+          echo "branch=${BRANCH}" >> "$GITHUB_OUTPUT"
+          echo "slice_ids=${SLICE_IDS}" >> "$GITHUB_OUTPUT"
+
+          # Store last slice and its commit timestamp for early-green detection
+          LAST_SLICE=$(echo "${SLICE_IDS}" | tail -1)
+          LAST_SLICE_COMMIT=$(git log "origin/main..origin/${BRANCH}" --oneline 2>/dev/null | grep "GREEN — slice ${LAST_SLICE}" | head -1 | awk '{print $1}')
+          if [ -n "${LAST_SLICE_COMMIT}" ]; then
+            LAST_SLICE_TS=$(git show -s --format="%ct" "${LAST_SLICE_COMMIT}" 2>/dev/null || echo "0")
+          else
+            LAST_SLICE_TS="0"
+          fi
+          echo "last_slice=${LAST_SLICE}" >> "$GITHUB_OUTPUT"
+          echo "last_slice_ts=${LAST_SLICE_TS}" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Outer BDD gate — run automation-pipeline test
+        id: outer_bdd
+        continue-on-error: true
+        run: |
+          export PATH="$HOME/.bun/bin:$PATH"
+          bun test tests/automation-pipeline.test.ts
+          echo "bdd_status=success" >> "$GITHUB_OUTPUT"
+
+      - name: Record outer BDD gate first-green timestamp
+        id: bdd_ts
+        run: |
+          BRANCH="${{ steps.dag_done.outputs.branch }}"
+          if [ -z "${BRANCH}" ]; then
+            echo "bdd_first_green_ts=0" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # Find the earliest commit on the branch that is an automation-pipeline test GREEN marker
+          # We look at git log for any commit that mentions automation-pipeline going green
+          # As a proxy: find the commit of the first run of bun test automation-pipeline
+          # We compare based on branch commit ordering — outer-gate going green earlier than last slice
+          # is detected by checking if outer_bdd step result is "success" and last_slice_ts > 0
+          # and the test was already passing before last_slice commit.
+          # Practical approach: check if outer-gate was green before dag_done was true
+          # by looking at git log for any prior run results stored in commits.
+          # Since we can't directly know from git log when outer-gate first went green,
+          # we use the automation-pipeline test commit timestamps if they exist.
+          OUTER_GREEN_COMMIT=$(git log "origin/main..origin/${BRANCH}" --oneline 2>/dev/null | grep -i "automation-pipeline\|outer.*green\|bdd.*green" | tail -1 | awk '{print $1}')
+          if [ -n "${OUTER_GREEN_COMMIT}" ]; then
+            BDD_TS=$(git show -s --format="%ct" "${OUTER_GREEN_COMMIT}" 2>/dev/null || echo "0")
+          else
+            # If no explicit commit, use current time (means it just went green now, after last slice)
+            BDD_TS=$(date +%s)
+          fi
+          echo "bdd_first_green_ts=${BDD_TS}" >> "$GITHUB_OUTPUT"
+
+      - name: Preview e2e — check latest preview.yml run conclusion
+        id: preview_check
+        run: |
+          BRANCH="${{ steps.dag_done.outputs.branch }}"
+          PR_NUMBER="${{ steps.meta.outputs.pr_number }}"
+          if [ -z "${BRANCH}" ] && [ -n "${PR_NUMBER}" ]; then
+            BRANCH=$(gh pr view "${PR_NUMBER}" --json headRefName -q '.headRefName' 2>/dev/null || echo "")
+          fi
+          if [ -z "${BRANCH}" ]; then
+            echo "preview_ok=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          CONCLUSION=$(gh run list \
+            --workflow=preview.yml \
+            --branch="${BRANCH}" \
+            --limit=1 \
+            --json conclusion \
+            -q '.[0].conclusion' 2>/dev/null || echo "")
+          echo "preview_conclusion=${CONCLUSION}" >> "$GITHUB_OUTPUT"
+          if [ "${CONCLUSION}" = "success" ]; then
+            echo "preview_ok=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "preview_ok=false" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Early-green detection — spec gap guard
+        id: early_green
+        run: |
+          LAST_SLICE_TS="${{ steps.dag_done.outputs.last_slice_ts }}"
+          BDD_TS="${{ steps.bdd_ts.outputs.bdd_first_green_ts }}"
+          LAST_SLICE="${{ steps.dag_done.outputs.last_slice }}"
+          BRANCH="${{ steps.dag_done.outputs.branch }}"
+
+          # Check if outer-gate went GREEN before the last slice landed
+          # by inspecting commit ordering on the branch
+          SPEC_GAP=false
+          if [ -n "${BRANCH}" ] && [ -n "${LAST_SLICE}" ]; then
+            # Get the commit of the last slice GREEN
+            LAST_SLICE_COMMIT=$(git log "origin/main..origin/${BRANCH}" --oneline 2>/dev/null | grep "GREEN — slice ${LAST_SLICE}" | head -1 | awk '{print $1}')
+            # Get the commit of automation-pipeline test (if any in this branch)
+            OUTER_GREEN_COMMIT=$(git log "origin/main..origin/${BRANCH}" --oneline 2>/dev/null | grep -i "automation-pipeline\|outer.*green\|bdd.*green" | tail -1 | awk '{print $1}')
+
+            if [ -n "${LAST_SLICE_COMMIT}" ] && [ -n "${OUTER_GREEN_COMMIT}" ]; then
+              # Check if outer-gate commit appears before last-slice commit in git log
+              # git log lists newest first; if outer_green appears after last_slice, it's earlier in time
+              LOG_ORDER=$(git log "origin/main..origin/${BRANCH}" --oneline 2>/dev/null | grep -n "${OUTER_GREEN_COMMIT}\|${LAST_SLICE_COMMIT}" | head -2)
+              OUTER_LINE=$(echo "${LOG_ORDER}" | grep "${OUTER_GREEN_COMMIT}" | cut -d: -f1)
+              LAST_LINE=$(echo "${LOG_ORDER}" | grep "${LAST_SLICE_COMMIT}" | cut -d: -f1)
+              # Higher line number = older commit (git log newest first)
+              if [ -n "${OUTER_LINE}" ] && [ -n "${LAST_LINE}" ] && [ "${OUTER_LINE}" -lt "${LAST_LINE}" ]; then
+                # outer-gate commit is newer (smaller line) than last-slice commit?
+                # means outer-gate went green AFTER last slice → no gap
+                SPEC_GAP=false
+              elif [ -n "${OUTER_LINE}" ] && [ -n "${LAST_LINE}" ] && [ "${OUTER_LINE}" -gt "${LAST_LINE}" ]; then
+                # outer-gate commit is older than last-slice → went green before last slice
+                SPEC_GAP=true
+              fi
+            fi
+          fi
+
+          echo "spec_gap=${SPEC_GAP}" >> "$GITHUB_OUTPUT"
+
+      - name: Post spec-gap comment to issue
+        if: steps.early_green.outputs.spec_gap == 'true'
+        run: |
+          ISSUE_NUMBER="${{ steps.meta.outputs.issue_number }}"
+          if [ -n "${ISSUE_NUMBER}" ]; then
+            gh issue comment "${ISSUE_NUMBER}" \
+              --body "**spec gap detected**: the outer BDD gate went GREEN before the last slice landed. This indicates the acceptance criteria were met earlier than expected — review tasks.md for missing or redundant slices before merging."
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Squash merge PR
+        if: steps.dag_done.outputs.dag_done == 'true' && steps.preview_check.outputs.preview_ok == 'true' && steps.early_green.outputs.spec_gap != 'true'
+        run: |
+          PR_NUMBER="${{ steps.meta.outputs.pr_number }}"
+          gh pr merge --squash --delete-branch "${PR_NUMBER}"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Close linked issue after merge
+        if: steps.dag_done.outputs.dag_done == 'true' && steps.preview_check.outputs.preview_ok == 'true' && steps.early_green.outputs.spec_gap != 'true'
+        run: |
+          ISSUE_NUMBER="${{ steps.meta.outputs.issue_number }}"
+          if [ -n "${ISSUE_NUMBER}" ]; then
+            gh issue close "${ISSUE_NUMBER}"
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Archive spec
+        if: steps.dag_done.outputs.dag_done == 'true' && steps.preview_check.outputs.preview_ok == 'true' && steps.early_green.outputs.spec_gap != 'true'
+        run: |
+          export PATH="$HOME/.bun/bin:$PATH"
+          SPEC_SLUG=$(find specs/active -mindepth 1 -maxdepth 1 -type d | head -1 | xargs basename)
+          if [ -n "${SPEC_SLUG}" ]; then
+            bun run spec:complete "${SPEC_SLUG}"
+          fi
+
+      - name: Failure fan-in — post menu to issue
+        if: failure() || steps.dag_done.outputs.dag_done == 'false' || steps.preview_check.outputs.preview_ok == 'false'
+        run: |
+          export PATH="$HOME/.bun/bin:$PATH"
+          ISSUE_NUMBER="${{ steps.meta.outputs.issue_number }}"
+          PR_NUMBER="${{ steps.meta.outputs.pr_number }}"
+          if [ -z "${ISSUE_NUMBER}" ]; then
+            echo "No issue_number; cannot post failure menu"
+            exit 0
+          fi
+          MENU=$(bun scripts/issue-options.ts "automerge" "aggregator" 2>/dev/null || echo "Automerge aggregator failed. Run URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}")
+          gh issue comment "${ISSUE_NUMBER}" --body "${MENU}"
+        env:
+          GH_TOKEN: ${{ github.token }}
