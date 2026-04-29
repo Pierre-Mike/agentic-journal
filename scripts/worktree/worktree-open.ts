@@ -11,7 +11,7 @@
  */
 
 import { join } from "node:path";
-import { type Fs, type Process, realFs, realProcess } from "./_lib";
+import { type Fs, type Process, realFs, realProcess } from "../_lib";
 
 export async function openWorktree(deps: {
 	slug: string;
@@ -83,7 +83,7 @@ export async function openWorktree(deps: {
 async function main(): Promise<void> {
 	const slug = process.argv[2];
 	if (!slug) {
-		console.error("usage: bun scripts/worktree-open.ts <slug>");
+		console.error("usage: bun scripts/worktree/worktree-open.ts <slug>");
 		process.exit(1);
 	}
 

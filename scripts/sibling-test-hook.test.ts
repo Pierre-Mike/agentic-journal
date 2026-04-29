@@ -83,8 +83,8 @@ describe("sibling-test-hook: skipped file patterns", () => {
 		expect(result.offenders).toEqual([]);
 	});
 
-	test("scripts/smoke-*.ts files are skipped", () => {
-		const result = run(["scripts/smoke-deploy.ts"]);
+	test("scripts/smoke/*.ts files are skipped", () => {
+		const result = run(["scripts/smoke/smoke-deploy.ts"]);
 		expect(result.pass).toBe(true);
 		expect(result.offenders).toEqual([]);
 	});

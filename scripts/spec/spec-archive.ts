@@ -6,7 +6,7 @@
 import { existsSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import matter from "gray-matter";
-import { loadSpec } from "./_lib";
+import { loadSpec } from "../_lib";
 
 function hasUncheckedTasks(dir: string): boolean {
 	const tasks = join(dir, "tasks.md");
@@ -25,7 +25,7 @@ async function gatesPass(): Promise<boolean> {
 async function main(): Promise<void> {
 	const slug = process.argv[2];
 	if (!slug) {
-		console.error("usage: bun scripts/spec-archive.ts <slug>");
+		console.error("usage: bun scripts/spec/spec-archive.ts <slug>");
 		process.exit(1);
 	}
 

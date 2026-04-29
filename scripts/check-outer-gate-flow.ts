@@ -56,7 +56,7 @@ async function main(): Promise<void> {
 
 	console.log("\n[Check 3] spec-complete verifies .gate-frozen-outer sentinel");
 	checkFileContains(
-		"scripts/spec-complete.ts",
+		"scripts/spec/spec-complete.ts",
 		[".gate-frozen-outer", "kind:code spec requires the outer gate sentinel"],
 		"spec-complete.ts enforces outer gate before archive",
 	);

@@ -12,7 +12,7 @@
 
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { basename, join } from "node:path";
-import { loadSpec, taskGates } from "./_lib";
+import { loadSpec, taskGates } from "../_lib";
 
 interface TaskLine {
 	index: number;
@@ -124,7 +124,7 @@ function rewriteTaskLine(raw: string): string {
 async function main(): Promise<void> {
 	const arg = process.argv[2];
 	if (!arg) {
-		console.error("usage: bun scripts/spec-complete.ts <slug>");
+		console.error("usage: bun scripts/spec/spec-complete.ts <slug>");
 		process.exit(1);
 	}
 
@@ -221,7 +221,7 @@ async function main(): Promise<void> {
 
 	// 3. Archive via the existing deterministic script
 	console.log("\n[3/4] archiving…");
-	const archive = await sh(["bun", "scripts/spec-archive.ts", slug]);
+	const archive = await sh(["bun", "scripts/spec/spec-archive.ts", slug]);
 	if (!archive.ok) {
 		console.error("✖ archive step refused. See above.");
 		process.exit(1);

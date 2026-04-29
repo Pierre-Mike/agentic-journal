@@ -67,7 +67,7 @@ async function test2_specCompleteAcceptsSlug(): Promise<void> {
 			"---\nid: 007-widget-gizmo\nkind: rule\ngate: some/path\n---\n\nIntent.",
 		);
 
-		const mod = await import(join(process.cwd(), "scripts/spec-complete.ts"));
+		const mod = await import(join(process.cwd(), "scripts/spec/spec-complete.ts"));
 		if (typeof mod.resolveSpec !== "function") {
 			fail("resolveSpec is exported from scripts/spec-complete.ts", "no such export");
 			return;

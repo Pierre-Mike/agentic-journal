@@ -52,7 +52,7 @@ assert(lib.includes("frozen"), "_lib.ts taskGates() must return objects with a '
 // ---------------------------------------------------------------------------
 // 2. spec-lint validates per-task gate fields for kind:code
 // ---------------------------------------------------------------------------
-const specLint = readFile("scripts/spec-lint.ts");
+const specLint = readFile("scripts/spec/spec-lint.ts");
 assert(
 	specLint.includes("gate") && specLint.includes("kind") && specLint.includes("code"),
 	"spec-lint.ts must reference gate field validation gated on kind:code",
@@ -82,7 +82,7 @@ assert(
 // ---------------------------------------------------------------------------
 // 4. spec-complete requires all .gate-frozen-N sentinels for kind:code
 // ---------------------------------------------------------------------------
-const specComplete = readFile("scripts/spec-complete.ts");
+const specComplete = readFile("scripts/spec/spec-complete.ts");
 assert(
 	specComplete.includes("gate-frozen-") || specComplete.includes("taskGates"),
 	"spec-complete.ts must check .gate-frozen-N sentinels for kind:code specs",

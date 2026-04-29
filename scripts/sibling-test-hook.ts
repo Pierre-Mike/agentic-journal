@@ -23,7 +23,7 @@ const INCLUDE_GLOBS = [
 /** File patterns that are excluded from enforcement (within included dirs). */
 const SKIP_GLOBS = [
 	new Bun.Glob("**/*.test.ts"),
-	new Bun.Glob("scripts/smoke-*.ts"),
+	new Bun.Glob("scripts/smoke/*.ts"),
 	new Bun.Glob("scripts/gates/*.ts"),
 ];
 

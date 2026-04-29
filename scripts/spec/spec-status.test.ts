@@ -4,7 +4,7 @@
  */
 
 import { describe, expect, it } from "bun:test";
-import type { Spec } from "./_lib";
+import type { Spec } from "../_lib";
 
 // Import under test.
 import { formatSpecLine } from "./spec-status";
