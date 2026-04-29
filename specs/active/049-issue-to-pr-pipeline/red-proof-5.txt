@@ -1,208 +1,208 @@
 exit_code: 1
 command: bun test tests/workflows/bootstrap.test.ts
-duration_ms: 19
+duration_ms: 44
 --- stderr (tail 200) ---
 ... (truncated, kept last 200 lines)
-28 | function readWorkflow(): string {
-29 | 	if (!existsSync(WORKFLOW_PATH)) {
-30 | 		throw new Error("bootstrap.yml not found at .github/workflows/bootstrap.yml");
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:52:79)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:58:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:222:14)
+(fail) bootstrap.yml: draft PR creation > opens a draft PR via gh pr create --draft [0.03ms]
+47 | 	id?: string;
+48 | };
+49 | 
+50 | function readWorkflowRaw(): string {
+51 | 	if (!existsSync(WORKFLOW_PATH)) {
+52 | 		throw new Error("bootstrap.yml not found at .github/workflows/bootstrap.yml");
                                                                                    ^
 error: bootstrap.yml not found at .github/workflows/bootstrap.yml
-      at readWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:30:79)
-      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:128:14)
-(fail) bootstrap.yml: branch creation > branch creation uses git checkout -b or git switch -c
-25 | const REPO_ROOT = join(import.meta.dir, "../..");
-26 | const WORKFLOW_PATH = join(REPO_ROOT, ".github", "workflows", "bootstrap.yml");
-27 | 
-28 | function readWorkflow(): string {
-29 | 	if (!existsSync(WORKFLOW_PATH)) {
-30 | 		throw new Error("bootstrap.yml not found at .github/workflows/bootstrap.yml");
-                                                                                   ^
-error: bootstrap.yml not found at .github/workflows/bootstrap.yml
-      at readWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:30:79)
-      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:139:14)
-(fail) bootstrap.yml: draft PR creation > opens a draft PR via gh pr create --draft [0.08ms]
-25 | const REPO_ROOT = join(import.meta.dir, "../..");
-26 | const WORKFLOW_PATH = join(REPO_ROOT, ".github", "workflows", "bootstrap.yml");
-27 | 
-28 | function readWorkflow(): string {
-29 | 	if (!existsSync(WORKFLOW_PATH)) {
-30 | 		throw new Error("bootstrap.yml not found at .github/workflows/bootstrap.yml");
-                                                                                   ^
-error: bootstrap.yml not found at .github/workflows/bootstrap.yml
-      at readWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:30:79)
-      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:144:14)
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:52:79)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:58:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:231:14)
 (fail) bootstrap.yml: draft PR creation > PR is linked to the issue (references issue number)
-25 | const REPO_ROOT = join(import.meta.dir, "../..");
-26 | const WORKFLOW_PATH = join(REPO_ROOT, ".github", "workflows", "bootstrap.yml");
-27 | 
-28 | function readWorkflow(): string {
-29 | 	if (!existsSync(WORKFLOW_PATH)) {
-30 | 		throw new Error("bootstrap.yml not found at .github/workflows/bootstrap.yml");
+47 | 	id?: string;
+48 | };
+49 | 
+50 | function readWorkflowRaw(): string {
+51 | 	if (!existsSync(WORKFLOW_PATH)) {
+52 | 		throw new Error("bootstrap.yml not found at .github/workflows/bootstrap.yml");
                                                                                    ^
 error: bootstrap.yml not found at .github/workflows/bootstrap.yml
-      at readWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:30:79)
-      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:157:14)
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:52:79)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:58:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:251:14)
 (fail) bootstrap.yml: claude /do-auto invocation > invokes claude with -p flag [0.05ms]
-25 | const REPO_ROOT = join(import.meta.dir, "../..");
-26 | const WORKFLOW_PATH = join(REPO_ROOT, ".github", "workflows", "bootstrap.yml");
-27 | 
-28 | function readWorkflow(): string {
-29 | 	if (!existsSync(WORKFLOW_PATH)) {
-30 | 		throw new Error("bootstrap.yml not found at .github/workflows/bootstrap.yml");
+47 | 	id?: string;
+48 | };
+49 | 
+50 | function readWorkflowRaw(): string {
+51 | 	if (!existsSync(WORKFLOW_PATH)) {
+52 | 		throw new Error("bootstrap.yml not found at .github/workflows/bootstrap.yml");
                                                                                    ^
 error: bootstrap.yml not found at .github/workflows/bootstrap.yml
-      at readWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:30:79)
-      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:162:14)
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:52:79)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:58:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:258:14)
 (fail) bootstrap.yml: claude /do-auto invocation > passes /do-auto as the prompt or command [0.03ms]
-25 | const REPO_ROOT = join(import.meta.dir, "../..");
-26 | const WORKFLOW_PATH = join(REPO_ROOT, ".github", "workflows", "bootstrap.yml");
-27 | 
-28 | function readWorkflow(): string {
-29 | 	if (!existsSync(WORKFLOW_PATH)) {
-30 | 		throw new Error("bootstrap.yml not found at .github/workflows/bootstrap.yml");
+47 | 	id?: string;
+48 | };
+49 | 
+50 | function readWorkflowRaw(): string {
+51 | 	if (!existsSync(WORKFLOW_PATH)) {
+52 | 		throw new Error("bootstrap.yml not found at .github/workflows/bootstrap.yml");
                                                                                    ^
 error: bootstrap.yml not found at .github/workflows/bootstrap.yml
-      at readWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:30:79)
-      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:167:14)
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:52:79)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:265:15)
 (fail) bootstrap.yml: claude /do-auto invocation > uses ANTHROPIC_API_KEY secret
-25 | const REPO_ROOT = join(import.meta.dir, "../..");
-26 | const WORKFLOW_PATH = join(REPO_ROOT, ".github", "workflows", "bootstrap.yml");
-27 | 
-28 | function readWorkflow(): string {
-29 | 	if (!existsSync(WORKFLOW_PATH)) {
-30 | 		throw new Error("bootstrap.yml not found at .github/workflows/bootstrap.yml");
+47 | 	id?: string;
+48 | };
+49 | 
+50 | function readWorkflowRaw(): string {
+51 | 	if (!existsSync(WORKFLOW_PATH)) {
+52 | 		throw new Error("bootstrap.yml not found at .github/workflows/bootstrap.yml");
                                                                                    ^
 error: bootstrap.yml not found at .github/workflows/bootstrap.yml
-      at readWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:30:79)
-      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:173:14)
-(fail) bootstrap.yml: claude /do-auto invocation > threads the issue body into the claude invocation [0.05ms]
-25 | const REPO_ROOT = join(import.meta.dir, "../..");
-26 | const WORKFLOW_PATH = join(REPO_ROOT, ".github", "workflows", "bootstrap.yml");
-27 | 
-28 | function readWorkflow(): string {
-29 | 	if (!existsSync(WORKFLOW_PATH)) {
-30 | 		throw new Error("bootstrap.yml not found at .github/workflows/bootstrap.yml");
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:52:79)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:58:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:270:14)
+(fail) bootstrap.yml: claude /do-auto invocation > threads the issue body into the claude invocation
+47 | 	id?: string;
+48 | };
+49 | 
+50 | function readWorkflowRaw(): string {
+51 | 	if (!existsSync(WORKFLOW_PATH)) {
+52 | 		throw new Error("bootstrap.yml not found at .github/workflows/bootstrap.yml");
                                                                                    ^
 error: bootstrap.yml not found at .github/workflows/bootstrap.yml
-      at readWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:30:79)
-      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:185:14)
-(fail) bootstrap.yml: confidence gate > checks .agentic/last-alignment.md after claude runs [0.04ms]
-25 | const REPO_ROOT = join(import.meta.dir, "../..");
-26 | const WORKFLOW_PATH = join(REPO_ROOT, ".github", "workflows", "bootstrap.yml");
-27 | 
-28 | function readWorkflow(): string {
-29 | 	if (!existsSync(WORKFLOW_PATH)) {
-30 | 		throw new Error("bootstrap.yml not found at .github/workflows/bootstrap.yml");
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:52:79)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:58:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:288:14)
+(fail) bootstrap.yml: confidence gate (structural) > a step reads .agentic/last-alignment.md after claude runs
+47 | 	id?: string;
+48 | };
+49 | 
+50 | function readWorkflowRaw(): string {
+51 | 	if (!existsSync(WORKFLOW_PATH)) {
+52 | 		throw new Error("bootstrap.yml not found at .github/workflows/bootstrap.yml");
                                                                                    ^
 error: bootstrap.yml not found at .github/workflows/bootstrap.yml
-      at readWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:30:79)
-      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:190:14)
-(fail) bootstrap.yml: confidence gate > reads confidence field from last-alignment.md [0.01ms]
-25 | const REPO_ROOT = join(import.meta.dir, "../..");
-26 | const WORKFLOW_PATH = join(REPO_ROOT, ".github", "workflows", "bootstrap.yml");
-27 | 
-28 | function readWorkflow(): string {
-29 | 	if (!existsSync(WORKFLOW_PATH)) {
-30 | 		throw new Error("bootstrap.yml not found at .github/workflows/bootstrap.yml");
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:52:79)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:58:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:297:14)
+(fail) bootstrap.yml: confidence gate (structural) > a step captures or outputs the confidence value
+47 | 	id?: string;
+48 | };
+49 | 
+50 | function readWorkflowRaw(): string {
+51 | 	if (!existsSync(WORKFLOW_PATH)) {
+52 | 		throw new Error("bootstrap.yml not found at .github/workflows/bootstrap.yml");
                                                                                    ^
 error: bootstrap.yml not found at .github/workflows/bootstrap.yml
-      at readWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:30:79)
-      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:195:14)
-(fail) bootstrap.yml: confidence gate > on confidence:high — commits alignment.md to the branch [0.04ms]
-25 | const REPO_ROOT = join(import.meta.dir, "../..");
-26 | const WORKFLOW_PATH = join(REPO_ROOT, ".github", "workflows", "bootstrap.yml");
-27 | 
-28 | function readWorkflow(): string {
-29 | 	if (!existsSync(WORKFLOW_PATH)) {
-30 | 		throw new Error("bootstrap.yml not found at .github/workflows/bootstrap.yml");
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:52:79)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:58:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:304:14)
+(fail) bootstrap.yml: confidence gate (structural) > the alignment.md commit step has an 'if:' guard referencing confidence [0.13ms]
+47 | 	id?: string;
+48 | };
+49 | 
+50 | function readWorkflowRaw(): string {
+51 | 	if (!existsSync(WORKFLOW_PATH)) {
+52 | 		throw new Error("bootstrap.yml not found at .github/workflows/bootstrap.yml");
                                                                                    ^
 error: bootstrap.yml not found at .github/workflows/bootstrap.yml
-      at readWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:30:79)
-      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:202:14)
-(fail) bootstrap.yml: confidence gate > on confidence:low — posts a comment on the issue (does NOT commit alignment) [0.03ms]
-25 | const REPO_ROOT = join(import.meta.dir, "../..");
-26 | const WORKFLOW_PATH = join(REPO_ROOT, ".github", "workflows", "bootstrap.yml");
-27 | 
-28 | function readWorkflow(): string {
-29 | 	if (!existsSync(WORKFLOW_PATH)) {
-30 | 		throw new Error("bootstrap.yml not found at .github/workflows/bootstrap.yml");
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:52:79)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:58:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:324:14)
+(fail) bootstrap.yml: confidence gate (structural) > the issue-comment (low-confidence) step has an 'if:' guard
+47 | 	id?: string;
+48 | };
+49 | 
+50 | function readWorkflowRaw(): string {
+51 | 	if (!existsSync(WORKFLOW_PATH)) {
+52 | 		throw new Error("bootstrap.yml not found at .github/workflows/bootstrap.yml");
                                                                                    ^
 error: bootstrap.yml not found at .github/workflows/bootstrap.yml
-      at readWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:30:79)
-      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:208:14)
-(fail) bootstrap.yml: confidence gate > low-confidence branch does NOT directly commit alignment.md (conditional guarded)
-25 | const REPO_ROOT = join(import.meta.dir, "../..");
-26 | const WORKFLOW_PATH = join(REPO_ROOT, ".github", "workflows", "bootstrap.yml");
-27 | 
-28 | function readWorkflow(): string {
-29 | 	if (!existsSync(WORKFLOW_PATH)) {
-30 | 		throw new Error("bootstrap.yml not found at .github/workflows/bootstrap.yml");
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:52:79)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:58:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:338:14)
+(fail) bootstrap.yml: confidence gate (structural) > high-path and low-path 'if:' guards are mutually exclusive (negations of each other) [0.09ms]
+47 | 	id?: string;
+48 | };
+49 | 
+50 | function readWorkflowRaw(): string {
+51 | 	if (!existsSync(WORKFLOW_PATH)) {
+52 | 		throw new Error("bootstrap.yml not found at .github/workflows/bootstrap.yml");
                                                                                    ^
 error: bootstrap.yml not found at .github/workflows/bootstrap.yml
-      at readWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:30:79)
-      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:223:14)
-(fail) bootstrap.yml: concurrency group > has a concurrency block
-25 | const REPO_ROOT = join(import.meta.dir, "../..");
-26 | const WORKFLOW_PATH = join(REPO_ROOT, ".github", "workflows", "bootstrap.yml");
-27 | 
-28 | function readWorkflow(): string {
-29 | 	if (!existsSync(WORKFLOW_PATH)) {
-30 | 		throw new Error("bootstrap.yml not found at .github/workflows/bootstrap.yml");
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:52:79)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:58:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:385:14)
+(fail) bootstrap.yml: concurrency group > has a top-level concurrency block [0.03ms]
+47 | 	id?: string;
+48 | };
+49 | 
+50 | function readWorkflowRaw(): string {
+51 | 	if (!existsSync(WORKFLOW_PATH)) {
+52 | 		throw new Error("bootstrap.yml not found at .github/workflows/bootstrap.yml");
                                                                                    ^
 error: bootstrap.yml not found at .github/workflows/bootstrap.yml
-      at readWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:30:79)
-      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:228:14)
-(fail) bootstrap.yml: concurrency group > concurrency group is keyed on the issue number [0.07ms]
-25 | const REPO_ROOT = join(import.meta.dir, "../..");
-26 | const WORKFLOW_PATH = join(REPO_ROOT, ".github", "workflows", "bootstrap.yml");
-27 | 
-28 | function readWorkflow(): string {
-29 | 	if (!existsSync(WORKFLOW_PATH)) {
-30 | 		throw new Error("bootstrap.yml not found at .github/workflows/bootstrap.yml");
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:52:79)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:58:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:390:14)
+(fail) bootstrap.yml: concurrency group > concurrency group is keyed on the issue number [0.02ms]
+47 | 	id?: string;
+48 | };
+49 | 
+50 | function readWorkflowRaw(): string {
+51 | 	if (!existsSync(WORKFLOW_PATH)) {
+52 | 		throw new Error("bootstrap.yml not found at .github/workflows/bootstrap.yml");
                                                                                    ^
 error: bootstrap.yml not found at .github/workflows/bootstrap.yml
-      at readWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:30:79)
-      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:237:14)
-(fail) bootstrap.yml: concurrency group > concurrency group has cancel-in-progress set
-25 | const REPO_ROOT = join(import.meta.dir, "../..");
-26 | const WORKFLOW_PATH = join(REPO_ROOT, ".github", "workflows", "bootstrap.yml");
-27 | 
-28 | function readWorkflow(): string {
-29 | 	if (!existsSync(WORKFLOW_PATH)) {
-30 | 		throw new Error("bootstrap.yml not found at .github/workflows/bootstrap.yml");
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:52:79)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:58:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:396:14)
+(fail) bootstrap.yml: concurrency group > concurrency group has cancel-in-progress: true
+47 | 	id?: string;
+48 | };
+49 | 
+50 | function readWorkflowRaw(): string {
+51 | 	if (!existsSync(WORKFLOW_PATH)) {
+52 | 		throw new Error("bootstrap.yml not found at .github/workflows/bootstrap.yml");
                                                                                    ^
 error: bootstrap.yml not found at .github/workflows/bootstrap.yml
-      at readWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:30:79)
-      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:248:14)
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:52:79)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:58:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:407:14)
 (fail) bootstrap.yml: runner > uses runs-on: ubuntu-latest
-25 | const REPO_ROOT = join(import.meta.dir, "../..");
-26 | const WORKFLOW_PATH = join(REPO_ROOT, ".github", "workflows", "bootstrap.yml");
-27 | 
-28 | function readWorkflow(): string {
-29 | 	if (!existsSync(WORKFLOW_PATH)) {
-30 | 		throw new Error("bootstrap.yml not found at .github/workflows/bootstrap.yml");
+47 | 	id?: string;
+48 | };
+49 | 
+50 | function readWorkflowRaw(): string {
+51 | 	if (!existsSync(WORKFLOW_PATH)) {
+52 | 		throw new Error("bootstrap.yml not found at .github/workflows/bootstrap.yml");
                                                                                    ^
 error: bootstrap.yml not found at .github/workflows/bootstrap.yml
-      at readWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:30:79)
-      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:259:14)
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:52:79)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:58:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:420:14)
 (fail) bootstrap.yml: checkout step > uses actions/checkout@v4
-25 | const REPO_ROOT = join(import.meta.dir, "../..");
-26 | const WORKFLOW_PATH = join(REPO_ROOT, ".github", "workflows", "bootstrap.yml");
-27 | 
-28 | function readWorkflow(): string {
-29 | 	if (!existsSync(WORKFLOW_PATH)) {
-30 | 		throw new Error("bootstrap.yml not found at .github/workflows/bootstrap.yml");
+47 | 	id?: string;
+48 | };
+49 | 
+50 | function readWorkflowRaw(): string {
+51 | 	if (!existsSync(WORKFLOW_PATH)) {
+52 | 		throw new Error("bootstrap.yml not found at .github/workflows/bootstrap.yml");
                                                                                    ^
 error: bootstrap.yml not found at .github/workflows/bootstrap.yml
-      at readWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:30:79)
-      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:264:14)
-(fail) bootstrap.yml: checkout step > checkout step sets fetch-depth: 0
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:52:79)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:58:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/bootstrap.test.ts:427:14)
+(fail) bootstrap.yml: checkout step > checkout step sets fetch-depth: 0 [0.11ms]
 
  0 pass
  31 fail
  1 expect() calls
-Ran 31 tests across 1 file. [13.00ms]
+Ran 31 tests across 1 file. [38.00ms]
 
 --- stdout (tail 200) ---
 bun test v1.3.6 (d530ed99)
