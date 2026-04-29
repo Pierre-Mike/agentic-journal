@@ -125,6 +125,20 @@ Hard rules:
 
 Headless invocation: `claude -p --max-turns 100 "/do-auto <intent>"`. See `.claude/skills/do-auto/SKILL.md` for the full skill and `.claude/agents/auto-aligner.md` for the aligner's contract.
 
+### Morning digest (auto-pilot feedback)
+
+The morning digest agent (spec 047) scans overnight `/do-auto` outcomes and posts a 3-row daily summary:
+
+- **✅ MERGED** — specs archived in the last 24h
+- **⏸ PAUSED** — active specs with escalations (CI red, judge rejection, replan escalation)
+- **❓ NEEDS-HUMAN** — intents in `.agentic/last-alignment.md` with `status: needs-human`
+
+Output: `.agentic/digest/YYYY-MM-DD.md` (gitignored, durable history).
+
+Invocation: `/morning-digest` (manual) or scheduled via `/schedule "/morning-digest" --cron "0 9 * * *"` (daily at 9am).
+
+The digest closes the auto-pilot loop: overnight runs → morning digest → human review. No overnight outcomes go unnoticed; the digest is the single scan point.
+
 ## 5. TypeScript axioms
 
 - `strict: true`, `noUncheckedIndexedAccess: true`
