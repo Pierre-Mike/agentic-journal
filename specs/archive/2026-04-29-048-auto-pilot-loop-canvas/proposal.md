@@ -1,13 +1,16 @@
 ---
 id: 048-auto-pilot-loop-canvas
 title: Auto-pilot loop canvas demo
-status: active
+status: archived
 kind: workflow
 gate: scripts/gates/auto-pilot-loop-canvas-valid.ts
-created: 2026-04-29
+created: 2026-04-29T00:00:00.000Z
 owner: main
-depends_on: [046-do-auto-headless, 047-morning-digest]
+depends_on:
+  - 046-do-auto-headless
+  - 047-morning-digest
 supersedes: null
+archived: '2026-04-29'
 ---
 
 ## Intent
