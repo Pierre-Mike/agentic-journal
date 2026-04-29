@@ -403,6 +403,232 @@ function registerTests(): void {
 	});
 
 	// ----------------------------------------------------------------
+	// spec-049 slice 1 RED: depends_on and touches schema enforcement
+	// These tests MUST fail until:
+	//   - specs/_template/tasks.md declares depends_on: and touches: on every slice
+	//   - validateTaskSchema() enforces touches: (non-empty path list)
+	//   - validateTaskSchema() enforces depends_on: (list of integers)
+	//   - validateBoundary() rejects touches: paths outside boundary:
+	// ----------------------------------------------------------------
+	describe("spec-049: template tasks.md declares depends_on and touches on every task", () => {
+		function getParseTasksFileRaw(): (path: string) => readonly Record<string, unknown>[] {
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			const mod = require("./spec-lint.ts") as Record<string, unknown>;
+			if (typeof mod.parseTasksFile !== "function") {
+				throw new Error("parseTasksFile not exported from spec-lint.ts");
+			}
+			return mod.parseTasksFile as (path: string) => readonly Record<string, unknown>[];
+		}
+
+		const templateTasksPath = require("node:path").join(
+			require("node:path").dirname(require.resolve("./spec-lint.ts")),
+			"../specs/_template/tasks.md",
+		) as string;
+
+		test("every task in _template/tasks.md declares depends_on:", () => {
+			const parseTasksFile = getParseTasksFileRaw();
+			const tasks = parseTasksFile(templateTasksPath);
+			expect(tasks.length).toBeGreaterThan(0);
+			for (const task of tasks) {
+				expect(
+					Object.hasOwn(task, "depends_on"),
+					`task "${String(task["title"] ?? task["index"])}" is missing depends_on:`,
+				).toBe(true);
+			}
+		});
+
+		test("every task in _template/tasks.md declares touches:", () => {
+			const parseTasksFile = getParseTasksFileRaw();
+			const tasks = parseTasksFile(templateTasksPath);
+			expect(tasks.length).toBeGreaterThan(0);
+			for (const task of tasks) {
+				expect(
+					Object.hasOwn(task, "touches"),
+					`task "${String(task["title"] ?? task["index"])}" is missing touches:`,
+				).toBe(true);
+			}
+		});
+
+		test("every task's touches: in _template/tasks.md is a non-empty array of strings", () => {
+			const parseTasksFile = getParseTasksFileRaw();
+			const tasks = parseTasksFile(templateTasksPath);
+			expect(tasks.length).toBeGreaterThan(0);
+			for (const task of tasks) {
+				const touches = task["touches"];
+				expect(
+					Array.isArray(touches) && (touches as unknown[]).length > 0,
+					`task "${String(task["title"] ?? task["index"])}" has empty or non-array touches:`,
+				).toBe(true);
+			}
+		});
+
+		test("every task's depends_on: in _template/tasks.md is an array", () => {
+			const parseTasksFile = getParseTasksFileRaw();
+			const tasks = parseTasksFile(templateTasksPath);
+			expect(tasks.length).toBeGreaterThan(0);
+			for (const task of tasks) {
+				expect(
+					Array.isArray(task["depends_on"]),
+					`task "${String(task["title"] ?? task["index"])}" has non-array depends_on:`,
+				).toBe(true);
+			}
+		});
+	});
+
+	describe("spec-049: validateTaskSchema enforces depends_on and touches fields", () => {
+		function getValidateTaskSchemaExtended(): (task: Record<string, unknown>) => {
+			errors: string[];
+			warnings: string[];
+		} {
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			const mod = require("./spec-lint.ts") as Record<string, unknown>;
+			if (typeof mod.validateTaskSchema !== "function") {
+				throw new Error("validateTaskSchema not exported from spec-lint.ts");
+			}
+			return mod.validateTaskSchema as (task: Record<string, unknown>) => {
+				errors: string[];
+				warnings: string[];
+			};
+		}
+
+		test("task missing touches: → error mentioning touches", () => {
+			const validateTaskSchema = getValidateTaskSchemaExtended();
+			const result = validateTaskSchema({
+				index: 1,
+				title: "no touches",
+				file_targets: ["scripts/foo.ts"],
+				boundary: ["scripts/foo.ts"],
+				depends_on: [],
+				// no touches
+			});
+			expect(result.errors.length).toBeGreaterThan(0);
+			expect(result.errors.join("\n")).toMatch(/touches/i);
+		});
+
+		test("task with empty touches: array → error mentioning touches non-empty", () => {
+			const validateTaskSchema = getValidateTaskSchemaExtended();
+			const result = validateTaskSchema({
+				index: 1,
+				title: "empty touches",
+				file_targets: ["scripts/foo.ts"],
+				boundary: ["scripts/foo.ts"],
+				depends_on: [],
+				touches: [],
+			});
+			expect(result.errors.length).toBeGreaterThan(0);
+			expect(result.errors.join("\n")).toMatch(/touches/i);
+		});
+
+		test("task with non-array touches: → error mentioning touches", () => {
+			const validateTaskSchema = getValidateTaskSchemaExtended();
+			const result = validateTaskSchema({
+				index: 1,
+				title: "bad touches",
+				file_targets: ["scripts/foo.ts"],
+				boundary: ["scripts/foo.ts"],
+				depends_on: [],
+				touches: "scripts/foo.ts",
+			});
+			expect(result.errors.length).toBeGreaterThan(0);
+			expect(result.errors.join("\n")).toMatch(/touches/i);
+		});
+
+		test("task with non-integer in depends_on: → error mentioning depends_on", () => {
+			const validateTaskSchema = getValidateTaskSchemaExtended();
+			const result = validateTaskSchema({
+				index: 1,
+				title: "bad depends_on",
+				file_targets: ["scripts/foo.ts"],
+				boundary: ["scripts/foo.ts"],
+				depends_on: ["prev-task"],
+				touches: ["scripts/foo.ts"],
+			});
+			expect(result.errors.length).toBeGreaterThan(0);
+			expect(result.errors.join("\n")).toMatch(/depends_on/i);
+		});
+
+		test("task with non-array depends_on: → error mentioning depends_on", () => {
+			const validateTaskSchema = getValidateTaskSchemaExtended();
+			const result = validateTaskSchema({
+				index: 1,
+				title: "bad depends_on type",
+				file_targets: ["scripts/foo.ts"],
+				boundary: ["scripts/foo.ts"],
+				depends_on: 1,
+				touches: ["scripts/foo.ts"],
+			});
+			expect(result.errors.length).toBeGreaterThan(0);
+			expect(result.errors.join("\n")).toMatch(/depends_on/i);
+		});
+
+		test("task with valid touches and depends_on → no new errors from these fields", () => {
+			const validateTaskSchema = getValidateTaskSchemaExtended();
+			const result = validateTaskSchema({
+				index: 1,
+				title: "valid task",
+				file_targets: ["scripts/foo.ts"],
+				boundary: ["scripts/foo.ts"],
+				depends_on: [],
+				touches: ["scripts/foo.ts"],
+			});
+			// errors must be empty (depends_on + touches are valid)
+			expect(result.errors).toEqual([]);
+		});
+
+		test("task with integer-filled depends_on and valid touches → no errors", () => {
+			const validateTaskSchema = getValidateTaskSchemaExtended();
+			const result = validateTaskSchema({
+				index: 3,
+				title: "depends on others",
+				file_targets: ["scripts/bar.ts"],
+				boundary: ["scripts/bar.ts"],
+				depends_on: [1, 2],
+				touches: ["scripts/bar.ts"],
+			});
+			expect(result.errors).toEqual([]);
+		});
+	});
+
+	describe("spec-049: validateBoundary rejects touches paths outside boundary", () => {
+		test("touches path outside boundary → validateBoundary fails for that path", () => {
+			// If a task declares touches: [src/outside.ts] but boundary: [scripts/*.ts],
+			// validateBoundary should detect the violation when checking touches as changed files.
+			const result = validateBoundary({
+				task: { boundary: ["scripts/*.ts"] },
+				changedFiles: ["src/outside.ts"],
+				repoRoot: "/tmp/fixture",
+			});
+			expect(result.ok).toBe(false);
+			if (!result.ok) {
+				expect(result.offendingFiles).toContain("src/outside.ts");
+			}
+		});
+
+		test("validateTaskSchema: touches path not matching any boundary glob → error", () => {
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			const mod = require("./spec-lint.ts") as Record<string, unknown>;
+			if (typeof mod.validateTaskSchema !== "function") {
+				throw new Error("validateTaskSchema not exported from spec-lint.ts");
+			}
+			const validateTaskSchema = mod.validateTaskSchema as (task: Record<string, unknown>) => {
+				errors: string[];
+				warnings: string[];
+			};
+
+			const result = validateTaskSchema({
+				index: 1,
+				title: "touches outside boundary",
+				file_targets: ["scripts/foo.ts"],
+				boundary: ["scripts/*.ts"],
+				depends_on: [],
+				touches: ["src/outside.ts"],
+			});
+			expect(result.errors.length).toBeGreaterThan(0);
+			expect(result.errors.join("\n")).toMatch(/touches|boundary/i);
+		});
+	});
+
+	// ----------------------------------------------------------------
 	// spec-039: parseTasksFile captures per-task gate: field
 	// ----------------------------------------------------------------
 	describe("parseTasksFile — gate: field parsing (spec-039)", () => {
