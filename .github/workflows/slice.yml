@@ -80,6 +80,7 @@ jobs:
             "You are the spec-implementer. Make slice ${SLICE_ID} of spec ${SPEC_ID} GREEN. Read the frozen gate and implement only the file_targets declared in task ${SLICE_ID}. Run bun run tasks:verify. When GREEN, run a refactor pass scoped to the task's file_targets. Do not push — only commit."
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           GH_TOKEN: ${{ github.token }}
 
       - name: Commit implemented slice files
@@ -120,6 +121,7 @@ jobs:
             "You are the spec-replanner. Slice ${SLICE_ID} of spec ${SPEC_ID} is now GREEN on branch ${BRANCH}. Review tasks.md and update the plan: check which slices are unblocked, update depends_on status, and commit any changes to tasks.md."
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           GH_TOKEN: ${{ github.token }}
 
       - name: Failure escalation — post menu on issue
