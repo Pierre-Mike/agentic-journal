@@ -53,7 +53,7 @@ jobs:
       - name: Run /do-auto aligner
         id: align
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           ISSUE_BODY: ${{ github.event.issue.body }}
         run: |
           claude -p "/do-auto $ISSUE_BODY" || true
