@@ -7,7 +7,7 @@
  *   3. Permissions block: contents:write, pull-requests:write, issues:write
  *   4. Job creates branch named auto/<issue-number>-<slug> from main
  *   5. Job opens a draft PR linked to the issue (gh pr create --draft)
- *   6. Job invokes `claude -p` with /do-auto and uses ANTHROPIC_API_KEY secret
+ *   6. Job invokes `claude -p` with /do-auto and uses CLAUDE_CODE_OAUTH_TOKEN secret
  *   7. After claude runs, checks .agentic/last-alignment.md confidence:
  *      - confidence:low  → posts issue comment (does NOT commit alignment)
  *      - confidence:high → commits alignment.md to the branch (ONLY when high)
@@ -243,7 +243,7 @@ describe("bootstrap.yml: draft PR creation", () => {
 });
 
 // ---------------------------------------------------------------------------
-// 6. Claude invocation with /do-auto and ANTHROPIC_API_KEY
+// 6. Claude invocation with /do-auto and CLAUDE_CODE_OAUTH_TOKEN
 // ---------------------------------------------------------------------------
 
 describe("bootstrap.yml: claude /do-auto invocation", () => {
@@ -261,9 +261,10 @@ describe("bootstrap.yml: claude /do-auto invocation", () => {
 		expect(doAutoStep).toBeDefined();
 	});
 
-	test("uses ANTHROPIC_API_KEY secret", () => {
+	test("uses CLAUDE_CODE_OAUTH_TOKEN secret (no API key)", () => {
 		const raw = readWorkflowRaw();
-		expect(raw).toMatch(/secrets\.ANTHROPIC_API_KEY/);
+		expect(raw).toMatch(/secrets\.CLAUDE_CODE_OAUTH_TOKEN/);
+		expect(raw).not.toMatch(/secrets\.ANTHROPIC_API_KEY/);
 	});
 
 	test("threads the issue body into the claude invocation", () => {
