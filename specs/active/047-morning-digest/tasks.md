@@ -23,11 +23,14 @@
 - [ ] Edit `.gitignore` to add `.agentic/digest/` line
 - Check if `.agentic/` is already covered; add specific line if needed
 
-## Task 4: Skill file (HANDOFF)
-- [ ] Write `specs/active/047-morning-digest/SKILL-content-for-handoff.md`
-- Contains the yaml frontmatter + skill body for `.claude/skills/morning-digest/SKILL.md`
+## Task 4: Skill file
+- [ ] Write `.claude/skills/morning-digest/SKILL.md`
+  - agent: main
+  - depends: [2]
+  - file_targets: [.claude/skills/morning-digest/SKILL.md, specs/active/047-morning-digest/SKILL-content-for-handoff.md]
+  - boundary: [.claude/skills/morning-digest/SKILL.md, specs/active/047-morning-digest/SKILL-content-for-handoff.md]
+- Worker authored intended content as `SKILL-content-for-handoff.md`; parent landed the actual skill file (worker hit a permission limitation on creating new files under `.claude/skills/`).
 - Matches format of `.claude/skills/do-auto/SKILL.md`
-- Parent session writes actual skill file (worker lacks permission)
 
 ## Task 5: Constitution update
 - [ ] Edit `specs/constitution.md`
