@@ -436,7 +436,7 @@ function registerTests(): void {
 			for (const task of tasks) {
 				expect(
 					Object.hasOwn(task, "depends_on"),
-					`task "${String(task["title"] ?? task["index"])}" is missing depends_on:`,
+					`task "${String(task.title ?? task.index)}" is missing depends_on:`,
 				).toBe(true);
 			}
 		});
@@ -448,7 +448,7 @@ function registerTests(): void {
 			for (const task of tasks) {
 				expect(
 					Object.hasOwn(task, "touches"),
-					`task "${String(task["title"] ?? task["index"])}" is missing touches:`,
+					`task "${String(task.title ?? task.index)}" is missing touches:`,
 				).toBe(true);
 			}
 		});
@@ -458,10 +458,10 @@ function registerTests(): void {
 			const tasks = parseTasksFile(templateTasksPath);
 			expect(tasks.length).toBeGreaterThan(0);
 			for (const task of tasks) {
-				const touches = task["touches"];
+				const touches = task.touches;
 				expect(
 					Array.isArray(touches) && (touches as unknown[]).length > 0,
-					`task "${String(task["title"] ?? task["index"])}" has empty or non-array touches:`,
+					`task "${String(task.title ?? task.index)}" has empty or non-array touches:`,
 				).toBe(true);
 			}
 		});
@@ -472,8 +472,8 @@ function registerTests(): void {
 			expect(tasks.length).toBeGreaterThan(0);
 			for (const task of tasks) {
 				expect(
-					Array.isArray(task["depends_on"]),
-					`task "${String(task["title"] ?? task["index"])}" has non-array depends_on:`,
+					Array.isArray(task.depends_on),
+					`task "${String(task.title ?? task.index)}" has non-array depends_on:`,
 				).toBe(true);
 			}
 		});
@@ -657,14 +657,15 @@ function registerTests(): void {
 			expect(tasks.length).toBe(1);
 			const task = tasks[0];
 			expect(task).toBeDefined();
+			if (!task) throw new Error("task is undefined");
 			// depends_on must be present and be an array containing 1 and 2
-			expect(Object.hasOwn(task!, "depends_on")).toBe(true);
-			const dependsOn = task!["depends_on"];
+			expect(Object.hasOwn(task, "depends_on")).toBe(true);
+			const dependsOn = task.depends_on;
 			expect(Array.isArray(dependsOn)).toBe(true);
 			expect((dependsOn as unknown[]).length).toBe(2);
 			// touches must be present and contain foo.ts and bar.ts
-			expect(Object.hasOwn(task!, "touches")).toBe(true);
-			const touches = task!["touches"];
+			expect(Object.hasOwn(task, "touches")).toBe(true);
+			const touches = task.touches;
 			expect(Array.isArray(touches)).toBe(true);
 			expect(touches as string[]).toContain("foo.ts");
 			expect(touches as string[]).toContain("bar.ts");
