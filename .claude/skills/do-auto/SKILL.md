@@ -1,18 +1,20 @@
 ---
 name: do-auto
 description: >
-  Headless variant of /do — replaces the interactive `align` interview with the `auto-aligner`
+  Lighter-touch variant of /do — replaces the interactive `align` interview with the `auto-aligner`
   subagent and an ambiguity gate. Reads intent, dispatches auto-aligner, branches on the mailbox
   status. On `confirmed` + `confidence: high`, runs Steps 3-10 from /do (worktree, scaffold,
-  slice loop, close, push, PR). On `needs-human`, exits 0; the mailbox sits at
-  `.agentic/last-alignment.md` for the morning digest. Invoke as `/do-auto <intent>` from a TTY
-  or via `claude -p --max-turns 100 "/do-auto <intent>"` from cron, retro findings, or a queue.
+  slice loop, close, push, PR). On `needs-human` in a TTY, fires one `AskUserQuestion` round with
+  the minimum disambiguating questions and re-runs the aligner once. On `needs-human` headless (or
+  after the one retry), exits 0 and the mailbox sits at `.agentic/last-alignment.md` for the
+  morning digest. Invoke as `/do-auto <intent>` from a TTY or via
+  `claude -p --max-turns 100 "/do-auto <intent>"` from cron, retro findings, or a queue.
   Never opens a worktree until the auto-aligner returns high confidence.
 ---
 
 ## Core Principle
 
-One headless command per change. No human interaction. The auto-aligner is the single judgment point — its `confidence` field gates everything downstream. Default action on ambiguity is "do nothing, surface for human review" — never guess and scaffold.
+One command per change. The auto-aligner is the single judgment point — its `confidence` field gates everything downstream. Default action on ambiguity headless: "do nothing, surface for human review." In a TTY: one minimum-question `AskUserQuestion` round, then re-run aligner once — never guess and scaffold.
 
 ## Preconditions
 
@@ -54,7 +56,27 @@ import { parseAlignmentAndBranch } from "scripts/do-auto-branch";
 const result = parseAlignmentAndBranch(".agentic/last-alignment.md");
 ```
 
-If `result.proceed === false`:
+If `result.proceed === true`, continue to Step 4.
+
+If `result.proceed === false`, detect interactivity:
+
+```bash
+tty -s 2>/dev/null && echo interactive || echo headless
+```
+
+#### Step 3a — Interactive disambiguation (TTY only, max 1 round)
+
+If interactive AND the parent session has not already retried once this run (track with a local boolean — do NOT persist), do the following:
+
+1. Read `.agentic/last-alignment.md`. Extract the bullets under `## Straightforward Details`. These are the questions the aligner needs answered.
+2. Call `AskUserQuestion` with **at most 3 questions** (the minimum needed — pick the highest-leverage ones if more were listed). For each question, infer 2-3 candidate options from the alignment's `## Big Picture` (the candidate spec mappings the aligner enumerated). The implicit "Other" entry lets the user free-text any answer that doesn't match.
+3. Append the answers to `.agentic/last-intent.txt` as a `Clarifications:` block — keep the original intent line untouched, add a blank line, then `Clarifications:` followed by `- Q: <question> A: <answer>` lines. This preserves intent_hash determinism for the original intent while giving the aligner more signal on retry.
+4. Re-run **Step 2** (dispatch `auto-aligner`) once. The aligner re-hashes the new file contents, so the new alignment.md overwrites the old.
+5. Re-evaluate `parseAlignmentAndBranch(...)`:
+   - `proceed === true` → continue to Step 4.
+   - `proceed === false` → fall through to Step 3b (no second retry).
+
+#### Step 3b — Headless / second-strike exit
 
 ```
 echo "/do-auto exited: ${result.reason}"
@@ -64,8 +86,6 @@ exit 0
 ```
 
 The mailbox file is left in place. The morning digest (spec 5) reads it.
-
-If `result.proceed === true`, continue to Step 4.
 
 ### Step 4 — Extract spec fields from alignment.md
 
@@ -114,14 +134,15 @@ The `--max-turns 100` cap protects against runaway slice loops. A typical kind:c
 ## Hard rules
 
 - **Never bypass auto-aligner.** Even if the intent looks clear, dispatching the aligner is the safety check. Skipping it removes the ambiguity gate.
-- **Never scaffold a spec when status is needs-human.** Exit 0 with the reason. The morning digest is the recovery path.
+- **Never scaffold a spec when status is needs-human after the interactive retry.** In a TTY, one `AskUserQuestion` round is allowed (Step 3a); after that, exit 0. The morning digest is the recovery path. In a headless run (`tty -s` fails), skip 3a entirely.
+- **Interactive retry is one-shot.** Never loop the aligner more than once per `/do-auto` invocation. If the user's answers don't disambiguate, exit 0 — don't keep asking.
 - **Main is never dirty.** Same as /do — every write goes into the worktree.
 - **Never `git pull` from within /do-auto.** The post-merge hook handles cleanup.
 - **Soft-escalate, never hard-block.** Field-extraction failures, replan conflicts, CI red — all surface in artifacts the digest reads. Never throw; exit 0 with a clear stdout line.
 
 ## When NOT to invoke
 
-- Interactive session where the user wants alignment confirmation → use `/do` instead.
+- Interactive session where the user wants the full progressive `align` interview (Goal → Big Picture → Straightforward Details → Non-obvious Decisions, each chunk confirmed) → use `/do` instead. `/do-auto` only fires the minimum disambiguation round when the aligner reports `needs-human`.
 - Intent that names a destructive action (delete, drop, mass-rename) → human review required regardless. Auto-aligner should set `needs-human` for these.
 - Repo state mid-merge or mid-rebase — preconditions block it.
 
