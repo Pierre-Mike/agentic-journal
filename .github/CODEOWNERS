@@ -1,0 +1,6 @@
+# Default: pierre-mike owns everything not otherwise specified
+* @pierre-mike
+
+# Freeze: alignment.md is owned by a lockout sentinel so no real handle can self-approve
+# (uses last-match-wins; this rule must come AFTER any catch-all)
+specs/active/*/alignment.md @no-such-user
