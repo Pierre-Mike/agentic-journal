@@ -1,19 +1,20 @@
 ---
-id: "049"
-title: "Issue→PR autonomous pipeline"
-status: active
+id: 049
+title: Issue→PR autonomous pipeline
+status: archived
 kind: code
 gate:
   - path: tests/automation-pipeline.test.ts
     level: integration
   - path: scripts/spec-lint.test.ts
     level: unit
-created: 2026-04-29
+created: 2026-04-29T00:00:00.000Z
 owner: main
 depends_on:
   - 046-do-auto-headless
   - 047-morning-digest
 supersedes: null
+archived: '2026-04-29'
 ---
 
 ## Intent
