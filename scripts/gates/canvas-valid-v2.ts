@@ -55,8 +55,8 @@ const REQUIRED_GROUPS: ReadonlyArray<{ readonly label: string; readonly fill: st
 
 const REQUIRED_FILE_NODES: ReadonlyArray<string> = [
 	"lefthook.yml",
-	"scripts/red-commit-gate.ts",
-	"scripts/trace-scan.ts",
+	"scripts/ci/red-commit-gate.ts",
+	"scripts/agentic/trace-scan.ts",
 	".claude/skills/do/SKILL.md",
 	".claude/skills/retro/SKILL.md",
 ];

@@ -25,7 +25,7 @@ No other preconditions. The script gracefully handles missing directories (no ar
 Run the digest generator:
 
 ```bash
-bun scripts/morning-digest.ts
+bun scripts/agentic/morning-digest.ts
 ```
 
 The script scans three sources:
@@ -96,7 +96,7 @@ The `/schedule` skill (from the Claude Code harness) handles cron execution. The
 
 - Mid-day spot checks → just read `.agentic/digest/<today>.md` directly if it exists; no need to re-run
 - Digest already ran today → the file is durable; re-running overwrites it (safe but redundant)
-- Testing the digest logic → use `scripts/smoke-morning-digest.ts` (the gate) instead
+- Testing the digest logic → use `scripts/smoke/smoke-morning-digest.ts` (the gate) instead
 
 ## Relationship to /do-auto
 

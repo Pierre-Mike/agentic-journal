@@ -112,7 +112,7 @@ You may NOT Write any other path. No worktree open, no scaffold, no source code,
 
 ### Allowed Bash
 - `cat`, `head`, `shasum`, `date`, `find`, `grep` — read-only inspection
-- `bun scripts/check-alignment-mailbox.ts` — re-run the validator after writing (optional)
+- `bun scripts/agentic/check-alignment-mailbox.ts` — re-run the validator after writing (optional)
 
 You may NOT run `git`, `npm`, `bun run`, formatters, tests, or any process that mutates state outside the mailbox.
 

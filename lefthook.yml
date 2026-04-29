@@ -8,7 +8,7 @@ pre-commit:
     typecheck:
       glob: "*.{ts,tsx,astro}"
       run: |
-        if bun scripts/red-commit-gate.ts; then exit 0; fi
+        if bun scripts/ci/red-commit-gate.ts; then exit 0; fi
         bun run typecheck
     spec-lint:
       glob: "specs/**/*.md"
@@ -19,7 +19,7 @@ pre-commit:
           gitleaks protect --staged --redact
         fi
     sibling-test:
-      run: bun scripts/sibling-test-hook.ts
+      run: bun scripts/ci/sibling-test-hook.ts
 
 pre-push:
   parallel: true
