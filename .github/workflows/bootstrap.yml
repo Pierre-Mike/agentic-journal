@@ -35,21 +35,33 @@ jobs:
             | cut -c1-50)
           echo "value=$SLUG" >> $GITHUB_OUTPUT
 
-      - name: Create branch with seed commit
+      - name: Create or reuse branch (idempotent)
         run: |
           BRANCH="auto/${{ github.event.issue.number }}-${{ steps.slug.outputs.value }}"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
-          git checkout -b "$BRANCH"
-          git commit --allow-empty -m "bootstrap: open PR for issue #${{ github.event.issue.number }}"
-          git push -u origin "$BRANCH"
+          if git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null 2>&1; then
+            echo "Branch $BRANCH already exists on remote — checking out"
+            git fetch origin "$BRANCH"
+            git checkout -B "$BRANCH" "origin/$BRANCH"
+          else
+            echo "Creating new branch $BRANCH with seed commit"
+            git checkout -b "$BRANCH"
+            git commit --allow-empty -m "bootstrap: open PR for issue #${{ github.event.issue.number }}"
+            git push -u origin "$BRANCH"
+          fi
 
-      - name: Open draft PR linked to issue
+      - name: Open or reuse draft PR (idempotent)
         run: |
-          gh pr create \
-            --draft \
-            --title "auto: issue #${{ github.event.issue.number }} — ${{ github.event.issue.title }}" \
-            --body "Closes #${{ github.event.issue.number }}"
+          BRANCH="auto/${{ github.event.issue.number }}-${{ steps.slug.outputs.value }}"
+          if gh pr view "$BRANCH" --json number >/dev/null 2>&1; then
+            echo "PR for $BRANCH already exists — reusing"
+          else
+            gh pr create \
+              --draft \
+              --title "auto: issue #${{ github.event.issue.number }} — ${{ github.event.issue.title }}" \
+              --body "Closes #${{ github.event.issue.number }}"
+          fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
