@@ -12,7 +12,7 @@
  *   6.  Runner: ubuntu-latest
  *   7.  Checkout: actions/checkout@v4 checks out branch with fetch-depth: 0
  *   8.  Pull-rebase before work
- *   9.  Claude invocation: claude -p with --max-turns, ANTHROPIC_API_KEY,
+ *   9.  Claude invocation: claude -p with --max-turns, CLAUDE_CODE_OAUTH_TOKEN,
  *       --no-resume, and expertise skill loaded via flag/path/env mechanism
  *  10.  Commit step between pull-rebase and push
  *  11.  Push with retry on non-fast-forward (max retries = 3)
@@ -374,7 +374,7 @@ describe("slice.yml: pull-rebase before work", () => {
 });
 
 // ---------------------------------------------------------------------------
-// 9. Claude invocation: -p, --max-turns, ANTHROPIC_API_KEY, expertise skill, --no-resume
+// 9. Claude invocation: -p, --max-turns, CLAUDE_CODE_OAUTH_TOKEN, expertise skill, --no-resume
 // ---------------------------------------------------------------------------
 
 describe("slice.yml: claude invocation", () => {
@@ -392,17 +392,20 @@ describe("slice.yml: claude invocation", () => {
 		expect(claudeStep?.run).toMatch(/--max-turns/);
 	});
 
-	test("uses ANTHROPIC_API_KEY secret", () => {
+	test("uses CLAUDE_CODE_OAUTH_TOKEN secret (no API key)", () => {
 		const raw = readWorkflowRaw();
-		expect(raw).toMatch(/secrets\.ANTHROPIC_API_KEY/);
+		expect(raw).toMatch(/secrets\.CLAUDE_CODE_OAUTH_TOKEN/);
+		expect(raw).not.toMatch(/secrets\.ANTHROPIC_API_KEY/);
 	});
 
-	test("ANTHROPIC_API_KEY is wired into the claude step (env or run block)", () => {
+	test("CLAUDE_CODE_OAUTH_TOKEN is wired into the claude step (env or run block)", () => {
 		const wf = parseWorkflow();
 		const steps = allSteps(wf);
 		const claudeStep = steps.find((s) => s.run?.match(/claude\s+-p/));
-		const envHasKey = Object.keys(claudeStep?.env ?? {}).some((k) => k === "ANTHROPIC_API_KEY");
-		const runHasKey = claudeStep?.run?.includes("ANTHROPIC_API_KEY") ?? false;
+		const envHasKey = Object.keys(claudeStep?.env ?? {}).some(
+			(k) => k === "CLAUDE_CODE_OAUTH_TOKEN",
+		);
+		const runHasKey = claudeStep?.run?.includes("CLAUDE_CODE_OAUTH_TOKEN") ?? false;
 		expect(envHasKey || runHasKey).toBe(true);
 	});
 
@@ -611,7 +614,7 @@ describe("slice.yml: failure escalation — posts to ISSUE (not PR)", () => {
 		const steps = allSteps(wf);
 		const menuStep = steps.find((s) => s.run?.includes("issue-options"));
 		const envHasToken = Object.keys(menuStep?.env ?? {}).some(
-			(k) => k === "GH_TOKEN" || k === "GITHUB_TOKEN" || k === "ANTHROPIC_API_KEY",
+			(k) => k === "GH_TOKEN" || k === "GITHUB_TOKEN" || k === "CLAUDE_CODE_OAUTH_TOKEN",
 		);
 		const runHasToken =
 			menuStep?.run?.includes("GH_TOKEN") ||
