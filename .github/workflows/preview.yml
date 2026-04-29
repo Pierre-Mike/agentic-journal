@@ -51,6 +51,9 @@ jobs:
               body,
             });
 
+      - name: Install Playwright browsers
+        run: bunx playwright install --with-deps chromium
+
       - name: Playwright e2e against preview
         run: bun run playwright test
         env:
