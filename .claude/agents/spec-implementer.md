@@ -116,7 +116,7 @@ gh pr checks "$PR_URL" --watch --interval 15 --required
 
 On CI failure:
 ```bash
-bun scripts/ci-feedback.ts "$PR_URL" --worktree .agentic/worktrees/<slug>
+bun scripts/ci/ci-feedback.ts "$PR_URL" --worktree .agentic/worktrees/<slug>
 ```
 
 If CI reports the branch is not up-to-date (parallel-merge conflict), run `gh pr update-branch "$PR_URL"` ONCE and resume the watch. Do not loop.
@@ -188,7 +188,7 @@ HEAD: <rev>
 ## Resume paths
 1. Edit the stuck task's `file_targets` manually, then re-run `/do <slug>` — implementer resumes Step 6 loop from current task.
 2. If the tests look wrong, remove `.gate-frozen`, delete `tester-review.md`, and re-run `/do <slug>` — the spec-tester dispatches afresh.
-3. Close the PR (if open) and abandon the worktree via `bun scripts/worktree-close.ts <slug>`.
+3. Close the PR (if open) and abandon the worktree via `bun scripts/worktree/worktree-close.ts <slug>`.
 ```
 
 ## Do not touch

@@ -11,7 +11,7 @@
  */
 
 import { join } from "node:path";
-import { type Fs, type Process, realFs, realProcess } from "./_lib";
+import { type Fs, type Process, realFs, realProcess } from "../_lib";
 
 export async function openWorktree(deps: {
 	slug: string;

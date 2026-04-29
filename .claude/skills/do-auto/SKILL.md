@@ -52,7 +52,7 @@ Wait for completion. The auto-aligner exits 0 in all cases — outcome is encode
 Read the mailbox via the shared helper:
 
 ```ts
-import { parseAlignmentAndBranch } from "scripts/do-auto-branch";
+import { parseAlignmentAndBranch } from "scripts/agentic/do-auto-branch";
 const result = parseAlignmentAndBranch(".agentic/last-alignment.md");
 ```
 
@@ -109,7 +109,7 @@ If any field cannot be derived confidently, write the reason into `replan-escala
 From here forward, the workflow is identical to `/do`. Reference `.claude/skills/do/SKILL.md` Steps 3-10:
 
 - Step 3: Allocate ID and slug
-- Step 4: Open worktree (`bun scripts/worktree-open.ts <slug>`)
+- Step 4: Open worktree (`bun scripts/worktree/worktree-open.ts <slug>`)
 - Step 5: Scaffold the spec (5a proposal.md, 5b alignment.md copied from mailbox, 5c gate, 5d design.md, 5e tasks.md)
 - Step 6: Per-slice TDD loop (kind: code) or work loop (other kinds)
 - Step 7: Close (`bun run spec:complete <slug>`)

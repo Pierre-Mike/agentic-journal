@@ -130,7 +130,7 @@ The steps below are executed by the subagents. Step 5 lives in spec-tester; Step
 ### Step 4 — Open worktree
 
 ```bash
-bun scripts/worktree-open.ts <slug>
+bun scripts/worktree/worktree-open.ts <slug>
 ```
 
 Script creates `.agentic/worktrees/<slug>/` on branch `spec/<slug>` from `main`. All subsequent edits use absolute paths under that directory.
@@ -147,7 +147,7 @@ Inside the worktree, write in this order. `proposal.md` comes first because the 
 
 ```bash
 cp .agentic/last-alignment.md specs/active/<id>-<slug>/alignment.md
-bun scripts/check-alignment-mailbox.ts specs/active/<id>-<slug>/alignment.md
+bun scripts/agentic/check-alignment-mailbox.ts specs/active/<id>-<slug>/alignment.md
 ```
 
 If the mailbox is missing or fails the validator, abort — the spec was launched without a fresh `align` run. Re-run `align` (which writes the mailbox) before retrying `/do`.
@@ -177,7 +177,7 @@ for slice N = 1..taskCount:
     spec-tester (slice N)  → writes gate file for task N, commits RED
                               commit: "spec(<id>): RED — slice N — <task title>"
     // RED-proof step: run the gate to confirm it fails before freezing
-    bun scripts/red-proof.ts <id> <N> <gate-path>
+    bun scripts/ci/red-proof.ts <id> <N> <gate-path>
     // artifact: specs/active/<id>/red-proof-N.txt
     // exit_code branches:
     //   0   → gate passed (not RED) → auto-FAIL: judge skipped, mark tester attempt failed
@@ -301,7 +301,7 @@ Spec 030-style escalation: spec-judge rejected 3 tester attempts. No implementer
 ## Resume paths
 1. Clarify intent in proposal.md and push — retry counter resets.
 2. Override the judge — manually touch `.gate-frozen` and push; a future /do resume dispatches the implementer.
-3. Abandon — close the PR and run `bun scripts/worktree-close.ts <slug>`.
+3. Abandon — close the PR and run `bun scripts/worktree/worktree-close.ts <slug>`.
 EOF
 )")
 echo "✓ draft PR opened for judge-rejected spec: $PR_URL"
@@ -323,7 +323,7 @@ This blocks until all required CI checks resolve. On success → auto-merge fire
 On failure → invoke the CI feedback script so a brief lands inside the worktree for the next session to pick up:
 
 ```bash
-bun scripts/ci-feedback.ts "$PR_URL" --worktree .agentic/worktrees/<slug>
+bun scripts/ci/ci-feedback.ts "$PR_URL" --worktree .agentic/worktrees/<slug>
 ```
 
 The script fetches `gh pr checks` + `gh run view --log-failed` for every red job and writes `ci-failure.md` next to `proposal.md` inside the spec's active directory. A follow-up session (human or a future autonomous fix subagent) reads that brief and drives the fix. No LLM is invoked by this script — it is pure `gh` + markdown formatting.

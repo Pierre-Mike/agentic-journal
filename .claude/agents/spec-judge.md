@@ -165,7 +165,7 @@ failed rubric items:
 
 2. **Override the judge**: manually `touch specs/active/<id>/.gate-frozen` and push. A follow-up `/do <slug>` dispatches the spec-implementer with the last tester output as-is. (This breaks the separation guarantee for this spec; note why in `proposal.md`'s Context section as a `[JUDGE OVERRIDE]` line so future `/retro` surfaces the decision.)
 
-3. **Abandon the spec**: close the PR and run `bun scripts/worktree-close.ts <slug>` after deleting the active spec folder. The worktree-close script handles zombie reconciliation (spec 026).
+3. **Abandon the spec**: close the PR and run `bun scripts/worktree/worktree-close.ts <slug>` after deleting the active spec folder. The worktree-close script handles zombie reconciliation (spec 026).
 
 ### Worktree
 

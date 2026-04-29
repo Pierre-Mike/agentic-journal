@@ -4,8 +4,8 @@
  * State is computed from the filesystem — never stored.
  */
 
-import type { Spec } from "./_lib";
-import { isReady, listActiveSpecs, listArchivedIds, sliceProgress, unresolvedDeps } from "./_lib";
+import type { Spec } from "../_lib";
+import { isReady, listActiveSpecs, listArchivedIds, sliceProgress, unresolvedDeps } from "../_lib";
 
 export function formatSpecLine(
 	spec: Spec,
