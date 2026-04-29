@@ -1,0 +1,208 @@
+exit_code: 1
+command: bun test tests/workflows/automerge.test.ts
+duration_ms: 43
+--- stderr (tail 200) ---
+... (truncated, kept last 200 lines)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/automerge.test.ts:101:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/automerge.test.ts:335:14)
+(fail) automerge.yml: early-green detection (spec gap guard) > spec gap step has an if: guard so it only fires when gap is detected [0.03ms]
+90 | // Helpers
+91 | // ---------------------------------------------------------------------------
+92 | 
+93 | function readWorkflowRaw(): string {
+94 | 	if (!existsSync(WORKFLOW_PATH)) {
+95 | 		throw new Error("automerge.yml not found at .github/workflows/automerge.yml");
+                                                                                   ^
+error: automerge.yml not found at .github/workflows/automerge.yml
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/automerge.test.ts:95:79)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/automerge.test.ts:101:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/automerge.test.ts:349:14)
+(fail) automerge.yml: early-green detection (spec gap guard) > merge step has an if: guard that excludes spec-gap case
+90 | // Helpers
+91 | // ---------------------------------------------------------------------------
+92 | 
+93 | function readWorkflowRaw(): string {
+94 | 	if (!existsSync(WORKFLOW_PATH)) {
+95 | 		throw new Error("automerge.yml not found at .github/workflows/automerge.yml");
+                                                                                   ^
+error: automerge.yml not found at .github/workflows/automerge.yml
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/automerge.test.ts:95:79)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/automerge.test.ts:101:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/automerge.test.ts:365:14)
+(fail) automerge.yml: squash merge > a step runs gh pr merge --squash [0.06ms]
+90 | // Helpers
+91 | // ---------------------------------------------------------------------------
+92 | 
+93 | function readWorkflowRaw(): string {
+94 | 	if (!existsSync(WORKFLOW_PATH)) {
+95 | 		throw new Error("automerge.yml not found at .github/workflows/automerge.yml");
+                                                                                   ^
+error: automerge.yml not found at .github/workflows/automerge.yml
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/automerge.test.ts:95:79)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/automerge.test.ts:101:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/automerge.test.ts:374:14)
+(fail) automerge.yml: squash merge > merge step includes --delete-branch flag [0.03ms]
+90 | // Helpers
+91 | // ---------------------------------------------------------------------------
+92 | 
+93 | function readWorkflowRaw(): string {
+94 | 	if (!existsSync(WORKFLOW_PATH)) {
+95 | 		throw new Error("automerge.yml not found at .github/workflows/automerge.yml");
+                                                                                   ^
+error: automerge.yml not found at .github/workflows/automerge.yml
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/automerge.test.ts:95:79)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/automerge.test.ts:101:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/automerge.test.ts:383:14)
+(fail) automerge.yml: squash merge > merge step references a PR number variable (not hardcoded) [0.04ms]
+90 | // Helpers
+91 | // ---------------------------------------------------------------------------
+92 | 
+93 | function readWorkflowRaw(): string {
+94 | 	if (!existsSync(WORKFLOW_PATH)) {
+95 | 		throw new Error("automerge.yml not found at .github/workflows/automerge.yml");
+                                                                                   ^
+error: automerge.yml not found at .github/workflows/automerge.yml
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/automerge.test.ts:95:79)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/automerge.test.ts:101:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/automerge.test.ts:406:14)
+(fail) automerge.yml: issue close after merge > a step runs gh issue close after the merge step [0.03ms]
+90 | // Helpers
+91 | // ---------------------------------------------------------------------------
+92 | 
+93 | function readWorkflowRaw(): string {
+94 | 	if (!existsSync(WORKFLOW_PATH)) {
+95 | 		throw new Error("automerge.yml not found at .github/workflows/automerge.yml");
+                                                                                   ^
+error: automerge.yml not found at .github/workflows/automerge.yml
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/automerge.test.ts:95:79)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/automerge.test.ts:101:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/automerge.test.ts:413:14)
+(fail) automerge.yml: issue close after merge > issue close step references an issue number variable [0.03ms]
+90 | // Helpers
+91 | // ---------------------------------------------------------------------------
+92 | 
+93 | function readWorkflowRaw(): string {
+94 | 	if (!existsSync(WORKFLOW_PATH)) {
+95 | 		throw new Error("automerge.yml not found at .github/workflows/automerge.yml");
+                                                                                   ^
+error: automerge.yml not found at .github/workflows/automerge.yml
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/automerge.test.ts:95:79)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/automerge.test.ts:101:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/automerge.test.ts:427:14)
+(fail) automerge.yml: issue close after merge > issue close step comes AFTER the merge step in step order
+90 | // Helpers
+91 | // ---------------------------------------------------------------------------
+92 | 
+93 | function readWorkflowRaw(): string {
+94 | 	if (!existsSync(WORKFLOW_PATH)) {
+95 | 		throw new Error("automerge.yml not found at .github/workflows/automerge.yml");
+                                                                                   ^
+error: automerge.yml not found at .github/workflows/automerge.yml
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/automerge.test.ts:95:79)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/automerge.test.ts:101:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/automerge.test.ts:444:14)
+(fail) automerge.yml: spec archive step > a step archives the spec after merge (bun run spec:complete or mv specs/active → specs/archive) [0.09ms]
+90 | // Helpers
+91 | // ---------------------------------------------------------------------------
+92 | 
+93 | function readWorkflowRaw(): string {
+94 | 	if (!existsSync(WORKFLOW_PATH)) {
+95 | 		throw new Error("automerge.yml not found at .github/workflows/automerge.yml");
+                                                                                   ^
+error: automerge.yml not found at .github/workflows/automerge.yml
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/automerge.test.ts:95:79)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/automerge.test.ts:101:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/automerge.test.ts:458:14)
+(fail) automerge.yml: spec archive step > archive step comes after the merge step [0.02ms]
+90 | // Helpers
+91 | // ---------------------------------------------------------------------------
+92 | 
+93 | function readWorkflowRaw(): string {
+94 | 	if (!existsSync(WORKFLOW_PATH)) {
+95 | 		throw new Error("automerge.yml not found at .github/workflows/automerge.yml");
+                                                                                   ^
+error: automerge.yml not found at .github/workflows/automerge.yml
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/automerge.test.ts:95:79)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/automerge.test.ts:101:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/automerge.test.ts:480:14)
+(fail) automerge.yml: failure fan-in (issue-options.ts) > a step calls bun scripts/issue-options.ts on gate failure [0.05ms]
+90 | // Helpers
+91 | // ---------------------------------------------------------------------------
+92 | 
+93 | function readWorkflowRaw(): string {
+94 | 	if (!existsSync(WORKFLOW_PATH)) {
+95 | 		throw new Error("automerge.yml not found at .github/workflows/automerge.yml");
+                                                                                   ^
+error: automerge.yml not found at .github/workflows/automerge.yml
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/automerge.test.ts:95:79)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/automerge.test.ts:101:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/automerge.test.ts:489:14)
+(fail) automerge.yml: failure fan-in (issue-options.ts) > failure step posts via gh issue comment (NOT gh pr comment) [0.05ms]
+90 | // Helpers
+91 | // ---------------------------------------------------------------------------
+92 | 
+93 | function readWorkflowRaw(): string {
+94 | 	if (!existsSync(WORKFLOW_PATH)) {
+95 | 		throw new Error("automerge.yml not found at .github/workflows/automerge.yml");
+                                                                                   ^
+error: automerge.yml not found at .github/workflows/automerge.yml
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/automerge.test.ts:95:79)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/automerge.test.ts:101:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/automerge.test.ts:500:14)
+(fail) automerge.yml: failure fan-in (issue-options.ts) > failure fan-in step has an if: guard (only fires when a gate fails) [0.03ms]
+90 | // Helpers
+91 | // ---------------------------------------------------------------------------
+92 | 
+93 | function readWorkflowRaw(): string {
+94 | 	if (!existsSync(WORKFLOW_PATH)) {
+95 | 		throw new Error("automerge.yml not found at .github/workflows/automerge.yml");
+                                                                                   ^
+error: automerge.yml not found at .github/workflows/automerge.yml
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/automerge.test.ts:95:79)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/automerge.test.ts:101:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/automerge.test.ts:510:14)
+(fail) automerge.yml: failure fan-in (issue-options.ts) > failure step condition references a failure state (failure() or a gate output) [0.07ms]
+90 | // Helpers
+91 | // ---------------------------------------------------------------------------
+92 | 
+93 | function readWorkflowRaw(): string {
+94 | 	if (!existsSync(WORKFLOW_PATH)) {
+95 | 		throw new Error("automerge.yml not found at .github/workflows/automerge.yml");
+                                                                                   ^
+error: automerge.yml not found at .github/workflows/automerge.yml
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/automerge.test.ts:95:79)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/automerge.test.ts:101:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/automerge.test.ts:533:14)
+(fail) automerge.yml: runner > uses runs-on: ubuntu-latest [0.02ms]
+90 | // Helpers
+91 | // ---------------------------------------------------------------------------
+92 | 
+93 | function readWorkflowRaw(): string {
+94 | 	if (!existsSync(WORKFLOW_PATH)) {
+95 | 		throw new Error("automerge.yml not found at .github/workflows/automerge.yml");
+                                                                                   ^
+error: automerge.yml not found at .github/workflows/automerge.yml
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/automerge.test.ts:95:79)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/automerge.test.ts:101:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/automerge.test.ts:546:14)
+(fail) automerge.yml: checkout step > uses actions/checkout@v4
+90 | // Helpers
+91 | // ---------------------------------------------------------------------------
+92 | 
+93 | function readWorkflowRaw(): string {
+94 | 	if (!existsSync(WORKFLOW_PATH)) {
+95 | 		throw new Error("automerge.yml not found at .github/workflows/automerge.yml");
+                                                                                   ^
+error: automerge.yml not found at .github/workflows/automerge.yml
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/automerge.test.ts:95:79)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/automerge.test.ts:101:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/automerge.test.ts:553:14)
+(fail) automerge.yml: checkout step > checkout step sets fetch-depth: 0 [0.14ms]
+
+ 0 pass
+ 37 fail
+ 1 expect() calls
+Ran 37 tests across 1 file. [36.00ms]
+
+--- stdout (tail 200) ---
+bun test v1.3.6 (d530ed99)
