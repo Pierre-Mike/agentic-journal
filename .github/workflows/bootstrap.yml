@@ -53,6 +53,14 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Setup Node and install Claude Code CLI
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install @anthropic-ai/claude-code
+        run: npm i -g @anthropic-ai/claude-code
+
       - name: Run /do-auto aligner
         id: align
         env:
