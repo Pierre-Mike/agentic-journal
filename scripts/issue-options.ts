@@ -46,6 +46,20 @@ export function renderFailureMenu(input: FailureMenuInput): string {
 }
 
 /**
+ * Outer-gate compatible shim: `failureMenu(sliceId, title) → string`.
+ * Wraps renderFailureMenu with sensible defaults for the optional fields.
+ */
+export function failureMenu(sliceId: number, sliceTitle: string): string {
+	return renderFailureMenu({
+		sliceId: String(sliceId),
+		sliceTitle,
+		attemptCount: 3,
+		lastError: "",
+		runUrl: "",
+	});
+}
+
+/**
  * Parses a user reply comment body.
  * Returns the single checked valid choice, or null if ambiguous / none / unrecognised.
  */

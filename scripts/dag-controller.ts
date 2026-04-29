@@ -192,3 +192,34 @@ export function findDispatchable({ tasks, completed, inFlight }: DispatchableInp
 		})
 		.map((task) => task.id);
 }
+
+// ---------------------------------------------------------------------------
+// Compatibility shim: outer-gate API (simpler Slice type, returns Slice[])
+// ---------------------------------------------------------------------------
+
+interface SimpleSlice {
+	readonly id: number;
+	readonly depends_on: number[];
+	readonly touches: string[];
+}
+
+/**
+ * Outer-gate compatible variant of findDispatchable.
+ * Accepts the minimal Slice shape (id, depends_on, touches) and returns Slice[].
+ */
+export function dispatchable(
+	slices: SimpleSlice[],
+	done: Set<number>,
+	inFlight: SimpleSlice[],
+): SimpleSlice[] {
+	const inFlightIds = new Set(inFlight.map((s) => s.id));
+	const inFlightTouches: string[] = inFlight.flatMap((s) => s.touches);
+
+	return slices.filter((slice) => {
+		if (done.has(slice.id)) return false;
+		if (inFlightIds.has(slice.id)) return false;
+		if (!slice.depends_on.every((dep) => done.has(dep))) return false;
+		if (intersectsTouches(slice.touches, inFlightTouches)) return false;
+		return true;
+	});
+}
