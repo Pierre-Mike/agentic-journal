@@ -6,6 +6,7 @@ on:
 permissions:
   contents: read
   pull-requests: write
+  deployments: write
 
 jobs:
   preview:
@@ -17,7 +18,7 @@ jobs:
           bun-version: 1.2.4
       - run: bun install --frozen-lockfile
       - run: bun run build
-      - name: Preview deploy
+      - name: Preview deploy (wrangler versions upload)
         id: deploy
         uses: cloudflare/wrangler-action@v3
         env:
@@ -27,15 +28,35 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: versions upload --env="" --preview-alias pr-${{ github.event.pull_request.number }}
+
+      - name: Capture preview URL
+        id: capture
+        run: |
+          PREVIEW_URL="https://pr-${{ github.event.pull_request.number }}.agentic-journal.workers.dev"
+          echo "deployment_url=$PREVIEW_URL" >> "$GITHUB_OUTPUT"
+
       - name: Comment preview URL
         uses: actions/github-script@v7
+        env:
+          PREVIEW_URL: ${{ steps.capture.outputs.deployment_url }}
         with:
           script: |
             const pr = context.payload.pull_request.number;
-            const body = `Preview: https://pr-${pr}.agentic-journal.workers.dev`;
+            const previewUrl = process.env.PREVIEW_URL;
+            const body = `Preview: ${previewUrl}`;
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: pr,
               body,
             });
+
+      - name: Playwright e2e against preview
+        run: bun run playwright test
+        env:
+          PLAYWRIGHT_BASE_URL: ${{ steps.capture.outputs.deployment_url }}
+          PREVIEW_URL: ${{ steps.capture.outputs.deployment_url }}
+
+      - name: Outer BDD gate
+        continue-on-error: true
+        run: bun test tests/automation-pipeline.test.ts

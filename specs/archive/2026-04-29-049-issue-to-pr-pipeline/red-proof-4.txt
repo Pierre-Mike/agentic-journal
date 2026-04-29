@@ -1,0 +1,78 @@
+exit_code: 1
+command: bun test tests/codeowners.test.ts
+duration_ms: 21
+--- stderr (tail 200) ---
+
+tests/codeowners.test.ts:
+ 9 | // Any such handle would allow self-approval, defeating the freeze.
+10 | const REAL_HANDLES = ["@pierre-mike"];
+11 | 
+12 | describe("CODEOWNERS: freeze alignment.md", () => {
+13 | 	it("file exists at .github/CODEOWNERS", () => {
+14 | 		expect(existsSync(CODEOWNERS_PATH)).toBe(true);
+                                           ^
+error: expect(received).toBe(expected)
+
+Expected: true
+Received: false
+
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/codeowners.test.ts:14:39)
+(fail) CODEOWNERS: freeze alignment.md > file exists at .github/CODEOWNERS [0.54ms]
+13 | 	it("file exists at .github/CODEOWNERS", () => {
+14 | 		expect(existsSync(CODEOWNERS_PATH)).toBe(true);
+15 | 	});
+16 | 
+17 | 	it("alignment rule pattern is exactly specs/active/*/alignment.md (single-star glob)", () => {
+18 | 		const content = readFileSync(CODEOWNERS_PATH, "utf8");
+                       ^
+error: ENOENT: no such file or directory, open '/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/.github/CODEOWNERS'
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/codeowners.test.ts:18:19)
+(fail) CODEOWNERS: freeze alignment.md > alignment rule pattern is exactly specs/active/*/alignment.md (single-star glob) [0.10ms]
+24 | 		);
+25 | 		expect(alignmentRule).toBeTruthy();
+26 | 	});
+27 | 
+28 | 	it("alignment.md owner list contains NO real repo handle (lockout sentinel only)", () => {
+29 | 		const content = readFileSync(CODEOWNERS_PATH, "utf8");
+                       ^
+error: ENOENT: no such file or directory, open '/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/.github/CODEOWNERS'
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/codeowners.test.ts:29:19)
+(fail) CODEOWNERS: freeze alignment.md > alignment.md owner list contains NO real repo handle (lockout sentinel only)
+57 | 			expect(o).toMatch(/no-such|freeze|lockout|__/i);
+58 | 		}
+59 | 	});
+60 | 
+61 | 	it("alignment rule line index is greater than any catch-all * rule (last-match-wins)", () => {
+62 | 		const content = readFileSync(CODEOWNERS_PATH, "utf8");
+                       ^
+error: ENOENT: no such file or directory, open '/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/.github/CODEOWNERS'
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/codeowners.test.ts:62:19)
+(fail) CODEOWNERS: freeze alignment.md > alignment rule line index is greater than any catch-all * rule (last-match-wins)
+76 | 		// AFTER the catch-all so it takes precedence over the default owner.
+77 | 		expect(alignmentIdx).toBeGreaterThan(catchAllIdx);
+78 | 	});
+79 | 
+80 | 	it("has a default fallback rule for all other paths", () => {
+81 | 		const content = readFileSync(CODEOWNERS_PATH, "utf8");
+                       ^
+error: ENOENT: no such file or directory, open '/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/.github/CODEOWNERS'
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/codeowners.test.ts:81:19)
+(fail) CODEOWNERS: freeze alignment.md > has a default fallback rule for all other paths
+84 | 		const fallback = lines.find((line) => /^\*\s+@\S+/.test(line.trim()));
+85 | 		expect(fallback).toBeTruthy();
+86 | 	});
+87 | 
+88 | 	it("file ends with a newline (POSIX)", () => {
+89 | 		const content = readFileSync(CODEOWNERS_PATH, "utf8");
+                       ^
+error: ENOENT: no such file or directory, open '/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/.github/CODEOWNERS'
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/codeowners.test.ts:89:19)
+(fail) CODEOWNERS: freeze alignment.md > file ends with a newline (POSIX) [0.23ms]
+
+ 0 pass
+ 6 fail
+ 1 expect() calls
+Ran 6 tests across 1 file. [16.00ms]
+
+--- stdout (tail 200) ---
+bun test v1.3.6 (d530ed99)

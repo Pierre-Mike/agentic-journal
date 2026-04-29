@@ -1,0 +1,82 @@
+name: Slice Controller
+
+on:
+  schedule:
+    - cron: "*/2 * * * *"
+  repository_dispatch:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+  actions: write
+
+concurrency:
+  group: controller-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  controller:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Detect completed slices from git log (GREEN commits)
+        id: completed
+        run: |
+          # Match commits like "code(049): GREEN — slice 3"
+          COMPLETED=$(git log --oneline | grep -oP 'GREEN\s+[—-]+\s+slice\s+\K\d+' | sort -un | tr '\n' ',' | sed 's/,$//')
+          echo "ids=${COMPLETED}" >> "$GITHUB_OUTPUT"
+
+      - name: Detect in-flight slice.yml runs
+        id: inflight
+        run: |
+          IN_FLIGHT=$(gh run list --workflow=slice.yml --status=in_progress --json databaseId,name 2>/dev/null || echo "[]")
+          echo "json=${IN_FLIGHT}" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Compute dispatchable slices via dag-controller.ts
+        id: dag
+        run: |
+          TASKS_MD=$(find specs/active -name "tasks.md" | head -1)
+          if [ -z "$TASKS_MD" ]; then
+            echo "dispatchable=[]" >> "$GITHUB_OUTPUT"
+            echo "spec_id=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          SPEC_DIR=$(dirname "$TASKS_MD")
+          SPEC_ID=$(basename "$SPEC_DIR")
+          DISPATCHABLE=$(bun scripts/dag-controller.ts "$TASKS_MD" \
+            "${{ steps.completed.outputs.ids }}" \
+            '${{ steps.inflight.outputs.json }}')
+          echo "dispatchable=${DISPATCHABLE}" >> "$GITHUB_OUTPUT"
+          echo "spec_id=${SPEC_ID}" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Dispatch ready slices via gh workflow run slice.yml
+        if: steps.dag.outputs.dispatchable != '[]' && steps.dag.outputs.dispatchable != ''
+        run: |
+          DISPATCHABLE='${{ steps.dag.outputs.dispatchable }}'
+          SPEC_ID='${{ steps.dag.outputs.spec_id }}'
+          BRANCH='${{ github.ref_name }}'
+          # Iterate over slice IDs and dispatch each via gh api dispatches
+          for slice_id in $(echo "$DISPATCHABLE" | tr -d '[]' | tr ',' ' '); do
+            gh workflow run slice.yml \
+              --ref "$BRANCH" \
+              --field slice_id="${slice_id}" \
+              --field spec_id="${SPEC_ID}" \
+              --field branch="${BRANCH}"
+            echo "Dispatched slice_id=${slice_id} spec_id=${SPEC_ID} branch=${BRANCH}"
+          done
+        env:
+          GH_TOKEN: ${{ github.token }}
