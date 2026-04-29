@@ -63,6 +63,14 @@ jobs:
           curl -fsSL https://bun.sh/install | bash
           echo "$HOME/.bun/bin" >> "$GITHUB_PATH"
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install @anthropic-ai/claude-code
+        run: npm i -g @anthropic-ai/claude-code
+
       - name: Install dependencies
         run: |
           export PATH="$HOME/.bun/bin:$PATH"
