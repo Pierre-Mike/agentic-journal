@@ -1,1 +1,207 @@
-{"nodes":[],"edges":[]}
+{
+  "nodes": [
+    {
+      "id": "group-trigger",
+      "type": "group",
+      "x": 0,
+      "y": -220,
+      "width": 1000,
+      "height": 440,
+      "label": "Trigger",
+      "color": "1"
+    },
+    {
+      "id": "group-judgment",
+      "type": "group",
+      "x": 1060,
+      "y": -220,
+      "width": 680,
+      "height": 440,
+      "label": "Judgment gate",
+      "color": "5"
+    },
+    {
+      "id": "group-outcomes",
+      "type": "group",
+      "x": 1800,
+      "y": -220,
+      "width": 1260,
+      "height": 440,
+      "label": "Outcomes",
+      "color": "3"
+    },
+    {
+      "id": "user-intent",
+      "type": "text",
+      "x": 40,
+      "y": -60,
+      "width": 220,
+      "height": 60,
+      "text": "user intent"
+    },
+    {
+      "id": "skill-do-auto",
+      "type": "file",
+      "x": 340,
+      "y": -60,
+      "width": 280,
+      "height": 60,
+      "file": ".claude/skills/do-auto/SKILL.md",
+      "label": "/do-auto SKILL"
+    },
+    {
+      "id": "agent-auto-aligner",
+      "type": "file",
+      "x": 700,
+      "y": -60,
+      "width": 280,
+      "height": 60,
+      "file": ".claude/agents/auto-aligner.md",
+      "label": "auto-aligner AGENT"
+    },
+    {
+      "id": "mailbox",
+      "type": "text",
+      "x": 1100,
+      "y": -60,
+      "width": 260,
+      "height": 60,
+      "text": ".agentic/last-alignment.md"
+    },
+    {
+      "id": "branch-confirmed",
+      "type": "text",
+      "x": 1840,
+      "y": -160,
+      "width": 260,
+      "height": 60,
+      "text": "confirmed + confidence:high"
+    },
+    {
+      "id": "branch-needs-human",
+      "type": "text",
+      "x": 1840,
+      "y": 60,
+      "width": 260,
+      "height": 60,
+      "text": "needs-human"
+    },
+    {
+      "id": "skill-do",
+      "type": "file",
+      "x": 2180,
+      "y": -160,
+      "width": 280,
+      "height": 60,
+      "file": ".claude/skills/do/SKILL.md",
+      "label": "/do Steps 3-10"
+    },
+    {
+      "id": "merged-spec",
+      "type": "text",
+      "x": 2540,
+      "y": -160,
+      "width": 200,
+      "height": 60,
+      "text": "merged spec → PR"
+    },
+    {
+      "id": "skill-morning-digest",
+      "type": "file",
+      "x": 2180,
+      "y": 60,
+      "width": 280,
+      "height": 60,
+      "file": ".claude/skills/morning-digest/SKILL.md",
+      "label": "/morning-digest SKILL"
+    },
+    {
+      "id": "digest-file",
+      "type": "text",
+      "x": 2540,
+      "y": 60,
+      "width": 200,
+      "height": 60,
+      "text": "digest/YYYY-MM-DD.md"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-intent",
+      "fromNode": "user-intent",
+      "toNode": "skill-do-auto",
+      "fromSide": "right",
+      "toSide": "left",
+      "label": "intent"
+    },
+    {
+      "id": "edge-dispatch",
+      "fromNode": "skill-do-auto",
+      "toNode": "agent-auto-aligner",
+      "fromSide": "right",
+      "toSide": "left",
+      "label": "dispatch"
+    },
+    {
+      "id": "edge-aligner-to-mailbox",
+      "fromNode": "agent-auto-aligner",
+      "toNode": "mailbox",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "edge-confirmed-high",
+      "fromNode": "mailbox",
+      "toNode": "branch-confirmed",
+      "fromSide": "right",
+      "toSide": "left",
+      "label": "confirmed+high"
+    },
+    {
+      "id": "edge-needs-human",
+      "fromNode": "mailbox",
+      "toNode": "branch-needs-human",
+      "fromSide": "right",
+      "toSide": "left",
+      "label": "needs-human"
+    },
+    {
+      "id": "edge-do-steps",
+      "fromNode": "branch-confirmed",
+      "toNode": "skill-do",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "edge-merged",
+      "fromNode": "skill-do",
+      "toNode": "merged-spec",
+      "fromSide": "right",
+      "toSide": "left",
+      "label": "MERGED row"
+    },
+    {
+      "id": "edge-morning-digest-needs",
+      "fromNode": "branch-needs-human",
+      "toNode": "skill-morning-digest",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "edge-digest-file",
+      "fromNode": "skill-morning-digest",
+      "toNode": "digest-file",
+      "fromSide": "right",
+      "toSide": "left",
+      "label": "NEEDS-HUMAN row"
+    },
+    {
+      "id": "edge-merged-to-digest",
+      "fromNode": "merged-spec",
+      "toNode": "skill-morning-digest",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "label": "MERGED row"
+    }
+  ]
+}
