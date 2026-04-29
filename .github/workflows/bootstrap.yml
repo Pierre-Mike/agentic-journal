@@ -35,10 +35,13 @@ jobs:
             | cut -c1-50)
           echo "value=$SLUG" >> $GITHUB_OUTPUT
 
-      - name: Create branch
+      - name: Create branch with seed commit
         run: |
           BRANCH="auto/${{ github.event.issue.number }}-${{ steps.slug.outputs.value }}"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
           git checkout -b "$BRANCH"
+          git commit --allow-empty -m "bootstrap: open PR for issue #${{ github.event.issue.number }}"
           git push -u origin "$BRANCH"
 
       - name: Open draft PR linked to issue

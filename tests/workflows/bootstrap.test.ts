@@ -304,11 +304,11 @@ describe("bootstrap.yml: confidence gate (structural)", () => {
 	test("the alignment.md commit step has an 'if:' guard referencing confidence", () => {
 		const wf = parseWorkflow();
 		const steps = allSteps(wf);
-		// Find a step that commits alignment.md
+		// Find the step that commits alignment.md (must reference alignment.md explicitly)
 		const commitStep = steps.find(
 			(s) =>
 				s.run !== undefined &&
-				(s.run.includes("alignment.md") || s.run.includes("git commit")) &&
+				s.run.includes("alignment.md") &&
 				(s.run.includes("git add") || s.run.includes("git commit")),
 		);
 		expect(commitStep).toBeDefined();
