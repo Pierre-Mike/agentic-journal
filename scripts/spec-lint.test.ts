@@ -404,11 +404,15 @@ function registerTests(): void {
 
 	// ----------------------------------------------------------------
 	// spec-049 slice 1 RED: depends_on and touches schema enforcement
+	// 13 tests total (dispatch brief said 10; count was revised upward to cover:
+	//   template structure ×4, schema negative cases ×5, valid cases ×2,
+	//   boundary cross-check ×1, parser round-trip ×1)
 	// These tests MUST fail until:
 	//   - specs/_template/tasks.md declares depends_on: and touches: on every slice
 	//   - validateTaskSchema() enforces touches: (non-empty path list)
 	//   - validateTaskSchema() enforces depends_on: (list of integers)
-	//   - validateBoundary() rejects touches: paths outside boundary:
+	//   - validateTaskSchema() rejects touches: entries outside boundary: globs
+	//   - parseTasksFile() parses depends_on: and touches: fields
 	// ----------------------------------------------------------------
 	describe("spec-049: template tasks.md declares depends_on and touches on every task", () => {
 		function getParseTasksFileRaw(): (path: string) => readonly Record<string, unknown>[] {
@@ -589,22 +593,11 @@ function registerTests(): void {
 		});
 	});
 
-	describe("spec-049: validateBoundary rejects touches paths outside boundary", () => {
-		test("touches path outside boundary → validateBoundary fails for that path", () => {
-			// If a task declares touches: [src/outside.ts] but boundary: [scripts/*.ts],
-			// validateBoundary should detect the violation when checking touches as changed files.
-			const result = validateBoundary({
-				task: { boundary: ["scripts/*.ts"] },
-				changedFiles: ["src/outside.ts"],
-				repoRoot: "/tmp/fixture",
-			});
-			expect(result.ok).toBe(false);
-			if (!result.ok) {
-				expect(result.offendingFiles).toContain("src/outside.ts");
-			}
-		});
-
-		test("validateTaskSchema: touches path not matching any boundary glob → error", () => {
+	describe("spec-049: validateTaskSchema cross-checks touches against boundary", () => {
+		test("validateTaskSchema: touches path not matching any boundary glob → error mentioning touches or boundary", () => {
+			// NEW behavior (slice 1): validateTaskSchema must reject a task whose touches:
+			// entries fall outside the declared boundary: globs. This is a schema-level
+			// cross-check distinct from validateBoundary's file-existence check.
 			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			const mod = require("./spec-lint.ts") as Record<string, unknown>;
 			if (typeof mod.validateTaskSchema !== "function") {
@@ -625,6 +618,56 @@ function registerTests(): void {
 			});
 			expect(result.errors.length).toBeGreaterThan(0);
 			expect(result.errors.join("\n")).toMatch(/touches|boundary/i);
+		});
+	});
+
+	describe("spec-049: parseTasksFile round-trip for depends_on and touches fields", () => {
+		test("parseTasksFile parses depends_on and touches from a synthetic tasks.md fixture", () => {
+			// Pin the parser contract: both fields must appear on the parsed task object.
+			// This is independent of _template/tasks.md content evolution.
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			const mod = require("./spec-lint.ts") as Record<string, unknown>;
+			if (typeof mod.parseTasksFile !== "function") {
+				throw new Error("parseTasksFile not exported from spec-lint.ts");
+			}
+			const parseTasksFile = mod.parseTasksFile as (
+				path: string,
+			) => readonly Record<string, unknown>[];
+			const { writeFileSync, mkdtempSync } = require("node:fs") as typeof import("node:fs");
+			const { join } = require("node:path") as typeof import("node:path");
+			const { tmpdir } = require("node:os") as typeof import("node:os");
+			const tmp = mkdtempSync(join(tmpdir(), "spec-lint-049-roundtrip-"));
+			const tasksPath = join(tmp, "tasks.md");
+			writeFileSync(
+				tasksPath,
+				[
+					"# Tasks",
+					"",
+					"- [ ] 1. Build the widget",
+					"  - agent: main",
+					"  - gate: scripts/smoke-widget.ts",
+					"  - file_targets: [src/widget.ts]",
+					"  - boundary: [src/widget.ts]",
+					"  - depends_on: [1, 2]",
+					"  - touches: [foo.ts, bar.ts]",
+					"",
+				].join("\n"),
+			);
+			const tasks = parseTasksFile(tasksPath);
+			expect(tasks.length).toBe(1);
+			const task = tasks[0];
+			expect(task).toBeDefined();
+			// depends_on must be present and be an array containing 1 and 2
+			expect(Object.hasOwn(task!, "depends_on")).toBe(true);
+			const dependsOn = task!["depends_on"];
+			expect(Array.isArray(dependsOn)).toBe(true);
+			expect((dependsOn as unknown[]).length).toBe(2);
+			// touches must be present and contain foo.ts and bar.ts
+			expect(Object.hasOwn(task!, "touches")).toBe(true);
+			const touches = task!["touches"];
+			expect(Array.isArray(touches)).toBe(true);
+			expect(touches as string[]).toContain("foo.ts");
+			expect(touches as string[]).toContain("bar.ts");
 		});
 	});
 
