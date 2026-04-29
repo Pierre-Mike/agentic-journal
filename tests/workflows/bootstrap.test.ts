@@ -257,7 +257,15 @@ describe("bootstrap.yml: claude /do-auto invocation", () => {
 	test("passes /do-auto as the prompt or command", () => {
 		const wf = parseWorkflow();
 		const steps = allSteps(wf);
-		const doAutoStep = steps.find((s) => s.run?.includes("/do-auto"));
+		// /do-auto may appear in `run:` (CLI form) or in a step's `with.prompt` (action form)
+		const doAutoStep = steps.find((s) => {
+			if (s.run?.includes("/do-auto")) return true;
+			const withProps = (s as { with?: Record<string, unknown> }).with;
+			if (withProps && typeof withProps.prompt === "string") {
+				return withProps.prompt.includes("/do-auto");
+			}
+			return false;
+		});
 		expect(doAutoStep).toBeDefined();
 	});
 
