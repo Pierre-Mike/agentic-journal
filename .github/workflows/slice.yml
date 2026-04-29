@@ -1,0 +1,139 @@
+name: Slice Runner
+
+on:
+  repository_dispatch:
+    types: [slice-ready]
+  workflow_dispatch:
+    inputs:
+      slice_id:
+        description: "Slice ID to implement"
+        required: true
+        type: string
+      spec_id:
+        description: "Spec ID (slug)"
+        required: true
+        type: string
+      branch:
+        description: "Branch to check out and push to"
+        required: true
+        type: string
+      issue_number:
+        description: "GitHub issue number for failure escalation"
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: ${{ inputs.spec_id || github.event.client_payload.spec_id }}-${{ inputs.slice_id || github.event.client_payload.slice_id }}
+  cancel-in-progress: false
+
+jobs:
+  implement-slice:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Normalize inputs
+        id: norm
+        run: |
+          SLICE_ID="${{ github.event.client_payload.slice_id || github.event.inputs.slice_id }}"
+          SPEC_ID="${{ github.event.client_payload.spec_id || github.event.inputs.spec_id }}"
+          BRANCH="${{ github.event.client_payload.branch || github.event.inputs.branch }}"
+          ISSUE_NUMBER="${{ github.event.client_payload.issue_number || github.event.inputs.issue_number }}"
+          echo "slice_id=${SLICE_ID}" >> "$GITHUB_OUTPUT"
+          echo "spec_id=${SPEC_ID}" >> "$GITHUB_OUTPUT"
+          echo "branch=${BRANCH}" >> "$GITHUB_OUTPUT"
+          echo "issue_number=${ISSUE_NUMBER}" >> "$GITHUB_OUTPUT"
+
+      - name: Pull-rebase before work
+        run: |
+          BRANCH="${{ github.event.client_payload.branch || github.event.inputs.branch }}"
+          git pull --rebase origin "${BRANCH}" || echo "Pre-checkout pull skipped (not yet cloned)"
+
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch || github.event.client_payload.branch }}
+          fetch-depth: 0
+
+      - name: Setup Bun
+        run: |
+          curl -fsSL https://bun.sh/install | bash
+          echo "$HOME/.bun/bin" >> "$GITHUB_PATH"
+
+      - name: Install dependencies
+        run: |
+          export PATH="$HOME/.bun/bin:$PATH"
+          bun install --frozen-lockfile
+
+      - name: Implement slice via Claude (spec-implementer)
+        id: claude-work
+        run: |
+          SLICE_ID="${{ steps.norm.outputs.slice_id }}"
+          SPEC_ID="${{ steps.norm.outputs.spec_id }}"
+          claude -p \
+            --no-resume \
+            --max-turns 50 \
+            --skill expertise \
+            "You are the spec-implementer. Make slice ${SLICE_ID} of spec ${SPEC_ID} GREEN. Read the frozen gate and implement only the file_targets declared in task ${SLICE_ID}. Run bun run tasks:verify. When GREEN, run a refactor pass scoped to the task's file_targets. Do not push — only commit."
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Commit implemented slice files
+        run: |
+          SLICE_ID="${{ steps.norm.outputs.slice_id }}"
+          SPEC_ID="${{ steps.norm.outputs.spec_id }}"
+          git add .github/workflows/slice.yml
+          git diff --cached --quiet || git commit -m "code(${SPEC_ID}): GREEN — slice ${SLICE_ID} — implemented by slice runner"
+
+      - name: Push with retry on non-fast-forward
+        id: push
+        run: |
+          BRANCH="${{ steps.norm.outputs.branch }}"
+          MAX_RETRIES=3
+          attempt=0
+          while [ $attempt -lt $MAX_RETRIES ]; do
+            attempt=$((attempt + 1))
+            if git push origin "${BRANCH}"; then
+              echo "Push succeeded on attempt ${attempt}"
+              echo "attempt=${attempt}" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            echo "Push failed (attempt ${attempt}/${MAX_RETRIES}), pulling --rebase..."
+            git pull --rebase origin "${BRANCH}"
+          done
+          echo "Push failed after ${MAX_RETRIES} attempts"
+          echo "attempt=${attempt}" >> "$GITHUB_OUTPUT"
+          exit 1
+
+      - name: Invoke spec-replanner after GREEN commits
+        run: |
+          SLICE_ID="${{ steps.norm.outputs.slice_id }}"
+          SPEC_ID="${{ steps.norm.outputs.spec_id }}"
+          BRANCH="${{ steps.norm.outputs.branch }}"
+          claude -p \
+            --no-resume \
+            --max-turns 10 \
+            "You are the spec-replanner. Slice ${SLICE_ID} of spec ${SPEC_ID} is now GREEN on branch ${BRANCH}. Review tasks.md and update the plan: check which slices are unblocked, update depends_on status, and commit any changes to tasks.md."
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Failure escalation — post menu on issue
+        if: failure() || steps.push.outputs.attempt == '3'
+        run: |
+          ISSUE_NUMBER="${{ steps.norm.outputs.issue_number }}"
+          SLICE_ID="${{ steps.norm.outputs.slice_id }}"
+          SPEC_ID="${{ steps.norm.outputs.spec_id }}"
+          if [ -z "${ISSUE_NUMBER}" ]; then
+            echo "No issue_number provided; skipping gh issue comment"
+            exit 0
+          fi
+          MENU=$(bun scripts/issue-options.ts "${SPEC_ID}" "${SLICE_ID}" 2>/dev/null || echo "Slice ${SLICE_ID} failed after 3 retries.")
+          gh issue comment "${ISSUE_NUMBER}" --body "${MENU}"
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ github.token }}

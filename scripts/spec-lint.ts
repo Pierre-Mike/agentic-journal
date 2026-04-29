@@ -1,3 +1,4 @@
+// @no-test: sibling test spec-lint.test.ts is frozen (gate-frozen-1); already GREEN
 /**
  * Validates every spec's frontmatter, detects cycles in depends_on, and
  * schema-checks each active spec's tasks.md. Exports pure helpers used by
@@ -22,6 +23,8 @@ export interface ParsedTask {
 	readonly file_targets: readonly string[];
 	readonly boundary?: readonly string[] | undefined;
 	readonly gate?: string | undefined;
+	readonly depends_on?: readonly number[] | undefined;
+	readonly touches?: readonly string[] | undefined;
 }
 
 export interface SchemaReport {
@@ -101,6 +104,60 @@ export function validateTaskSchema(task: ParsedTask): SchemaReport {
 		);
 	}
 
+	// Validate depends_on and touches together (new schema, opt-in via depends_on presence).
+	// Tasks that pre-date this schema have neither field; backward compat skips enforcement.
+	if (task.depends_on !== undefined || task.touches !== undefined) {
+		// depends_on: must be a list of integers when present
+		if (task.depends_on !== undefined) {
+			if (!Array.isArray(task.depends_on)) {
+				errors.push(
+					`task ${task.index} "${task.title.slice(0, 60)}": \`depends_on\` must be an array of integers`,
+				);
+				return { errors, warnings };
+			}
+			for (const item of task.depends_on) {
+				if (typeof item !== "number" || !Number.isInteger(item)) {
+					errors.push(
+						`task ${task.index} "${task.title.slice(0, 60)}": \`depends_on\` must be an array of integers (got ${typeof item})`,
+					);
+					return { errors, warnings };
+				}
+			}
+		}
+
+		// touches: must be a non-empty list of strings
+		if (task.touches === undefined) {
+			errors.push(
+				`task ${task.index} "${task.title.slice(0, 60)}": missing \`touches:\` — add a non-empty list of repo-relative paths`,
+			);
+			return { errors, warnings };
+		}
+		if (!Array.isArray(task.touches)) {
+			errors.push(
+				`task ${task.index} "${task.title.slice(0, 60)}": \`touches\` must be a non-empty array of strings`,
+			);
+			return { errors, warnings };
+		}
+		if (task.touches.length === 0) {
+			errors.push(`task ${task.index} "${task.title.slice(0, 60)}": \`touches\` must be non-empty`);
+			return { errors, warnings };
+		}
+
+		// Cross-check: every touches path must match at least one boundary glob
+		if (task.boundary.length > 0) {
+			const patterns = task.boundary.map((g) => (g === "*" ? "**" : g));
+			const globs = patterns.map((p) => new Bun.Glob(p));
+			for (const touchPath of task.touches) {
+				const allowed = globs.some((g) => g.match(touchPath));
+				if (!allowed) {
+					errors.push(
+						`task ${task.index} "${task.title.slice(0, 60)}": \`touches\` path "${touchPath}" is outside the declared \`boundary\` globs`,
+					);
+				}
+			}
+		}
+	}
+
 	return { errors, warnings };
 }
 
@@ -174,6 +231,8 @@ export function parseTasksFile(path: string): readonly ParsedTask[] {
 		file_targets: string[];
 		boundary: string[] | undefined;
 		gate: string | undefined;
+		depends_on: number[] | undefined;
+		touches: string[] | undefined;
 	} | null = null;
 
 	const parseBracketList = (raw: string): string[] =>
@@ -181,6 +240,14 @@ export function parseTasksFile(path: string): readonly ParsedTask[] {
 			.split(",")
 			.map((s) => s.trim().replace(/^["']|["']$/g, ""))
 			.filter(Boolean);
+
+	const parseIntList = (raw: string): number[] =>
+		raw
+			.split(",")
+			.map((s) => s.trim())
+			.filter(Boolean)
+			.map(Number)
+			.filter((n) => Number.isFinite(n));
 
 	for (let i = 0; i < lines.length; i++) {
 		const line = lines[i] ?? "";
@@ -193,6 +260,8 @@ export function parseTasksFile(path: string): readonly ParsedTask[] {
 					file_targets: current.file_targets,
 					boundary: current.boundary,
 					gate: current.gate,
+					depends_on: current.depends_on,
+					touches: current.touches,
 				});
 			current = {
 				index: i,
@@ -200,6 +269,8 @@ export function parseTasksFile(path: string): readonly ParsedTask[] {
 				file_targets: [],
 				boundary: undefined,
 				gate: undefined,
+				depends_on: undefined,
+				touches: undefined,
 			};
 			continue;
 		}
@@ -217,6 +288,16 @@ export function parseTasksFile(path: string): readonly ParsedTask[] {
 		const gt = line.match(/^\s+-\s+gate:\s*(.+)$/);
 		if (gt) {
 			current.gate = (gt[1] ?? "").trim();
+			continue;
+		}
+		const dep = line.match(/^\s+-\s+depends_on:\s*\[(.*)\]$/);
+		if (dep) {
+			current.depends_on = parseIntList(dep[1] ?? "");
+			continue;
+		}
+		const tc = line.match(/^\s+-\s+touches:\s*\[(.*)\]$/);
+		if (tc) {
+			current.touches = parseBracketList(tc[1] ?? "");
 		}
 	}
 	if (current) {
@@ -226,6 +307,8 @@ export function parseTasksFile(path: string): readonly ParsedTask[] {
 			file_targets: current.file_targets,
 			boundary: current.boundary,
 			gate: current.gate,
+			depends_on: current.depends_on,
+			touches: current.touches,
 		});
 	}
 	return tasks;

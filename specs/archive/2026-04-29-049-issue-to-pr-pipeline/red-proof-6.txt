@@ -1,0 +1,208 @@
+exit_code: 1
+command: bun test tests/workflows/controller.test.ts
+duration_ms: 34
+--- stderr (tail 200) ---
+... (truncated, kept last 200 lines)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/controller.test.ts:80:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/controller.test.ts:201:14)
+(fail) controller.yml: dag-controller.ts invocation (structural) > the dag-controller step references tasks.md [0.12ms]
+69 | // Helpers
+70 | // ---------------------------------------------------------------------------
+71 | 
+72 | function readWorkflowRaw(): string {
+73 | 	if (!existsSync(WORKFLOW_PATH)) {
+74 | 		throw new Error("controller.yml not found at .github/workflows/controller.yml");
+                                                                                     ^
+error: controller.yml not found at .github/workflows/controller.yml
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/controller.test.ts:74:81)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/controller.test.ts:80:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/controller.test.ts:217:14)
+(fail) controller.yml: in-flight detection (structural) > a step queries gh run list for in_progress slice.yml runs
+69 | // Helpers
+70 | // ---------------------------------------------------------------------------
+71 | 
+72 | function readWorkflowRaw(): string {
+73 | 	if (!existsSync(WORKFLOW_PATH)) {
+74 | 		throw new Error("controller.yml not found at .github/workflows/controller.yml");
+                                                                                     ^
+error: controller.yml not found at .github/workflows/controller.yml
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/controller.test.ts:74:81)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/controller.test.ts:80:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/controller.test.ts:229:14)
+(fail) controller.yml: in-flight detection (structural) > in-flight step references slice.yml as the workflow to query [0.07ms]
+69 | // Helpers
+70 | // ---------------------------------------------------------------------------
+71 | 
+72 | function readWorkflowRaw(): string {
+73 | 	if (!existsSync(WORKFLOW_PATH)) {
+74 | 		throw new Error("controller.yml not found at .github/workflows/controller.yml");
+                                                                                     ^
+error: controller.yml not found at .github/workflows/controller.yml
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/controller.test.ts:74:81)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/controller.test.ts:80:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/controller.test.ts:241:14)
+(fail) controller.yml: in-flight detection (structural) > in-flight step uses --json flag or gh api for structured output
+69 | // Helpers
+70 | // ---------------------------------------------------------------------------
+71 | 
+72 | function readWorkflowRaw(): string {
+73 | 	if (!existsSync(WORKFLOW_PATH)) {
+74 | 		throw new Error("controller.yml not found at .github/workflows/controller.yml");
+                                                                                     ^
+error: controller.yml not found at .github/workflows/controller.yml
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/controller.test.ts:74:81)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/controller.test.ts:80:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/controller.test.ts:259:14)
+(fail) controller.yml: completed slices detection (structural) > a step derives completed slices from git log or status file
+69 | // Helpers
+70 | // ---------------------------------------------------------------------------
+71 | 
+72 | function readWorkflowRaw(): string {
+73 | 	if (!existsSync(WORKFLOW_PATH)) {
+74 | 		throw new Error("controller.yml not found at .github/workflows/controller.yml");
+                                                                                     ^
+error: controller.yml not found at .github/workflows/controller.yml
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/controller.test.ts:74:81)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/controller.test.ts:80:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/controller.test.ts:272:14)
+(fail) controller.yml: completed slices detection (structural) > completed detection references GREEN slice commit pattern
+69 | // Helpers
+70 | // ---------------------------------------------------------------------------
+71 | 
+72 | function readWorkflowRaw(): string {
+73 | 	if (!existsSync(WORKFLOW_PATH)) {
+74 | 		throw new Error("controller.yml not found at .github/workflows/controller.yml");
+                                                                                     ^
+error: controller.yml not found at .github/workflows/controller.yml
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/controller.test.ts:74:81)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/controller.test.ts:80:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/controller.test.ts:289:14)
+(fail) controller.yml: dispatch loop (structural) > a step calls gh workflow run or repository_dispatch for slice.yml [0.13ms]
+69 | // Helpers
+70 | // ---------------------------------------------------------------------------
+71 | 
+72 | function readWorkflowRaw(): string {
+73 | 	if (!existsSync(WORKFLOW_PATH)) {
+74 | 		throw new Error("controller.yml not found at .github/workflows/controller.yml");
+                                                                                     ^
+error: controller.yml not found at .github/workflows/controller.yml
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/controller.test.ts:74:81)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/controller.test.ts:80:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/controller.test.ts:301:14)
+(fail) controller.yml: dispatch loop (structural) > dispatch step passes slice_id in payload [0.01ms]
+69 | // Helpers
+70 | // ---------------------------------------------------------------------------
+71 | 
+72 | function readWorkflowRaw(): string {
+73 | 	if (!existsSync(WORKFLOW_PATH)) {
+74 | 		throw new Error("controller.yml not found at .github/workflows/controller.yml");
+                                                                                     ^
+error: controller.yml not found at .github/workflows/controller.yml
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/controller.test.ts:74:81)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/controller.test.ts:80:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/controller.test.ts:314:14)
+(fail) controller.yml: dispatch loop (structural) > dispatch step passes spec_id in payload
+69 | // Helpers
+70 | // ---------------------------------------------------------------------------
+71 | 
+72 | function readWorkflowRaw(): string {
+73 | 	if (!existsSync(WORKFLOW_PATH)) {
+74 | 		throw new Error("controller.yml not found at .github/workflows/controller.yml");
+                                                                                     ^
+error: controller.yml not found at .github/workflows/controller.yml
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/controller.test.ts:74:81)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/controller.test.ts:80:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/controller.test.ts:327:14)
+(fail) controller.yml: dispatch loop (structural) > dispatch step passes branch ref in payload
+69 | // Helpers
+70 | // ---------------------------------------------------------------------------
+71 | 
+72 | function readWorkflowRaw(): string {
+73 | 	if (!existsSync(WORKFLOW_PATH)) {
+74 | 		throw new Error("controller.yml not found at .github/workflows/controller.yml");
+                                                                                     ^
+error: controller.yml not found at .github/workflows/controller.yml
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/controller.test.ts:74:81)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/controller.test.ts:80:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/controller.test.ts:349:14)
+(fail) controller.yml: no-op on empty dispatchable list > dispatch step has an 'if:' guard OR the run block short-circuits on empty array [0.14ms]
+69 | // Helpers
+70 | // ---------------------------------------------------------------------------
+71 | 
+72 | function readWorkflowRaw(): string {
+73 | 	if (!existsSync(WORKFLOW_PATH)) {
+74 | 		throw new Error("controller.yml not found at .github/workflows/controller.yml");
+                                                                                     ^
+error: controller.yml not found at .github/workflows/controller.yml
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/controller.test.ts:74:81)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/controller.test.ts:80:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/controller.test.ts:371:14)
+(fail) controller.yml: no-op on empty dispatchable list > workflow does not fail when dispatchable list is empty (uses exit 0 or non-failure path) [0.04ms]
+69 | // Helpers
+70 | // ---------------------------------------------------------------------------
+71 | 
+72 | function readWorkflowRaw(): string {
+73 | 	if (!existsSync(WORKFLOW_PATH)) {
+74 | 		throw new Error("controller.yml not found at .github/workflows/controller.yml");
+                                                                                     ^
+error: controller.yml not found at .github/workflows/controller.yml
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/controller.test.ts:74:81)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/controller.test.ts:80:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/controller.test.ts:397:14)
+(fail) controller.yml: runner > uses runs-on: ubuntu-latest [0.02ms]
+69 | // Helpers
+70 | // ---------------------------------------------------------------------------
+71 | 
+72 | function readWorkflowRaw(): string {
+73 | 	if (!existsSync(WORKFLOW_PATH)) {
+74 | 		throw new Error("controller.yml not found at .github/workflows/controller.yml");
+                                                                                     ^
+error: controller.yml not found at .github/workflows/controller.yml
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/controller.test.ts:74:81)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/controller.test.ts:80:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/controller.test.ts:410:14)
+(fail) controller.yml: checkout step > uses actions/checkout@v4 [0.04ms]
+69 | // Helpers
+70 | // ---------------------------------------------------------------------------
+71 | 
+72 | function readWorkflowRaw(): string {
+73 | 	if (!existsSync(WORKFLOW_PATH)) {
+74 | 		throw new Error("controller.yml not found at .github/workflows/controller.yml");
+                                                                                     ^
+error: controller.yml not found at .github/workflows/controller.yml
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/controller.test.ts:74:81)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/controller.test.ts:80:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/controller.test.ts:417:14)
+(fail) controller.yml: checkout step > checkout step sets fetch-depth: 0 (needed for git log)
+69 | // Helpers
+70 | // ---------------------------------------------------------------------------
+71 | 
+72 | function readWorkflowRaw(): string {
+73 | 	if (!existsSync(WORKFLOW_PATH)) {
+74 | 		throw new Error("controller.yml not found at .github/workflows/controller.yml");
+                                                                                     ^
+error: controller.yml not found at .github/workflows/controller.yml
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/controller.test.ts:74:81)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/controller.test.ts:80:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/controller.test.ts:430:14)
+(fail) controller.yml: dispatch step structural guard > dispatch step has if: clause OR run block is structured to skip on empty list [0.10ms]
+69 | // Helpers
+70 | // ---------------------------------------------------------------------------
+71 | 
+72 | function readWorkflowRaw(): string {
+73 | 	if (!existsSync(WORKFLOW_PATH)) {
+74 | 		throw new Error("controller.yml not found at .github/workflows/controller.yml");
+                                                                                     ^
+error: controller.yml not found at .github/workflows/controller.yml
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/controller.test.ts:74:81)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/controller.test.ts:80:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/controller.test.ts:449:14)
+(fail) controller.yml: dispatch step structural guard > if: guard on dispatch step references the dispatchable list variable [0.04ms]
+
+ 0 pass
+ 31 fail
+ 1 expect() calls
+Ran 31 tests across 1 file. [28.00ms]
+
+--- stdout (tail 200) ---
+bun test v1.3.6 (d530ed99)

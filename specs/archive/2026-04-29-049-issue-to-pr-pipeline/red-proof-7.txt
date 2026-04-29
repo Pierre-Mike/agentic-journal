@@ -1,0 +1,208 @@
+exit_code: 1
+command: bun test tests/workflows/slice.test.ts
+duration_ms: 34
+--- stderr (tail 200) ---
+... (truncated, kept last 200 lines)
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/slice.test.ts:82:71)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/slice.test.ts:88:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/slice.test.ts:303:14)
+(fail) slice.yml: claude invocation > invokes claude with -p flag [0.13ms]
+77 | // Helpers
+78 | // ---------------------------------------------------------------------------
+79 | 
+80 | function readWorkflowRaw(): string {
+81 | 	if (!existsSync(WORKFLOW_PATH)) {
+82 | 		throw new Error("slice.yml not found at .github/workflows/slice.yml");
+                                                                           ^
+error: slice.yml not found at .github/workflows/slice.yml
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/slice.test.ts:82:71)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/slice.test.ts:88:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/slice.test.ts:310:14)
+(fail) slice.yml: claude invocation > claude invocation includes --max-turns flag [0.04ms]
+77 | // Helpers
+78 | // ---------------------------------------------------------------------------
+79 | 
+80 | function readWorkflowRaw(): string {
+81 | 	if (!existsSync(WORKFLOW_PATH)) {
+82 | 		throw new Error("slice.yml not found at .github/workflows/slice.yml");
+                                                                           ^
+error: slice.yml not found at .github/workflows/slice.yml
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/slice.test.ts:82:71)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/slice.test.ts:317:15)
+(fail) slice.yml: claude invocation > uses ANTHROPIC_API_KEY secret
+77 | // Helpers
+78 | // ---------------------------------------------------------------------------
+79 | 
+80 | function readWorkflowRaw(): string {
+81 | 	if (!existsSync(WORKFLOW_PATH)) {
+82 | 		throw new Error("slice.yml not found at .github/workflows/slice.yml");
+                                                                           ^
+error: slice.yml not found at .github/workflows/slice.yml
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/slice.test.ts:82:71)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/slice.test.ts:88:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/slice.test.ts:322:14)
+(fail) slice.yml: claude invocation > ANTHROPIC_API_KEY is wired into the claude step (env or run block) [0.05ms]
+77 | // Helpers
+78 | // ---------------------------------------------------------------------------
+79 | 
+80 | function readWorkflowRaw(): string {
+81 | 	if (!existsSync(WORKFLOW_PATH)) {
+82 | 		throw new Error("slice.yml not found at .github/workflows/slice.yml");
+                                                                           ^
+error: slice.yml not found at .github/workflows/slice.yml
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/slice.test.ts:82:71)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/slice.test.ts:88:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/slice.test.ts:332:14)
+(fail) slice.yml: claude invocation > claude prompt or env includes the expertise skill [0.05ms]
+77 | // Helpers
+78 | // ---------------------------------------------------------------------------
+79 | 
+80 | function readWorkflowRaw(): string {
+81 | 	if (!existsSync(WORKFLOW_PATH)) {
+82 | 		throw new Error("slice.yml not found at .github/workflows/slice.yml");
+                                                                           ^
+error: slice.yml not found at .github/workflows/slice.yml
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/slice.test.ts:82:71)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/slice.test.ts:88:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/slice.test.ts:350:14)
+(fail) slice.yml: fresh context per slice > claude is invoked with --no-resume flag (no session carryover between slices) [0.06ms]
+77 | // Helpers
+78 | // ---------------------------------------------------------------------------
+79 | 
+80 | function readWorkflowRaw(): string {
+81 | 	if (!existsSync(WORKFLOW_PATH)) {
+82 | 		throw new Error("slice.yml not found at .github/workflows/slice.yml");
+                                                                           ^
+error: slice.yml not found at .github/workflows/slice.yml
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/slice.test.ts:82:71)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/slice.test.ts:88:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/slice.test.ts:363:14)
+(fail) slice.yml: push with retry > a step pushes to origin inputs.branch [0.03ms]
+77 | // Helpers
+78 | // ---------------------------------------------------------------------------
+79 | 
+80 | function readWorkflowRaw(): string {
+81 | 	if (!existsSync(WORKFLOW_PATH)) {
+82 | 		throw new Error("slice.yml not found at .github/workflows/slice.yml");
+                                                                           ^
+error: slice.yml not found at .github/workflows/slice.yml
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/slice.test.ts:82:71)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/slice.test.ts:88:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/slice.test.ts:370:14)
+(fail) slice.yml: push with retry > push step has retry logic for non-fast-forward (loop or retry wrapper) [0.01ms]
+77 | // Helpers
+78 | // ---------------------------------------------------------------------------
+79 | 
+80 | function readWorkflowRaw(): string {
+81 | 	if (!existsSync(WORKFLOW_PATH)) {
+82 | 		throw new Error("slice.yml not found at .github/workflows/slice.yml");
+                                                                           ^
+error: slice.yml not found at .github/workflows/slice.yml
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/slice.test.ts:82:71)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/slice.test.ts:88:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/slice.test.ts:385:14)
+(fail) slice.yml: push with retry > retry logic includes git pull --rebase before re-push on failure [0.06ms]
+77 | // Helpers
+78 | // ---------------------------------------------------------------------------
+79 | 
+80 | function readWorkflowRaw(): string {
+81 | 	if (!existsSync(WORKFLOW_PATH)) {
+82 | 		throw new Error("slice.yml not found at .github/workflows/slice.yml");
+                                                                           ^
+error: slice.yml not found at .github/workflows/slice.yml
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/slice.test.ts:82:71)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/slice.test.ts:88:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/slice.test.ts:394:14)
+(fail) slice.yml: push with retry > push retry has a max-retries count (bounded loop) [0.04ms]
+77 | // Helpers
+78 | // ---------------------------------------------------------------------------
+79 | 
+80 | function readWorkflowRaw(): string {
+81 | 	if (!existsSync(WORKFLOW_PATH)) {
+82 | 		throw new Error("slice.yml not found at .github/workflows/slice.yml");
+                                                                           ^
+error: slice.yml not found at .github/workflows/slice.yml
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/slice.test.ts:82:71)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/slice.test.ts:88:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/slice.test.ts:415:14)
+(fail) slice.yml: replanner invocation > a step invokes spec-replanner or replanner after work [0.04ms]
+77 | // Helpers
+78 | // ---------------------------------------------------------------------------
+79 | 
+80 | function readWorkflowRaw(): string {
+81 | 	if (!existsSync(WORKFLOW_PATH)) {
+82 | 		throw new Error("slice.yml not found at .github/workflows/slice.yml");
+                                                                           ^
+error: slice.yml not found at .github/workflows/slice.yml
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/slice.test.ts:82:71)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/slice.test.ts:88:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/slice.test.ts:431:14)
+(fail) slice.yml: replanner invocation > replanner step appears after the claude work step [0.03ms]
+77 | // Helpers
+78 | // ---------------------------------------------------------------------------
+79 | 
+80 | function readWorkflowRaw(): string {
+81 | 	if (!existsSync(WORKFLOW_PATH)) {
+82 | 		throw new Error("slice.yml not found at .github/workflows/slice.yml");
+                                                                           ^
+error: slice.yml not found at .github/workflows/slice.yml
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/slice.test.ts:82:71)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/slice.test.ts:88:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/slice.test.ts:458:14)
+(fail) slice.yml: failure escalation > a step or job invokes bun scripts/issue-options.ts on failure [0.05ms]
+77 | // Helpers
+78 | // ---------------------------------------------------------------------------
+79 | 
+80 | function readWorkflowRaw(): string {
+81 | 	if (!existsSync(WORKFLOW_PATH)) {
+82 | 		throw new Error("slice.yml not found at .github/workflows/slice.yml");
+                                                                           ^
+error: slice.yml not found at .github/workflows/slice.yml
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/slice.test.ts:82:71)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/slice.test.ts:88:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/slice.test.ts:465:14)
+(fail) slice.yml: failure escalation > failure escalation step references ANTHROPIC_API_KEY or GH_TOKEN secret [0.04ms]
+77 | // Helpers
+78 | // ---------------------------------------------------------------------------
+79 | 
+80 | function readWorkflowRaw(): string {
+81 | 	if (!existsSync(WORKFLOW_PATH)) {
+82 | 		throw new Error("slice.yml not found at .github/workflows/slice.yml");
+                                                                           ^
+error: slice.yml not found at .github/workflows/slice.yml
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/slice.test.ts:82:71)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/slice.test.ts:88:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/slice.test.ts:491:14)
+(fail) slice.yml: failure escalation structural guard > the issue-options step has an if: clause guarding on failure [0.05ms]
+77 | // Helpers
+78 | // ---------------------------------------------------------------------------
+79 | 
+80 | function readWorkflowRaw(): string {
+81 | 	if (!existsSync(WORKFLOW_PATH)) {
+82 | 		throw new Error("slice.yml not found at .github/workflows/slice.yml");
+                                                                           ^
+error: slice.yml not found at .github/workflows/slice.yml
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/slice.test.ts:82:71)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/slice.test.ts:88:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/slice.test.ts:507:14)
+(fail) slice.yml: failure escalation structural guard > the failure menu step is NOT reachable on first or second failure (guarded) [0.03ms]
+77 | // Helpers
+78 | // ---------------------------------------------------------------------------
+79 | 
+80 | function readWorkflowRaw(): string {
+81 | 	if (!existsSync(WORKFLOW_PATH)) {
+82 | 		throw new Error("slice.yml not found at .github/workflows/slice.yml");
+                                                                           ^
+error: slice.yml not found at .github/workflows/slice.yml
+      at readWorkflowRaw (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/slice.test.ts:82:71)
+      at parseWorkflow (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/slice.test.ts:88:14)
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/tests/workflows/slice.test.ts:516:14)
+(fail) slice.yml: failure escalation structural guard > workflow jobs include a failure-handling mechanism (if:failure() job OR failure-escalation step) [0.05ms]
+
+ 0 pass
+ 39 fail
+ 1 expect() calls
+Ran 39 tests across 1 file. [28.00ms]
+
+--- stdout (tail 200) ---
+bun test v1.3.6 (d530ed99)

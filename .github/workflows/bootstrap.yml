@@ -1,0 +1,82 @@
+name: Bootstrap — issue to branch + spec
+
+on:
+  issues:
+    types: [opened, edited]
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: issue-${{ github.event.issue.number }}
+  cancel-in-progress: true
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Derive slug from issue title
+        id: slug
+        run: |
+          SLUG=$(echo "${{ github.event.issue.title }}" \
+            | tr '[:upper:]' '[:lower:]' \
+            | sed 's/[^a-z0-9]/-/g' \
+            | sed 's/-\+/-/g' \
+            | sed 's/^-//;s/-$//' \
+            | cut -c1-50)
+          echo "value=$SLUG" >> $GITHUB_OUTPUT
+
+      - name: Create branch
+        run: |
+          BRANCH="auto/${{ github.event.issue.number }}-${{ steps.slug.outputs.value }}"
+          git checkout -b "$BRANCH"
+          git push -u origin "$BRANCH"
+
+      - name: Open draft PR linked to issue
+        run: |
+          gh pr create \
+            --draft \
+            --title "auto: issue #${{ github.event.issue.number }} — ${{ github.event.issue.title }}" \
+            --body "Closes #${{ github.event.issue.number }}"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run /do-auto aligner
+        id: align
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+        run: |
+          claude -p "/do-auto $ISSUE_BODY" || true
+          if [ -f .agentic/last-alignment.md ]; then
+            CONF=$(grep -E '^confidence:' .agentic/last-alignment.md | awk '{print $2}')
+          else
+            CONF="low"
+          fi
+          echo "confidence=$CONF" >> $GITHUB_OUTPUT
+
+      - name: Commit alignment.md on high confidence
+        if: steps.align.outputs.confidence == 'high'
+        run: |
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git add specs/active/*/alignment.md .agentic/last-alignment.md || true
+          git commit -m "chore: add alignment.md for issue #${{ github.event.issue.number }}" || true
+          git push
+
+      - name: Comment on low confidence
+        if: steps.align.outputs.confidence != 'high'
+        run: |
+          gh issue comment ${{ github.event.issue.number }} \
+            --body "Need clarification: the aligner returned low confidence. Please provide more details so the spec can be properly scoped."
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,168 @@
+exit_code: 1
+command: bun test scripts/spec-lint.test.ts
+duration_ms: 35
+--- stderr (tail 200) ---
+
+scripts/spec-lint.test.ts:
+435 | 			expect(tasks.length).toBeGreaterThan(0);
+436 | 			for (const task of tasks) {
+437 | 				expect(
+438 | 					Object.hasOwn(task, "depends_on"),
+439 | 					`task "${String(task.title ?? task.index)}" is missing depends_on:`,
+440 | 				).toBe(true);
+            ^
+error: task "1. First task" is missing depends_on:
+
+Expected: true
+Received: false
+
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/scripts/spec-lint.test.ts:440:7)
+(fail) spec-049: template tasks.md declares depends_on and touches on every task > every task in _template/tasks.md declares depends_on: [0.58ms]
+447 | 			expect(tasks.length).toBeGreaterThan(0);
+448 | 			for (const task of tasks) {
+449 | 				expect(
+450 | 					Object.hasOwn(task, "touches"),
+451 | 					`task "${String(task.title ?? task.index)}" is missing touches:`,
+452 | 				).toBe(true);
+            ^
+error: task "1. First task" is missing touches:
+
+Expected: true
+Received: false
+
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/scripts/spec-lint.test.ts:452:7)
+(fail) spec-049: template tasks.md declares depends_on and touches on every task > every task in _template/tasks.md declares touches: [0.16ms]
+460 | 			for (const task of tasks) {
+461 | 				const touches = task.touches;
+462 | 				expect(
+463 | 					Array.isArray(touches) && (touches as unknown[]).length > 0,
+464 | 					`task "${String(task.title ?? task.index)}" has empty or non-array touches:`,
+465 | 				).toBe(true);
+            ^
+error: task "1. First task" has empty or non-array touches:
+
+Expected: true
+Received: false
+
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/scripts/spec-lint.test.ts:465:7)
+(fail) spec-049: template tasks.md declares depends_on and touches on every task > every task's touches: in _template/tasks.md is a non-empty array of strings [0.15ms]
+472 | 			expect(tasks.length).toBeGreaterThan(0);
+473 | 			for (const task of tasks) {
+474 | 				expect(
+475 | 					Array.isArray(task.depends_on),
+476 | 					`task "${String(task.title ?? task.index)}" has non-array depends_on:`,
+477 | 				).toBe(true);
+            ^
+error: task "1. First task" has non-array depends_on:
+
+Expected: true
+Received: false
+
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/scripts/spec-lint.test.ts:477:7)
+(fail) spec-049: template tasks.md declares depends_on and touches on every task > every task's depends_on: in _template/tasks.md is an array [0.14ms]
+503 | 				file_targets: ["scripts/foo.ts"],
+504 | 				boundary: ["scripts/foo.ts"],
+505 | 				depends_on: [],
+506 | 				// no touches
+507 | 			});
+508 | 			expect(result.errors.length).toBeGreaterThan(0);
+                                      ^
+error: expect(received).toBeGreaterThan(expected)
+
+Expected: > 0
+Received: 0
+
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/scripts/spec-lint.test.ts:508:33)
+(fail) spec-049: validateTaskSchema enforces depends_on and touches fields > task missing touches: → error mentioning touches [0.06ms]
+517 | 				file_targets: ["scripts/foo.ts"],
+518 | 				boundary: ["scripts/foo.ts"],
+519 | 				depends_on: [],
+520 | 				touches: [],
+521 | 			});
+522 | 			expect(result.errors.length).toBeGreaterThan(0);
+                                      ^
+error: expect(received).toBeGreaterThan(expected)
+
+Expected: > 0
+Received: 0
+
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/scripts/spec-lint.test.ts:522:33)
+(fail) spec-049: validateTaskSchema enforces depends_on and touches fields > task with empty touches: array → error mentioning touches non-empty [0.08ms]
+531 | 				file_targets: ["scripts/foo.ts"],
+532 | 				boundary: ["scripts/foo.ts"],
+533 | 				depends_on: [],
+534 | 				touches: "scripts/foo.ts",
+535 | 			});
+536 | 			expect(result.errors.length).toBeGreaterThan(0);
+                                      ^
+error: expect(received).toBeGreaterThan(expected)
+
+Expected: > 0
+Received: 0
+
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/scripts/spec-lint.test.ts:536:33)
+(fail) spec-049: validateTaskSchema enforces depends_on and touches fields > task with non-array touches: → error mentioning touches [0.03ms]
+545 | 				file_targets: ["scripts/foo.ts"],
+546 | 				boundary: ["scripts/foo.ts"],
+547 | 				depends_on: ["prev-task"],
+548 | 				touches: ["scripts/foo.ts"],
+549 | 			});
+550 | 			expect(result.errors.length).toBeGreaterThan(0);
+                                      ^
+error: expect(received).toBeGreaterThan(expected)
+
+Expected: > 0
+Received: 0
+
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/scripts/spec-lint.test.ts:550:33)
+(fail) spec-049: validateTaskSchema enforces depends_on and touches fields > task with non-integer in depends_on: → error mentioning depends_on [0.07ms]
+559 | 				file_targets: ["scripts/foo.ts"],
+560 | 				boundary: ["scripts/foo.ts"],
+561 | 				depends_on: 1,
+562 | 				touches: ["scripts/foo.ts"],
+563 | 			});
+564 | 			expect(result.errors.length).toBeGreaterThan(0);
+                                      ^
+error: expect(received).toBeGreaterThan(expected)
+
+Expected: > 0
+Received: 0
+
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/scripts/spec-lint.test.ts:564:33)
+(fail) spec-049: validateTaskSchema enforces depends_on and touches fields > task with non-array depends_on: → error mentioning depends_on [0.13ms]
+614 | 				file_targets: ["scripts/foo.ts"],
+615 | 				boundary: ["scripts/*.ts"],
+616 | 				depends_on: [],
+617 | 				touches: ["src/outside.ts"],
+618 | 			});
+619 | 			expect(result.errors.length).toBeGreaterThan(0);
+                                      ^
+error: expect(received).toBeGreaterThan(expected)
+
+Expected: > 0
+Received: 0
+
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/scripts/spec-lint.test.ts:619:33)
+(fail) spec-049: validateTaskSchema cross-checks touches against boundary > validateTaskSchema: touches path not matching any boundary glob → error mentioning touches or boundary [0.04ms]
+657 | 			expect(tasks.length).toBe(1);
+658 | 			const task = tasks[0];
+659 | 			expect(task).toBeDefined();
+660 | 			if (!task) throw new Error("task is undefined");
+661 | 			// depends_on must be present and be an array containing 1 and 2
+662 | 			expect(Object.hasOwn(task, "depends_on")).toBe(true);
+                                                   ^
+error: expect(received).toBe(expected)
+
+Expected: true
+Received: false
+
+      at <anonymous> (/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/scripts/spec-lint.test.ts:662:46)
+(fail) spec-049: parseTasksFile round-trip for depends_on and touches fields > parseTasksFile parses depends_on and touches from a synthetic tasks.md fixture [0.67ms]
+
+ 30 pass
+ 11 fail
+ 70 expect() calls
+Ran 41 tests across 1 file. [29.00ms]
+
+--- stdout (tail 200) ---
+bun test v1.3.6 (d530ed99)
