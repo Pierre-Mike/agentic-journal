@@ -15,7 +15,7 @@
 
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { gateEntries, listActiveSpecs, listArchivedIds, taskGates, VALID_KINDS } from "./_lib";
+import { gateEntries, listActiveSpecs, listArchivedIds, taskGates, VALID_KINDS } from "../_lib";
 
 export interface ParsedTask {
 	readonly index: number;

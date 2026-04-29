@@ -1,3 +1,4 @@
+// @no-test: integration CLI; exercised end-to-end by spec-complete.ts and tasks-verify
 /**
  * Deterministic transition: specs/active/NNN-slug → specs/archive/YYYY-MM-DD-NNN-slug.
  * Refuses to archive unless all tasks are checked and gates pass (via tasks-verify).
@@ -6,7 +7,7 @@
 import { existsSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import matter from "gray-matter";
-import { loadSpec } from "./_lib";
+import { loadSpec } from "../_lib";
 
 function hasUncheckedTasks(dir: string): boolean {
 	const tasks = join(dir, "tasks.md");

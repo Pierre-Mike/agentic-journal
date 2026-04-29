@@ -13,7 +13,7 @@
 
 import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { parseAlignmentAndBranch } from "./do-auto-branch";
+import { parseAlignmentAndBranch } from "../agentic/do-auto-branch";
 
 function main() {
 	const tmpDir = join(process.cwd(), ".agentic/tmp-gate-046");

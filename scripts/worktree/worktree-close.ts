@@ -13,7 +13,7 @@
  */
 
 import { join } from "node:path";
-import { type Fs, type Process, realFs, realProcess } from "./_lib";
+import { type Fs, type Process, realFs, realProcess } from "../_lib";
 
 async function isMergedWith(branch: string, repoRoot: string, proc: Process): Promise<boolean> {
 	const ancestry = await proc.run(["git", "branch", "--merged", "main"], { cwd: repoRoot });

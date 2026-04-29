@@ -11,10 +11,10 @@
 
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import { gateEntries, gatePaths, listActiveSpecs, type Spec, taskGates } from "./_lib";
-import { checkWorkflow } from "./gates/smoke";
-import { checkWriteup } from "./gates/writeup";
-import { type ParsedTask, parseTasksFile, validateBoundary } from "./spec-lint";
+import { gateEntries, gatePaths, listActiveSpecs, type Spec, taskGates } from "../_lib";
+import { checkWorkflow } from "../gates/smoke";
+import { checkWriteup } from "../gates/writeup";
+import { type ParsedTask, parseTasksFile, validateBoundary } from "../spec/spec-lint";
 
 interface GateResult {
 	pass: boolean;

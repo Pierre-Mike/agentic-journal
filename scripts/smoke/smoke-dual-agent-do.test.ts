@@ -23,7 +23,7 @@ function writeAgent(dir: string, name: string, model: string, body: string) {
 }
 
 function runGate(root: string) {
-	return Bun.spawnSync(["bun", "scripts/smoke-dual-agent-do.ts"], {
+	return Bun.spawnSync(["bun", "scripts/smoke/smoke-dual-agent-do.ts"], {
 		env: { ...process.env, DUAL_AGENT_ROOT: root },
 	});
 }

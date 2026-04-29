@@ -29,7 +29,7 @@ const PERMISSIONS_BLOCK = `permissions:
 `;
 
 function runGate(path: string): { exitCode: number | null } {
-	const result = Bun.spawnSync(["bun", "scripts/smoke-preview-workflow.ts"], {
+	const result = Bun.spawnSync(["bun", "scripts/smoke/smoke-preview-workflow.ts"], {
 		env: { ...process.env, PREVIEW_WORKFLOW_PATH: path },
 	});
 	return { exitCode: result.exitCode };
