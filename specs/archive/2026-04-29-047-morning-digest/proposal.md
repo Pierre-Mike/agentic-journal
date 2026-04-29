@@ -1,14 +1,15 @@
 ---
 id: 047-morning-digest
 title: morning digest agent
-status: active
+status: archived
 kind: workflow
 gate: scripts/smoke-morning-digest.ts
-created: 2026-04-28
+created: 2026-04-28T00:00:00.000Z
 owner: main
 depends_on:
   - 046-do-auto-headless
 supersedes: null
+archived: '2026-04-29'
 ---
 
 ## Intent
