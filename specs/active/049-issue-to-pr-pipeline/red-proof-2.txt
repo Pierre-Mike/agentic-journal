@@ -1,0 +1,20 @@
+exit_code: 1
+command: bun test scripts/dag-controller.test.ts
+duration_ms: 13
+--- stderr (tail 200) ---
+
+scripts/dag-controller.test.ts:
+
+# Unhandled error between tests
+-------------------------------
+error: Cannot find module './dag-controller.ts' from '/Users/pierre-mikel/Github/agentic-journal/.agentic/worktrees/issue-to-pr-pipeline/scripts/dag-controller.test.ts'
+-------------------------------
+
+
+ 0 pass
+ 1 fail
+ 1 error
+Ran 1 test across 1 file. [7.00ms]
+
+--- stdout (tail 200) ---
+bun test v1.3.6 (d530ed99)
