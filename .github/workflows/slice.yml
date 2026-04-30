@@ -97,12 +97,20 @@ jobs:
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           GH_TOKEN: ${{ github.token }}
 
-      - name: Commit implemented slice files
+      - name: Ensure GREEN marker commit exists
         run: |
           SLICE_ID="${{ steps.norm.outputs.slice_id }}"
           SPEC_ID="${{ steps.norm.outputs.spec_id }}"
-          git add .github/workflows/slice.yml
-          git diff --cached --quiet || git commit -m "code(${SPEC_ID}): GREEN — slice ${SLICE_ID} — implemented by slice runner"
+          # The spec-implementer may have already committed its work with
+          # any message format. The controller's COMPLETED detection greps
+          # for `GREEN — slice N` in commit subjects, so we always lay
+          # down a marker commit (empty if the implementer already
+          # committed everything) right after the implementer step.
+          if ! git log -1 --pretty=%s | grep -qE "GREEN[[:space:]]+[—-]+[[:space:]]+slice[[:space:]]+${SLICE_ID}\b"; then
+            git commit --allow-empty -m "code(${SPEC_ID}): GREEN — slice ${SLICE_ID} — implemented by slice runner"
+          else
+            echo "GREEN marker for slice ${SLICE_ID} already on HEAD; skipping."
+          fi
 
       - name: Push with retry on non-fast-forward
         id: push
@@ -125,16 +133,21 @@ jobs:
           exit 1
 
       - name: Invoke spec-replanner after GREEN commits
+        # Replanner is informational: it inspects tasks.md and may patch
+        # the DAG. A failure here must NOT fail the slice (the GREEN
+        # commit has already landed and is what the controller cares
+        # about). Bumped max-turns from 10 → 30 so it has room to think.
+        continue-on-error: true
         run: |
           SLICE_ID="${{ steps.norm.outputs.slice_id }}"
           SPEC_ID="${{ steps.norm.outputs.spec_id }}"
           BRANCH="${{ steps.norm.outputs.branch }}"
           claude -p \
             --no-session-persistence \
-            --max-turns 10 \
+            --max-turns 30 \
             --allowedTools "Bash(git:*),Bash(bun:*),Edit,Write,Read,Glob,Grep" \
             <<EOF
-          You are the spec-replanner. Slice ${SLICE_ID} of spec ${SPEC_ID} is now GREEN on branch ${BRANCH}. Review tasks.md and update the plan: check which slices are unblocked, update depends_on status, and commit any changes to tasks.md.
+          You are the spec-replanner. Slice ${SLICE_ID} of spec ${SPEC_ID} is now GREEN on branch ${BRANCH}. Review tasks.md and update the plan: check which slices are unblocked, update depends_on status, and commit any changes to tasks.md. Be concise — if no replanning is needed, exit immediately.
           EOF
         env:
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
