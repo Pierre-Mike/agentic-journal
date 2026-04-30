@@ -1,17 +1,18 @@
 ---
 id: 055-pipeline-report
-title: Add pipeline:report dashboard script
-status: active
+title: 'Add pipeline:report dashboard script'
+status: archived
 kind: code
 gate:
   - path: scripts/pipeline-report.test.ts
     level: unit
   - path: tests/pipeline-report-bdd.test.ts
     level: integration
-created: 2026-04-30
+created: 2026-04-30T00:00:00.000Z
 owner: main
 depends_on: []
 supersedes: null
+archived: '2026-04-30'
 ---
 
 ## Intent
