@@ -174,7 +174,7 @@ jobs:
             --max-turns 30 \
             --allowedTools "Bash(git:*),Bash(gh:*),Bash(bun:*),Bash(mkdir:*),Bash(mv:*),Bash(cp:*),Bash(rm:*),Bash(cat:*),Bash(shasum:*),Bash(date:*),Edit,Write,Read,Glob,Grep" \
             <<EOF || true
-          Run the auto-aligner subagent. The intent is in .agentic/last-intent.txt (issue body + cumulative human comments — treat the most recent comments as the strongest disambiguating signal). Write .agentic/last-alignment.md AND copy it to specs/active/<next-id>-<slug>/alignment.md (allocate a new spec id, kebab-slug from the issue title). DO NOT scaffold proposal.md, design.md, tasks.md, or any gate file — those belong to the scaffold job. Stop after the alignment files are written.
+          Run the auto-aligner subagent. The intent is in .agentic/last-intent.txt (issue body + cumulative human comments — treat the most recent comments as the strongest disambiguating signal). Use issue number $ISSUE_NUMBER as the spec id. Write .agentic/last-alignment.md AND copy it to specs/active/${ISSUE_NUMBER}-<slug>/alignment.md (kebab-slug from the issue title: lowercase, hyphens, 50-char cap). DO NOT scaffold proposal.md, design.md, tasks.md, or any gate file — those belong to the scaffold job. Stop after the alignment files are written.
           EOF
           if [ -f .agentic/last-alignment.md ]; then
             CONF=$(grep -E '^confidence:' .agentic/last-alignment.md | awk '{print $2}')
