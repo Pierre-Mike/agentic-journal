@@ -22,6 +22,7 @@
 		"sync": "bun scripts/worktree/worktree-close.ts",
 		"intent:status": "bun scripts/intent-status.ts",
 		"auto:status": "bun scripts/auto-status.ts",
+		"auto:age": "bun scripts/auto-age-buckets.ts",
 		"tasks:verify": "CLAUDE_CODE_ENABLE_TELEMETRY=1 bun scripts/agentic/tasks-verify.ts",
 		"check": "bun run typecheck && bun run lint && bun run test && bun run spec:lint"
 	},
