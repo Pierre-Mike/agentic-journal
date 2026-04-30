@@ -13,7 +13,7 @@
  *   7.  Checkout: actions/checkout@v4 checks out branch with fetch-depth: 0
  *   8.  Pull-rebase before work
  *   9.  Claude invocation: claude -p with --max-turns, CLAUDE_CODE_OAUTH_TOKEN,
- *       --no-resume, and expertise skill loaded via flag/path/env mechanism
+ *       --no-session-persistence, and expertise skill loaded via flag/path/env mechanism
  *  10.  Commit step between pull-rebase and push
  *  11.  Push with retry on non-fast-forward (max retries = 3)
  *  12.  Replanner invocation after work commits
@@ -374,7 +374,7 @@ describe("slice.yml: pull-rebase before work", () => {
 });
 
 // ---------------------------------------------------------------------------
-// 9. Claude invocation: -p, --max-turns, CLAUDE_CODE_OAUTH_TOKEN, expertise skill, --no-resume
+// 9. Claude invocation: -p, --max-turns, CLAUDE_CODE_OAUTH_TOKEN, expertise skill, --no-session-persistence
 // ---------------------------------------------------------------------------
 
 describe("slice.yml: claude invocation", () => {
@@ -445,12 +445,12 @@ describe("slice.yml: claude invocation", () => {
 		expect(hasSkillFlag || envKeyHasSkill || rawEnvHasExpertisePath).toBe(true);
 	});
 
-	test("claude invoked with --no-resume flag (fresh context per slice)", () => {
+	test("claude invoked with --no-session-persistence (fresh context per slice)", () => {
 		const wf = parseWorkflow();
 		const steps = allSteps(wf);
-		// --no-resume must appear on the same run block that contains claude -p
+		// --no-session-persistence must appear on the same run block that contains claude -p
 		const claudeStep = steps.find((s) => s.run?.match(/claude\s+-p/));
-		expect(claudeStep?.run).toMatch(/--no-resume/);
+		expect(claudeStep?.run).toMatch(/--no-session-persistence/);
 	});
 });
 

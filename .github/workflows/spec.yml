@@ -85,16 +85,19 @@ jobs:
           SPEC_DIR: ${{ steps.verify.outputs.spec_dir }}
         run: |
           claude -p \
-            --no-resume \
+            --no-session-persistence \
             --max-turns 50 \
             --allowedTools "Bash(git:*),Bash(gh:*),Bash(bun:*),Bash(mkdir:*),Bash(mv:*),Bash(cp:*),Bash(rm:*),Edit,Write,Read,Glob,Grep" \
-            "You are the spec-tester. The alignment mailbox at $SPEC_DIR/alignment.md is frozen with confidence:high. Scaffold the spec at $SPEC_DIR/: write proposal.md (with kind:code, gate path), design.md, tasks.md (DAG with depends_on: and touches: per slice), and the BDD outer gate file referenced by proposal.md's gate: field — in RED form. Use specs/_template/ as a reference. Read .claude/skills/do/SKILL.md and .claude/agents/spec-tester.md for the contract."
+            <<EOF
+          You are the spec-tester. The alignment mailbox at $SPEC_DIR/alignment.md is frozen with confidence:high. Scaffold the spec at $SPEC_DIR/: write proposal.md (with kind:code, gate path), design.md, tasks.md (DAG with depends_on: and touches: per slice), and the BDD outer gate file referenced by proposal.md's gate: field — in RED form. Use specs/_template/ as a reference. Read .claude/skills/do/SKILL.md and .claude/agents/spec-tester.md for the contract.
+          EOF
 
       - name: Commit scaffold artifacts
         if: steps.verify.outputs.skip != 'true'
         env:
           SPEC_DIR: ${{ steps.verify.outputs.spec_dir }}
         run: |
+          BRANCH="${{ github.event.inputs.branch || github.ref_name }}"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
           SPEC_ID=$(basename "$SPEC_DIR" | cut -d- -f1)
@@ -102,18 +105,21 @@ jobs:
           # Also stage the outer gate file (path declared in proposal.md gate:)
           git add tests/ || true
           if git diff --cached --quiet; then
-            echo "No scaffold changes to commit."
+            echo "Nothing newly staged (claude may have already committed)."
           else
             git commit -m "spec($SPEC_ID): scaffold via spec.yml"
-            git push
           fi
+          # Push regardless — claude's own commits during the scaffold step
+          # are local-only until pushed here.
+          git push origin "HEAD:$BRANCH"
 
       - name: Comment on issue (success)
         if: steps.verify.outputs.skip != 'true' && success()
         run: |
-          ISSUE_NUM=$(echo "${{ github.ref_name }}" | grep -oE '^auto/[0-9]+' | grep -oE '[0-9]+')
+          BRANCH="${{ github.event.inputs.branch || github.ref_name }}"
+          ISSUE_NUM=$(echo "$BRANCH" | grep -oE '^auto/[0-9]+' | grep -oE '[0-9]+' || true)
           if [ -n "$ISSUE_NUM" ]; then
-            gh issue comment "$ISSUE_NUM" --body "✅ Spec scaffold landed on \`${{ github.ref_name }}\`. Controller will pick up tasks.md within ~2 minutes and start dispatching slices."
+            gh issue comment "$ISSUE_NUM" --body "✅ Spec scaffold landed on \`$BRANCH\`. Controller will pick up tasks.md within ~2 minutes and start dispatching slices."
           fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -121,9 +127,10 @@ jobs:
       - name: Comment on issue (failure)
         if: failure()
         run: |
-          ISSUE_NUM=$(echo "${{ github.ref_name }}" | grep -oE '^auto/[0-9]+' | grep -oE '[0-9]+')
+          BRANCH="${{ github.event.inputs.branch || github.ref_name }}"
+          ISSUE_NUM=$(echo "$BRANCH" | grep -oE '^auto/[0-9]+' | grep -oE '[0-9]+' || true)
           if [ -n "$ISSUE_NUM" ]; then
-            gh issue comment "$ISSUE_NUM" --body "❌ Spec scaffold failed for \`${{ github.ref_name }}\`. See run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            gh issue comment "$ISSUE_NUM" --body "❌ Spec scaffold failed for \`$BRANCH\`. See run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
