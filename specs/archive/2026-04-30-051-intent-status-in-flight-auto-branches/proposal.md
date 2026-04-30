@@ -1,19 +1,18 @@
 ---
 id: 051-intent-status-in-flight-auto-branches
-title: Add intent:status script for in-flight auto branches
-status: active
+title: 'Add intent:status script for in-flight auto branches'
+status: archived
 kind: code
-# Outer gate (BDD, integration-level) is tests/intent-status-bdd.test.ts — written RED at scaffold.
-# Per-slice gates are declared in tasks.md and written in the per-slice loop.
 gate:
   - path: scripts/intent-status.test.ts
     level: unit
   - path: tests/intent-status-bdd.test.ts
     level: integration
-created: 2026-04-30
+created: 2026-04-30T00:00:00.000Z
 owner: main
 depends_on: []
 supersedes: null
+archived: '2026-04-30'
 ---
 
 ## Intent

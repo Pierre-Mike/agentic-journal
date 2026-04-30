@@ -232,11 +232,39 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
 
-      - name: Squash merge PR
+      - name: Squash merge PR (auto-update branch if behind)
         if: steps.dag_done.outputs.dag_done == 'true' && steps.preview_check.outputs.preview_ok == 'true' && steps.early_green.outputs.spec_gap != 'true'
         run: |
           PR_NUMBER="${{ steps.meta.outputs.pr_number }}"
-          gh pr merge --squash --delete-branch "${PR_NUMBER}"
+          # First attempt: straight squash. Common case when nothing has
+          # merged into main since the PR branched.
+          if gh pr merge --squash --delete-branch "${PR_NUMBER}"; then
+            echo "Squash-merged ${PR_NUMBER}."
+            exit 0
+          fi
+
+          # If the PR is still a draft, promote and retry once.
+          if [ "$(gh pr view "${PR_NUMBER}" --json isDraft -q '.isDraft')" = "true" ]; then
+            echo "PR is draft; marking ready and retrying."
+            gh pr ready "${PR_NUMBER}" || true
+            if gh pr merge --squash --delete-branch "${PR_NUMBER}"; then
+              echo "Squash-merged ${PR_NUMBER} after ready-promote."
+              exit 0
+            fi
+          fi
+
+          # If the head is behind main, update the branch and let the
+          # resulting CI cascade re-trigger automerge. Exit 0 so this
+          # run records as success — the next workflow_run will close it.
+          MERGE_STATE=$(gh pr view "${PR_NUMBER}" --json mergeStateStatus -q '.mergeStateStatus' 2>/dev/null || echo "")
+          if [ "${MERGE_STATE}" = "BEHIND" ]; then
+            echo "Branch behind main; updating and yielding to next CI cascade."
+            gh pr update-branch "${PR_NUMBER}" || true
+            exit 0
+          fi
+
+          echo "Squash-merge failed and reason was not draft/behind. mergeState=${MERGE_STATE}"
+          exit 1
         env:
           GH_TOKEN: ${{ github.token }}
 
@@ -254,10 +282,21 @@ jobs:
         if: steps.dag_done.outputs.dag_done == 'true' && steps.preview_check.outputs.preview_ok == 'true' && steps.early_green.outputs.spec_gap != 'true'
         run: |
           export PATH="$HOME/.bun/bin:$PATH"
-          SPEC_SLUG=$(find specs/active -mindepth 1 -maxdepth 1 -type d | head -1 | xargs basename)
-          if [ -n "${SPEC_SLUG}" ]; then
-            bun run spec:complete "${SPEC_SLUG}"
+          # Tolerate the runner being checked out on a tree without
+          # specs/active/* (e.g. cascading workflow_run on a freshly
+          # merged main). The spec was already archived by the squash
+          # commit's diff or was never present locally.
+          if [ ! -d specs/active ]; then
+            echo "No specs/active/ on runner tree; skipping archive."
+            exit 0
           fi
+          SPEC_DIR=$(find specs/active -mindepth 1 -maxdepth 1 -type d | head -1)
+          if [ -z "${SPEC_DIR}" ]; then
+            echo "specs/active/ empty; nothing to archive."
+            exit 0
+          fi
+          SPEC_SLUG=$(basename "${SPEC_DIR}")
+          bun run spec:complete "${SPEC_SLUG}"
 
       - name: Failure fan-in — post menu to issue
         if: failure() || steps.dag_done.outputs.dag_done == 'false' || steps.preview_check.outputs.preview_ok == 'false'
