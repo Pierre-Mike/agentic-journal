@@ -306,6 +306,15 @@ jobs:
           fi
           git push origin "HEAD:$BRANCH"
 
+      - name: Upload Claude traces as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: claude-traces-${{ github.run_id }}
+          path: .claude/traces/
+          retention-days: 7
+          if-no-files-found: ignore
+
       - name: Trigger controller for instant first-wave dispatch
         if: success()
         run: gh workflow run controller.yml --ref main

@@ -151,6 +151,15 @@ jobs:
           echo "attempt=${attempt}" >> "$GITHUB_OUTPUT"
           exit 1
 
+      - name: Upload Claude traces as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: claude-traces-${{ github.run_id }}
+          path: .claude/traces/
+          retention-days: 7
+          if-no-files-found: ignore
+
       - name: Invoke spec-replanner after GREEN commits
         # Replanner is informational: it inspects tasks.md and may patch
         # the DAG. A failure here must NOT fail the slice (the GREEN

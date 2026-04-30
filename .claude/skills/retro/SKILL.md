@@ -38,9 +38,20 @@ Dormant specs block retrospective authorship. If dormant worktrees are found, su
 
 ### Step 2 — Gather signal
 
+#### CI artifact traces (best-effort)
+
+Before reading local traces, attempt to download CI session traces from GitHub Actions artifacts into `.claude/traces-ci/` (sibling directory preserves provenance; avoids clobbering live local trace files):
+
+```bash
+mkdir -p .claude/traces-ci
+gh run list --limit 20 --json databaseId,status --jq '.[] | select(.status == "completed") | .databaseId' | xargs -I{} gh run download {} --dir .claude/traces-ci --name "claude-traces-{}" 2>/dev/null || true
+```
+
+If `gh` fails (missing `actions: read` permission, no network, or no artifacts found), log a warning and continue — CI trace fetch is best-effort and must not break interactive local use.
+
 Read from four sources:
 
-**Traces** — `.claude/traces/*.jsonl` within the window.
+**Traces** — `.claude/traces/*.jsonl` and `.claude/traces-ci/**/*.jsonl` within the window.
 - Count events per session
 - Count tool-call failures, blocks (hook exit 2), retries
 - Record most-touched file paths

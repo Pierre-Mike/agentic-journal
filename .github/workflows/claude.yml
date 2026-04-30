@@ -41,3 +41,12 @@ jobs:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           claude_args: '--allowedTools "Bash(git:*),Bash(gh:*),Bash(npm:*),Bash(npx:*),Bash(node:*),Bash(bun:*),Edit,Write,Read,Glob,Grep"'
           show_full_output: "true"
+
+      - name: Upload Claude traces as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: claude-traces-${{ github.run_id }}
+          path: .claude/traces/
+          retention-days: 7
+          if-no-files-found: ignore
