@@ -452,7 +452,13 @@ describe("automerge.yml: spec archive step", () => {
 		expect(archiveStep).toBeDefined();
 	});
 
-	test("archive step comes after the merge step", () => {
+	test("archive step runs before the merge step (pre-squash architecture)", () => {
+		// Architecture: the archive must ride along with the PR's content
+		// in the squash-merge — a separate post-merge push to main is
+		// blocked by branch protection (required status checks). So the
+		// archive step pushes specs/active → specs/archive on the auto/N
+		// branch, and the squash-merge brings that move into main in one
+		// commit.
 		const wf = parseWorkflow();
 		const steps = allSteps(wf);
 		const mergeIdx = steps.findIndex(
@@ -465,7 +471,8 @@ describe("automerge.yml: spec archive step", () => {
 					(s.run.includes("specs/archive") && s.run.includes("specs/active"))),
 		);
 		expect(mergeIdx).toBeGreaterThanOrEqual(0);
-		expect(archiveIdx).toBeGreaterThan(mergeIdx);
+		expect(archiveIdx).toBeGreaterThanOrEqual(0);
+		expect(archiveIdx).toBeLessThan(mergeIdx);
 	});
 });
 

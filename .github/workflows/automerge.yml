@@ -232,15 +232,59 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
 
+      - name: Archive spec on PR branch (pre-squash)
+        id: archive
+        if: steps.dag_done.outputs.dag_done == 'true' && steps.preview_check.outputs.preview_ok == 'true' && steps.early_green.outputs.spec_gap != 'true'
+        run: |
+          export PATH="$HOME/.bun/bin:$PATH"
+          # Move specs/active/<id-slug> → specs/archive/<date>-<id-slug>
+          # on the PR branch so the squash-merge brings the archive into
+          # main in one shot. A separate post-merge push to main is
+          # blocked by branch protection (required status checks), so
+          # the archive must ride along with the PR's content.
+          PR_NUMBER="${{ steps.meta.outputs.pr_number }}"
+          BRANCH=$(gh pr view "${PR_NUMBER}" --json headRefName -q '.headRefName')
+          git fetch origin "${BRANCH}"
+          git checkout -B "${BRANCH}" "origin/${BRANCH}"
+          if [ ! -d specs/active ]; then
+            echo "No specs/active/ on branch; nothing to archive."
+            echo "archived=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          SPEC_DIR=$(find specs/active -mindepth 1 -maxdepth 1 -type d | head -1)
+          if [ -z "${SPEC_DIR}" ]; then
+            echo "specs/active/ empty on branch; nothing to archive."
+            echo "archived=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          SPEC_ID=$(basename "${SPEC_DIR}")
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          bun scripts/spec/spec-archive.ts "${SPEC_ID}"
+          git add -A
+          git commit -m "chore(${SPEC_ID%%-*}): archive spec ${SPEC_ID}"
+          # Push to auto/* branch — not protected; rides into main on
+          # squash-merge below.
+          git push origin "${BRANCH}"
+          echo "archived=true" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
       - name: Squash merge PR (auto-update branch if behind)
         id: squash
         if: steps.dag_done.outputs.dag_done == 'true' && steps.preview_check.outputs.preview_ok == 'true' && steps.early_green.outputs.spec_gap != 'true'
         run: |
           PR_NUMBER="${{ steps.meta.outputs.pr_number }}"
-          # First attempt: straight squash. Common case when nothing has
-          # merged into main since the PR branched.
-          if gh pr merge --squash --delete-branch "${PR_NUMBER}"; then
-            echo "Squash-merged ${PR_NUMBER}."
+          # If the archive step pushed a new commit, required status
+          # checks need to re-run on it. --auto queues the merge for
+          # when those checks pass; if they're already green, it merges
+          # immediately.
+          MERGE_FLAGS="--squash --delete-branch"
+          if [ "${{ steps.archive.outputs.archived }}" = "true" ]; then
+            MERGE_FLAGS="--auto ${MERGE_FLAGS}"
+          fi
+          if gh pr merge ${MERGE_FLAGS} "${PR_NUMBER}"; then
+            echo "Squash-merged (or queued) ${PR_NUMBER}."
             echo "merged=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -249,7 +293,7 @@ jobs:
           if [ "$(gh pr view "${PR_NUMBER}" --json isDraft -q '.isDraft')" = "true" ]; then
             echo "PR is draft; marking ready and retrying."
             gh pr ready "${PR_NUMBER}" || true
-            if gh pr merge --squash --delete-branch "${PR_NUMBER}"; then
+            if gh pr merge ${MERGE_FLAGS} "${PR_NUMBER}"; then
               echo "Squash-merged ${PR_NUMBER} after ready-promote."
               echo "merged=true" >> "$GITHUB_OUTPUT"
               exit 0
@@ -259,9 +303,6 @@ jobs:
           # If the head is behind main, update the branch and let the
           # resulting CI cascade re-trigger automerge. Exit 0 so this
           # run records as success; the next workflow_run will close it.
-          # The downstream `gh pr update-branch` is invoked with GH_PAT
-          # (if configured) so the resulting merge commit triggers
-          # `pull_request:synchronize` and preview.yml fires.
           MERGE_STATE=$(gh pr view "${PR_NUMBER}" --json mergeStateStatus -q '.mergeStateStatus' 2>/dev/null || echo "")
           if [ "${MERGE_STATE}" = "BEHIND" ]; then
             echo "Branch behind main; updating and yielding to next CI cascade."
@@ -275,8 +316,6 @@ jobs:
           exit 1
         env:
           GH_TOKEN: ${{ github.token }}
-          # Override token for `gh pr update-branch` only — when GH_PAT
-          # is set, the resulting merge commit fires synchronize events.
           UPDATE_TOKEN: ${{ secrets.GH_PAT || github.token }}
 
       - name: Close linked issue after merge
@@ -288,43 +327,6 @@ jobs:
           fi
         env:
           GH_TOKEN: ${{ github.token }}
-
-      - name: Archive spec
-        if: steps.squash.outputs.merged == 'true'
-        run: |
-          export PATH="$HOME/.bun/bin:$PATH"
-          # The squash-merge just landed on main; the spec dir lives on
-          # main under specs/active/. The runner is still checked out on
-          # the workflow_run trigger SHA (pre-merge), so we must refresh
-          # main before archiving. Without this, specs/active/ leaks
-          # across issues and intent.yml's scaffold guard misfires for
-          # the next issue.
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git config user.name "github-actions[bot]"
-          git fetch origin main
-          git checkout main
-          git reset --hard origin/main
-          if [ ! -d specs/active ]; then
-            echo "No specs/active/ on main; nothing to archive."
-            exit 0
-          fi
-          SPEC_DIR=$(find specs/active -mindepth 1 -maxdepth 1 -type d | head -1)
-          if [ -z "${SPEC_DIR}" ]; then
-            echo "specs/active/ empty; nothing to archive."
-            exit 0
-          fi
-          SPEC_ID=$(basename "${SPEC_DIR}")
-          # Move specs/active/${SPEC_ID} → specs/archive/<date>-${SPEC_ID}
-          # via spec-archive.ts, which handles the date-prefixed rename
-          # and the proposal.md status/archived frontmatter bump. It
-          # self-gates on tasks.md and gate passes — both already
-          # satisfied by the GREEN state on main.
-          bun scripts/spec/spec-archive.ts "${SPEC_ID}"
-          git add -A
-          git commit -m "chore(${SPEC_ID%%-*}): archive spec ${SPEC_ID}"
-          # actions/checkout@v4 already configured the default token
-          # credential helper for origin; push goes through that.
-          git push origin main
 
       - name: Failure fan-in — post menu to issue
         if: failure() || steps.dag_done.outputs.dag_done == 'false' || steps.preview_check.outputs.preview_ok == 'false'
