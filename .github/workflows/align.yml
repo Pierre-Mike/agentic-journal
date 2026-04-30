@@ -17,6 +17,7 @@ concurrency:
 
 jobs:
   align:
+    if: github.event_name != 'issue_comment' || github.event.comment.user.type != 'Bot'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -112,7 +113,25 @@ jobs:
       - name: Comment on low confidence
         if: steps.align.outputs.confidence != 'high'
         run: |
-          gh issue comment ${{ github.event.issue.number }} \
-            --body "Need clarification: the aligner returned low confidence. Please provide more details so the spec can be properly scoped."
+          if [ ! -f .agentic/last-alignment.md ]; then
+            gh issue comment ${{ github.event.issue.number }} \
+              --body "Aligner failed to produce a mailbox. See run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            exit 0
+          fi
+          GOAL=$(awk '/^## Goal$/{flag=1; next} /^## /{flag=0} flag' .agentic/last-alignment.md | sed '/^[[:space:]]*$/d')
+          QUESTIONS=$(awk '/^## Straightforward Details$/{flag=1; next} /^## /{flag=0} flag' .agentic/last-alignment.md | sed '/^[[:space:]]*$/d')
+          BODY=$(cat <<EOF
+          **Need clarification before the spec can be scaffolded.** The aligner returned \`confidence: low\` — the intent maps to multiple plausible specs, or names decisions you didn't specify.
+
+          **What I understood (Goal):**
+          ${GOAL:-_(aligner did not produce a Goal section)_}
+
+          **Questions to disambiguate:**
+          ${QUESTIONS:-_(aligner did not produce questions — re-run align.yml manually)_}
+
+          Reply in this issue with answers; the aligner will re-run on your comment.
+          EOF
+          )
+          gh issue comment ${{ github.event.issue.number }} --body "$BODY"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
