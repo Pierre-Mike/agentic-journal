@@ -105,6 +105,12 @@ jobs:
         run: |
           SLICE_ID="${{ steps.norm.outputs.slice_id }}"
           SPEC_ID="${{ steps.norm.outputs.spec_id }}"
+          # Set git identity defensively. Claude sets its own identity
+          # for its commits, but `git commit --allow-empty` here runs in
+          # a fresh shell and inherits nothing — slice 2 of issue #101
+          # crashed with `Author identity unknown` because of this.
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
           # The spec-implementer may have already committed its work with
           # any message format. The controller's COMPLETED detection greps
           # for `GREEN — slice N` in commit subjects, so we always lay
