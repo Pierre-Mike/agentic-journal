@@ -85,9 +85,12 @@ jobs:
           SPEC_DIR: ${{ steps.verify.outputs.spec_dir }}
         run: |
           claude -p \
+            --no-session-persistence \
             --max-turns 50 \
             --allowedTools "Bash(git:*),Bash(gh:*),Bash(bun:*),Bash(mkdir:*),Bash(mv:*),Bash(cp:*),Bash(rm:*),Edit,Write,Read,Glob,Grep" \
-            "You are the spec-tester. The alignment mailbox at $SPEC_DIR/alignment.md is frozen with confidence:high. Scaffold the spec at $SPEC_DIR/: write proposal.md (with kind:code, gate path), design.md, tasks.md (DAG with depends_on: and touches: per slice), and the BDD outer gate file referenced by proposal.md's gate: field — in RED form. Use specs/_template/ as a reference. Read .claude/skills/do/SKILL.md and .claude/agents/spec-tester.md for the contract."
+            <<EOF
+          You are the spec-tester. The alignment mailbox at $SPEC_DIR/alignment.md is frozen with confidence:high. Scaffold the spec at $SPEC_DIR/: write proposal.md (with kind:code, gate path), design.md, tasks.md (DAG with depends_on: and touches: per slice), and the BDD outer gate file referenced by proposal.md's gate: field — in RED form. Use specs/_template/ as a reference. Read .claude/skills/do/SKILL.md and .claude/agents/spec-tester.md for the contract.
+          EOF
 
       - name: Commit scaffold artifacts
         if: steps.verify.outputs.skip != 'true'

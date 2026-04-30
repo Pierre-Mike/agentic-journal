@@ -86,13 +86,15 @@ jobs:
           # and a copy at specs/active/<id>-<slug>/alignment.md. spec.yml triggers off
           # the latter on push.
           claude -p \
+            --no-session-persistence \
             --max-turns 30 \
             --allowedTools "Bash(git:*),Bash(gh:*),Bash(bun:*),Bash(mkdir:*),Bash(mv:*),Bash(cp:*),Bash(rm:*),Edit,Write,Read,Glob,Grep" \
-            "Run the auto-aligner subagent on the following intent and write its output to .agentic/last-alignment.md AND copy it to specs/active/<next-id>-<slug>/alignment.md (allocate a new spec id, kebab-slug from the issue title). DO NOT scaffold proposal.md, design.md, tasks.md, or any gate file — those belong to spec.yml. Stop after the alignment files are written.
+            <<EOF || true
+          Run the auto-aligner subagent on the following intent and write its output to .agentic/last-alignment.md AND copy it to specs/active/<next-id>-<slug>/alignment.md (allocate a new spec id, kebab-slug from the issue title). DO NOT scaffold proposal.md, design.md, tasks.md, or any gate file — those belong to spec.yml. Stop after the alignment files are written.
 
           INTENT (issue #$ISSUE_NUMBER):
-          $ISSUE_BODY" \
-            || true
+          $ISSUE_BODY
+          EOF
           if [ -f .agentic/last-alignment.md ]; then
             CONF=$(grep -E '^confidence:' .agentic/last-alignment.md | awk '{print $2}')
           else
