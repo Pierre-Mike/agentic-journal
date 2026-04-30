@@ -1,17 +1,18 @@
 ---
 id: 053-add-age-buckets-script-summarizing-auto-branch-age
-title: 'Add age-buckets script summarizing auto branch age'
-status: active
+title: Add age-buckets script summarizing auto branch age
+status: archived
 kind: code
 gate:
   - path: scripts/auto-age-buckets.test.ts
     level: unit
   - path: tests/auto-age-buckets-bdd.test.ts
     level: integration
-created: 2026-04-30
+created: 2026-04-30T00:00:00.000Z
 owner: main
 depends_on: []
 supersedes: null
+archived: '2026-04-30'
 ---
 
 ## Intent

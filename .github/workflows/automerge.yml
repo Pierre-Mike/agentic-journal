@@ -293,12 +293,19 @@ jobs:
         if: steps.squash.outputs.merged == 'true'
         run: |
           export PATH="$HOME/.bun/bin:$PATH"
-          # Tolerate the runner being checked out on a tree without
-          # specs/active/* (e.g. cascading workflow_run on a freshly
-          # merged main). The spec was already archived by the squash
-          # commit's diff or was never present locally.
+          # The squash-merge just landed on main; the spec dir lives on
+          # main under specs/active/. The runner is still checked out on
+          # the workflow_run trigger SHA (pre-merge), so we must refresh
+          # main before archiving. Without this, specs/active/ leaks
+          # across issues and intent.yml's scaffold guard misfires for
+          # the next issue.
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git fetch origin main
+          git checkout main
+          git reset --hard origin/main
           if [ ! -d specs/active ]; then
-            echo "No specs/active/ on runner tree; skipping archive."
+            echo "No specs/active/ on main; nothing to archive."
             exit 0
           fi
           SPEC_DIR=$(find specs/active -mindepth 1 -maxdepth 1 -type d | head -1)
@@ -306,8 +313,18 @@ jobs:
             echo "specs/active/ empty; nothing to archive."
             exit 0
           fi
-          SPEC_SLUG=$(basename "${SPEC_DIR}")
-          bun run spec:complete "${SPEC_SLUG}"
+          SPEC_ID=$(basename "${SPEC_DIR}")
+          # Move specs/active/${SPEC_ID} → specs/archive/<date>-${SPEC_ID}
+          # via spec-archive.ts, which handles the date-prefixed rename
+          # and the proposal.md status/archived frontmatter bump. It
+          # self-gates on tasks.md and gate passes — both already
+          # satisfied by the GREEN state on main.
+          bun scripts/spec/spec-archive.ts "${SPEC_ID}"
+          git add -A
+          git commit -m "chore(${SPEC_ID%%-*}): archive spec ${SPEC_ID}"
+          # actions/checkout@v4 already configured the default token
+          # credential helper for origin; push goes through that.
+          git push origin main
 
       - name: Failure fan-in — post menu to issue
         if: failure() || steps.dag_done.outputs.dag_done == 'false' || steps.preview_check.outputs.preview_ok == 'false'
