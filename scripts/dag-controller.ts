@@ -115,10 +115,10 @@ export function parseTasksDag(tasksMd: string): DagTask[] {
 			throw new Error(`parseTasksDag: block ${blockIdx} (id=${id}) missing 'file_targets'`);
 		}
 
-		// gate
+		// gate — required for kind:code specs, optional for kind:workflow/rule/writeup.
+		// We default to empty string here; spec-lint enforces presence per kind.
 		const gateMatch = text.match(/^\s+gate:\s*(\S+)/m);
-		if (!gateMatch) throw new Error(`parseTasksDag: block ${blockIdx} (id=${id}) missing 'gate'`);
-		const gate = gateMatch[1]?.trim() ?? "";
+		const gate = gateMatch?.[1]?.trim() ?? "";
 
 		return { id, title, depends_on, touches, file_targets, gate };
 	});

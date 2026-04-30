@@ -16,6 +16,7 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { gateEntries, listActiveSpecs, listArchivedIds, taskGates, VALID_KINDS } from "../_lib";
+import { parseTasksDag } from "../dag-controller";
 
 export interface ParsedTask {
 	readonly index: number;
@@ -218,12 +219,26 @@ export function validateGateLevels({
 }
 
 /**
- * Parse a tasks.md file into ParsedTask records. Matches spec-complete.ts's
- * parser but adds the `boundary:` line.
+ * Parse a tasks.md file into ParsedTask records.
+ *
+ * Supports two formats:
+ *  - Markdown checkbox: `- [ ] N. Title` with sub-bullets like
+ *    `- file_targets: [a, b]` (legacy template format).
+ *  - YAML list: `- id: N` blocks with multi-line list values (canonical
+ *    pipeline format used by dag-controller and automerge.yml).
+ *
+ * Format is detected by the first matching line shape; if `- id:` blocks
+ * are present we delegate to dag-controller's parseTasksDag and adapt
+ * to the ParsedTask shape. Otherwise we fall through to the checkbox
+ * parser below.
  */
 export function parseTasksFile(path: string): readonly ParsedTask[] {
 	if (!existsSync(path)) return [];
-	const lines = readFileSync(path, "utf-8").split("\n");
+	const raw = readFileSync(path, "utf-8");
+	if (/^- id:\s*\d+/m.test(raw)) {
+		return parseYamlListTasks(raw);
+	}
+	const lines = raw.split("\n");
 	const tasks: ParsedTask[] = [];
 	let current: {
 		index: number;
@@ -312,6 +327,55 @@ export function parseTasksFile(path: string): readonly ParsedTask[] {
 		});
 	}
 	return tasks;
+}
+
+/**
+ * Adapt the YAML-list parser from dag-controller (DagTask[]) to the
+ * ParsedTask shape that spec-lint and tasks-verify consume.
+ *
+ * dag-controller doesn't emit `boundary` (it's not relevant to dispatch
+ * scheduling), so we extract it here with a small inline regex.
+ * `index` is the line number where the `- id: N` block starts.
+ */
+function parseYamlListTasks(raw: string): ParsedTask[] {
+	const dagTasks = parseTasksDag(raw);
+	const lines = raw.split("\n");
+	const blockStartIndex = (id: number): number => {
+		const re = new RegExp(`^- id:\\s*${id}\\b`);
+		for (let i = 0; i < lines.length; i++) if (re.test(lines[i] ?? "")) return i;
+		return 0;
+	};
+	const blockText = (id: number): string => {
+		const start = blockStartIndex(id);
+		let end = lines.length;
+		for (let i = start + 1; i < lines.length; i++) {
+			if (/^- id:/.test(lines[i] ?? "")) {
+				end = i;
+				break;
+			}
+		}
+		return lines.slice(start, end).join("\n");
+	};
+	const extractBoundary = (text: string): string[] | undefined => {
+		const m = text.match(/^\s+boundary:\s*$\n((?:^\s{2,}-\s+.+$\n?)+)/m);
+		if (!m) return undefined;
+		return (m[1] ?? "")
+			.split("\n")
+			.map((l) => l.match(/^\s{2,}-\s+(.+)$/)?.[1]?.trim())
+			.filter((s): s is string => Boolean(s));
+	};
+	return dagTasks.map((t) => {
+		const text = blockText(t.id);
+		return {
+			index: blockStartIndex(t.id),
+			title: t.title,
+			file_targets: t.file_targets,
+			boundary: extractBoundary(text),
+			gate: t.gate,
+			depends_on: t.depends_on,
+			touches: t.touches,
+		};
+	});
 }
 
 function main(): void {

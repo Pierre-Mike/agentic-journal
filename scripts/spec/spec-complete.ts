@@ -13,6 +13,7 @@
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { basename, join } from "node:path";
 import { loadSpec, taskGates } from "../_lib";
+import { parseTasksDag } from "../dag-controller";
 
 interface TaskLine {
 	index: number;
@@ -63,7 +64,31 @@ async function sh(
 
 function parseTasks(tasksMdPath: string): TaskLine[] {
 	if (!existsSync(tasksMdPath)) return [];
-	const lines = readFileSync(tasksMdPath, "utf-8").split("\n");
+	const raw = readFileSync(tasksMdPath, "utf-8");
+	// YAML-list format (canonical pipeline format) — no checkbox, so treat
+	// every task as already checked. Completion is implied by gates passing
+	// (verified separately via tasks-verify upstream of this call).
+	if (/^- id:\s*\d+/m.test(raw)) {
+		const dag = parseTasksDag(raw);
+		const lines = raw.split("\n");
+		return dag.map((t) => {
+			let index = 0;
+			for (let i = 0; i < lines.length; i++) {
+				if (new RegExp(`^- id:\\s*${t.id}\\b`).test(lines[i] ?? "")) {
+					index = i;
+					break;
+				}
+			}
+			return {
+				index,
+				raw: lines[index] ?? "",
+				checked: true,
+				title: t.title,
+				file_targets: [...t.file_targets],
+			};
+		});
+	}
+	const lines = raw.split("\n");
 	const tasks: TaskLine[] = [];
 	let current: TaskLine | null = null;
 
@@ -174,7 +199,7 @@ async function main(): Promise<void> {
 
 	// 1. Gate must be green
 	console.log("\n[1/4] verifying gate…");
-	const verify = await sh(["bun", "scripts/tasks-verify.ts"]);
+	const verify = await sh(["bun", "scripts/agentic/tasks-verify.ts"]);
 	if (!verify.ok) {
 		console.error("✖ gate is not green. Refusing to close.");
 		process.exit(1);
@@ -221,7 +246,7 @@ async function main(): Promise<void> {
 
 	// 3. Archive via the existing deterministic script
 	console.log("\n[3/4] archiving…");
-	const archive = await sh(["bun", "scripts/spec-archive.ts", slug]);
+	const archive = await sh(["bun", "scripts/spec/spec-archive.ts", slug]);
 	if (!archive.ok) {
 		console.error("✖ archive step refused. See above.");
 		process.exit(1);

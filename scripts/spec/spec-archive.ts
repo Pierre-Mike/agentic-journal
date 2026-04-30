@@ -16,7 +16,7 @@ function hasUncheckedTasks(dir: string): boolean {
 }
 
 async function gatesPass(): Promise<boolean> {
-	const proc = Bun.spawn(["bun", "scripts/tasks-verify.ts"], {
+	const proc = Bun.spawn(["bun", "scripts/agentic/tasks-verify.ts"], {
 		stdout: "inherit",
 		stderr: "inherit",
 	});
