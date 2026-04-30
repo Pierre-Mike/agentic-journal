@@ -115,7 +115,9 @@ jobs:
         if: steps.align.outputs.confidence == 'high'
         run: |
           BRANCH="auto/${{ github.event.issue.number }}-${{ steps.slug.outputs.value }}"
-          gh workflow run spec.yml --ref "$BRANCH" --field branch="$BRANCH"
+          # Dispatch with --ref main so the freshest workflow file runs,
+          # but operate on the auto/* branch via the branch input.
+          gh workflow run spec.yml --ref main --field branch="$BRANCH"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
