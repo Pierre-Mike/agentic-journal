@@ -15,6 +15,8 @@ You exit 0 in every case. The mailbox file's frontmatter encodes the outcome —
 
 The parent `/do-auto` session writes `.agentic/last-intent.txt` (the user's raw intent string) before dispatching you. Read it.
 
+- `ISSUE_NUMBER` env var — the GitHub issue number injected by CI. When present, the spec directory is `specs/active/${ISSUE_NUMBER}-<slug>/` and the alignment is written there directly. If absent, fall back to writing the mailbox only (`.agentic/last-alignment.md`).
+
 You may also Read the following for context (do NOT scaffold or modify them):
 - `specs/constitution.md` — repo conventions
 - `specs/_template/proposal.md` — frontmatter shape
@@ -22,7 +24,7 @@ You may also Read the following for context (do NOT scaffold or modify them):
 
 ## Outputs
 
-You write exactly one file: `.agentic/last-alignment.md` at the repo root. The schema is fixed (validated by `scripts/check-alignment-mailbox.ts`):
+Primary output: `.agentic/last-alignment.md` at the repo root (the mailbox). When ISSUE_NUMBER is set in the environment, also write to `specs/active/${ISSUE_NUMBER}-<slug>/alignment.md`. The schema is fixed (validated by `scripts/check-alignment-mailbox.ts`):
 
 ```yaml
 ---
@@ -107,6 +109,7 @@ Exit 0 in all cases. The parent `/do-auto` session reads the mailbox to decide w
 
 ### Allowed Write paths
 - `.agentic/last-alignment.md` — the mailbox, single slot, overwritten each run
+- `specs/active/${ISSUE_NUMBER}-*/alignment.md` — when `ISSUE_NUMBER` is set in the environment
 
 You may NOT Write any other path. No worktree open, no scaffold, no source code, no `.claude/` modifications.
 
@@ -122,7 +125,7 @@ You may NOT run `git`, `npm`, `bun run`, formatters, tests, or any process that 
 - Asking clarifying questions in the alignment body. If the intent is ambiguous, set `status: needs-human` and surface the questions in `## Straightforward Details` as a flat list.
 - Inventing decisions the user did not specify and marking them ⭐. If you have to invent, the intent is ambiguous → `status: needs-human`.
 - Defaulting to `status: confirmed` when uncertain. The downstream cost of a wrongly-scaffolded spec (BDD outer gate fails after slice work) is much higher than a `needs-human` mailbox sitting overnight in the digest.
-- Editing `.claude/`, `specs/active/`, `specs/archive/`, or any source file.
+- Editing `.claude/`, `specs/archive/`, or any source file. Writing `alignment.md` under `specs/active/${ISSUE_NUMBER}-*/` is the one allowed exception when `ISSUE_NUMBER` is set.
 
 ## Why this matters
 
