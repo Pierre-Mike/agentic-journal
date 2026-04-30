@@ -107,12 +107,24 @@ jobs:
                   | sed 's/,$//'; } || true
             )
 
-            # In-flight slice.yml runs scoped to this branch
+            # In-flight slice.yml runs.
+            #
+            # slice.yml's `gh workflow run --ref main --field branch=...`
+            # invocation produces runs with headBranch=main (since the
+            # workflow file lives on main). The auto/* branch is just an
+            # input. To filter by branch, we parse the run-name string
+            # (which embeds slice/spec/branch — see slice.yml top-of-file).
             IN_FLIGHT_QUEUED=$(gh run list --workflow=slice.yml --status=queued \
-              --branch="$BRANCH" --json databaseId,name 2>/dev/null || echo "[]")
+              --json databaseId,displayTitle 2>/dev/null || echo "[]")
             IN_FLIGHT_RUNNING=$(gh run list --workflow=slice.yml --status=in_progress \
-              --branch="$BRANCH" --json databaseId,name 2>/dev/null || echo "[]")
-            IN_FLIGHT=$(jq -s 'add // []' <(echo "$IN_FLIGHT_QUEUED") <(echo "$IN_FLIGHT_RUNNING") 2>/dev/null || echo "[]")
+              --json databaseId,displayTitle 2>/dev/null || echo "[]")
+            IN_FLIGHT_ALL=$(jq -s 'add // []' <(echo "$IN_FLIGHT_QUEUED") <(echo "$IN_FLIGHT_RUNNING") 2>/dev/null || echo "[]")
+            # Keep only runs whose displayTitle mentions THIS branch and
+            # rewrite into the {name: "slice_id=N"} shape dag-controller's
+            # CLI parses (see scripts/dag-controller.ts CLI block).
+            IN_FLIGHT=$(echo "$IN_FLIGHT_ALL" | jq --arg branch "$BRANCH" \
+              '[.[] | select(.displayTitle | contains($branch)) | {name: ("slice_id=" + ((.displayTitle | capture("slice (?<id>[0-9]+)").id) // "0"))}]' \
+              2>/dev/null || echo "[]")
 
             # Compute dispatchable
             DISPATCHABLE=$(bun scripts/dag-controller.ts "$TMP_TASKS" "$COMPLETED" "$IN_FLIGHT" 2>/dev/null || echo "[]")
