@@ -251,6 +251,29 @@ describe("automerge.yml: aggregator gate — DAG done check", () => {
 			(dagDoneStep?.run?.includes("GITHUB_OUTPUT") ?? false) || dagDoneStep?.id !== undefined;
 		expect(writesOutput).toBe(true);
 	});
+
+	test("DAG-done step reads tasks.md from the PR branch (not local checkout)", () => {
+		// Regression: previously used `find specs/active -name tasks.md`, which
+		// only sees main's working tree (default workflow_run checkout). On
+		// in-flight PRs the spec lives on auto/X, so find returned empty and
+		// the fallback path archived prematurely after slice 1.
+		const wf = parseWorkflow();
+		const steps = allSteps(wf);
+		const dagDoneStep = steps.find((s) => s.id === "dag_done");
+		expect(dagDoneStep).toBeDefined();
+		const run = dagDoneStep?.run ?? "";
+		// Must read tasks.md from the PR branch via git, not via `find` on the
+		// local checkout. Either `git show origin/${BRANCH}:` or
+		// `git ls-tree origin/${BRANCH}` is acceptable.
+		const readsFromBranch =
+			run.includes('git show "origin/${BRANCH}') ||
+			run.includes("git ls-tree") ||
+			run.includes("origin/${BRANCH}:");
+		expect(readsFromBranch).toBe(true);
+		// Must NOT fall back to "assume DAG done" on missing tasks.md — that's
+		// the bug that caused premature archive.
+		expect(run).not.toMatch(/assuming DAG done/i);
+	});
 });
 
 describe("automerge.yml: aggregator gate — outer BDD gate", () => {

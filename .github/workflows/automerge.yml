@@ -77,16 +77,21 @@ jobs:
             exit 0
           fi
 
-          # Fetch slice IDs from tasks.md (find the active spec)
-          SPEC_DIR=$(find specs/active -name tasks.md 2>/dev/null | head -1)
-          if [ -z "${SPEC_DIR}" ]; then
-            echo "No tasks.md found; assuming DAG done" >&2
-            echo "dag_done=true" >> "$GITHUB_OUTPUT"
+          # Read tasks.md from the PR branch — NOT the local checkout, which is
+          # main and won't contain the in-flight spec. Looking on main caused
+          # the previous "no tasks.md, assume DAG done" path to fire and
+          # archive specs after the first slice.
+          git fetch origin "${BRANCH}" --quiet
+          SPEC_PATH=$(git ls-tree --name-only -r "origin/${BRANCH}" -- specs/active/ 2>/dev/null | grep -E '/tasks\.md$' | head -1)
+          if [ -z "${SPEC_PATH}" ]; then
+            echo "No tasks.md on PR branch '${BRANCH}'; spec missing — DAG not done." >&2
+            echo "dag_done=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
-          # Extract all slice IDs from tasks.md
-          SLICE_IDS=$(grep -oP '(?<=^- id: )\d+' "${SPEC_DIR}" | sort -n)
+          # Extract all slice IDs from tasks.md (read content from the PR branch)
+          TASKS_MD=$(git show "origin/${BRANCH}:${SPEC_PATH}")
+          SLICE_IDS=$(echo "${TASKS_MD}" | grep -oP '(?<=^- id: )\d+' | sort -n)
           if [ -z "${SLICE_IDS}" ]; then
             echo "No slice IDs found in tasks.md" >&2
             echo "dag_done=false" >> "$GITHUB_OUTPUT"
