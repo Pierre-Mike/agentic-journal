@@ -10,7 +10,14 @@ import { describe, expect, test } from "bun:test";
 import { closeSync, mkdtempSync, openSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { gateEntries, gatePaths, isReady, sliceProgress, unresolvedDeps } from "./_lib.ts";
+import {
+	gateEntries,
+	gatePaths,
+	isReady,
+	sliceProgress,
+	taskGates,
+	unresolvedDeps,
+} from "./_lib.ts";
 
 const makeSpec = (gate: unknown, depends_on: string[] = []) => ({
 	slug: "test",
@@ -159,5 +166,53 @@ describe("sliceProgress", () => {
 	test("kind:code, 0 tasks with gate fields → null", () => {
 		const dir = makeFixtureSpecDir("code", 0, []);
 		expect(sliceProgress({ specDir: dir })).toBeNull();
+	});
+});
+
+// ---------------------------------------------------------------------------
+// taskGates — YAML-list task format (the format the spec-tester emits)
+// ---------------------------------------------------------------------------
+
+describe("taskGates: YAML-list format", () => {
+	function makeYamlListSpec(opts: { gates: readonly string[]; frozen: readonly number[] }): string {
+		const dir = mkdtempSync(join(tmpdir(), "spec-yaml-"));
+		const lines: string[] = ["## Tasks", ""];
+		opts.gates.forEach((gate, i) => {
+			const id = i + 1;
+			lines.push(`- id: ${id}`);
+			lines.push(`  title: "Task ${id}"`);
+			lines.push(`  agent: main`);
+			lines.push(`  depends_on: []`);
+			lines.push(`  gate: ${gate}`);
+			lines.push("");
+		});
+		writeFileSync(join(dir, "tasks.md"), lines.join("\n"), "utf-8");
+		for (const ord of opts.frozen) {
+			closeSync(openSync(join(dir, `.gate-frozen-${ord}`), "w"));
+		}
+		return dir;
+	}
+
+	test("returns one entry per YAML-list task with a gate field", () => {
+		const dir = makeYamlListSpec({
+			gates: ["scripts/a.test.ts", "tests/b.test.ts"],
+			frozen: [],
+		});
+		const result = taskGates(dir);
+		expect(result.length).toBe(2);
+		expect(result[0]?.ordinal).toBe(1);
+		expect(result[0]?.gatePath).toBe("scripts/a.test.ts");
+		expect(result[1]?.ordinal).toBe(2);
+		expect(result[1]?.gatePath).toBe("tests/b.test.ts");
+	});
+
+	test("frozen sentinel detection works for YAML-list specs", () => {
+		const dir = makeYamlListSpec({
+			gates: ["scripts/a.test.ts", "tests/b.test.ts"],
+			frozen: [1],
+		});
+		const result = taskGates(dir);
+		expect(result[0]?.frozen).toBe(true);
+		expect(result[1]?.frozen).toBe(false);
 	});
 });

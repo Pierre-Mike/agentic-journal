@@ -221,7 +221,9 @@ export function sliceProgress({ specDir }: { specDir: string }): SliceProgress |
  * starting at 1. The `frozen` field is true if the corresponding
  * `.gate-frozen-N` sentinel file exists in `specDir`.
  *
- * Only applies to `kind: code` specs. For other kinds, returns [].
+ * Recognizes both task formats:
+ *   - markdown checkbox: `- [ ] Task title` followed by `  - gate: path`
+ *   - YAML list:         `- id: N`           followed by `  gate: path`
  */
 export function taskGates(specDir: string): readonly TaskGateEntry[] {
 	const tasksPath = join(specDir, "tasks.md");
@@ -233,13 +235,15 @@ export function taskGates(specDir: string): readonly TaskGateEntry[] {
 	let inTask = false;
 
 	for (const line of lines) {
-		const taskMatch = line.match(/^- \[[ x]\]\s+.+$/);
+		const taskMatch =
+			line.match(/^- \[[ x]\]\s+.+$/) !== null || line.match(/^- id:\s*\d+/) !== null;
 		if (taskMatch) {
 			inTask = true;
 			continue;
 		}
 		if (!inTask) continue;
-		const gateMatch = line.match(/^\s+-\s+gate:\s*(.+)$/);
+		// Match `  - gate: path` (markdown-checkbox style) or `  gate: path` (YAML-list style).
+		const gateMatch = line.match(/^\s+(?:-\s+)?gate:\s*(.+)$/);
 		if (gateMatch) {
 			ordinal += 1;
 			const gatePath = (gateMatch[1] ?? "").trim();
