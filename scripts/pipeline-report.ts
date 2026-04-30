@@ -26,8 +26,11 @@ async function main(): Promise<void> {
 	const argv = process.argv.slice(2);
 	let tracesDir = ".claude/traces";
 	for (let i = 0; i < argv.length; i++) {
-		if (argv[i] === "--traces-dir" && argv[i + 1] !== undefined) {
-			tracesDir = argv[++i] as string;
+		const arg = argv[i];
+		const next = argv[i + 1];
+		if (arg === "--traces-dir" && next !== undefined) {
+			tracesDir = next;
+			i++;
 		}
 	}
 	const events = loadTraces(tracesDir, null);
