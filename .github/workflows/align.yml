@@ -1,4 +1,4 @@
-name: Bootstrap — issue to branch + spec
+name: Align — issue to alignment.md
 
 on:
   issues:
@@ -16,7 +16,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  bootstrap:
+  align:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -73,14 +73,25 @@ jobs:
       - name: Install @anthropic-ai/claude-code
         run: npm i -g @anthropic-ai/claude-code
 
-      - name: Run /do-auto aligner
+      - name: Run aligner (writes alignment mailbox only)
         id: align
         env:
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           ISSUE_BODY: ${{ github.event.issue.body }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
         run: |
-          claude -p "/do-auto $ISSUE_BODY" \
+          # ALIGNMENT-ONLY phase. Do NOT scaffold the spec here — spec.yml owns that.
+          # The aligner writes .agentic/last-alignment.md (the canonical intent mailbox)
+          # and a copy at specs/active/<id>-<slug>/alignment.md. spec.yml triggers off
+          # the latter on push.
+          claude -p \
+            --no-resume \
+            --max-turns 30 \
             --allowedTools "Bash(git:*),Bash(gh:*),Bash(bun:*),Bash(mkdir:*),Bash(mv:*),Bash(cp:*),Bash(rm:*),Edit,Write,Read,Glob,Grep" \
+            "Run the auto-aligner subagent on the following intent and write its output to .agentic/last-alignment.md AND copy it to specs/active/<next-id>-<slug>/alignment.md (allocate a new spec id, kebab-slug from the issue title). DO NOT scaffold proposal.md, design.md, tasks.md, or any gate file — those belong to spec.yml. Stop after the alignment files are written.
+
+          INTENT (issue #$ISSUE_NUMBER):
+          $ISSUE_BODY" \
             || true
           if [ -f .agentic/last-alignment.md ]; then
             CONF=$(grep -E '^confidence:' .agentic/last-alignment.md | awk '{print $2}')

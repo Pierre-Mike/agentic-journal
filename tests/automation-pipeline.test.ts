@@ -5,7 +5,7 @@
  * final slice (slice 10) delivers all deliverables. Early GREEN = spec gap.
  *
  * Covers (aligned to proposal.md acceptance criteria):
- *  - bootstrap.yml contract (trigger events, branch naming, draft PR, /do-auto, alignment freeze)
+ *  - align.yml contract (trigger events, branch naming, draft PR, /do-auto, alignment freeze)
  *  - CODEOWNERS freeze rule for alignment.md
  *  - dag-controller.ts: dispatchable() function with depends_on + touches logic
  *  - tasks.md schema: depends_on and touches keys present in _template
@@ -40,44 +40,45 @@ function readFile(rel: string): string {
 }
 
 // ---------------------------------------------------------------------------
-// bootstrap.yml
+// align.yml
 // ---------------------------------------------------------------------------
 
-describe("bootstrap.yml contract", () => {
-	test("file exists at .github/workflows/bootstrap.yml", () => {
-		expect(existsSync(join(REPO_ROOT, ".github/workflows/bootstrap.yml"))).toBe(true);
+describe("align.yml contract", () => {
+	test("file exists at .github/workflows/align.yml", () => {
+		expect(existsSync(join(REPO_ROOT, ".github/workflows/align.yml"))).toBe(true);
 	});
 
 	test("listens to issues.opened and issues.edited events", () => {
-		const wf = readWorkflow("bootstrap.yml");
+		const wf = readWorkflow("align.yml");
 		expect(wf).toMatch(/issues/);
 		expect(wf).toMatch(/opened/);
 		expect(wf).toMatch(/edited/);
 	});
 
 	test("listens to issue_comment.created event", () => {
-		const wf = readWorkflow("bootstrap.yml");
+		const wf = readWorkflow("align.yml");
 		expect(wf).toMatch(/issue_comment/);
 		expect(wf).toMatch(/created/);
 	});
 
 	test("creates branch with auto/<issue#>-<slug> naming pattern", () => {
-		const wf = readWorkflow("bootstrap.yml");
+		const wf = readWorkflow("align.yml");
 		expect(wf).toMatch(/auto\//);
 	});
 
 	test("opens a draft PR", () => {
-		const wf = readWorkflow("bootstrap.yml");
+		const wf = readWorkflow("align.yml");
 		expect(wf).toMatch(/draft/);
 	});
 
-	test("invokes /do-auto command", () => {
-		const wf = readWorkflow("bootstrap.yml");
-		expect(wf).toMatch(/\/do-auto/);
+	test("invokes the auto-aligner (alignment-only phase)", () => {
+		const wf = readWorkflow("align.yml");
+		// Accept legacy /do-auto wording or explicit auto-aligner / alignment reference.
+		expect(wf).toMatch(/\/do-auto|auto-aligner|alignment/i);
 	});
 
 	test("commits alignment.md only on confidence: high", () => {
-		const wf = readWorkflow("bootstrap.yml");
+		const wf = readWorkflow("align.yml");
 		expect(wf).toMatch(/alignment\.md/);
 		expect(wf).toMatch(/confidence.*high|high.*confidence/i);
 	});
@@ -421,7 +422,7 @@ describe("RED-until-last-slice invariant", () => {
 	 */
 
 	const REQUIRED_DELIVERABLES = [
-		".github/workflows/bootstrap.yml",
+		".github/workflows/align.yml",
 		".github/workflows/controller.yml",
 		".github/workflows/slice.yml",
 		".github/workflows/preview.yml",

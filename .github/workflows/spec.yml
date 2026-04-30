@@ -1,0 +1,129 @@
+name: Spec — alignment.md to scaffold + outer gate
+
+on:
+  push:
+    branches:
+      - "auto/**"
+    paths:
+      - "specs/active/**/alignment.md"
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "Branch to scaffold spec on"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: spec-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  scaffold:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch || github.ref }}
+          fetch-depth: 0
+
+      - name: Verify alignment.md present and confidence:high
+        id: verify
+        run: |
+          ALIGN_FILE=$(find specs/active -name alignment.md -type f | head -1)
+          if [ -z "$ALIGN_FILE" ]; then
+            echo "No alignment.md found under specs/active — nothing to scaffold."
+            echo "skip=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          CONF=$(grep -E '^confidence:' "$ALIGN_FILE" | awk '{print $2}')
+          if [ "$CONF" != "high" ]; then
+            echo "alignment.md confidence is '$CONF', expected 'high' — aborting."
+            echo "skip=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          # Idempotency: skip if proposal.md already exists in the same spec dir
+          SPEC_DIR=$(dirname "$ALIGN_FILE")
+          if [ -f "$SPEC_DIR/proposal.md" ]; then
+            echo "$SPEC_DIR/proposal.md already exists — spec already scaffolded."
+            echo "skip=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          echo "spec_dir=$SPEC_DIR" >> $GITHUB_OUTPUT
+          echo "skip=false" >> $GITHUB_OUTPUT
+
+      - name: Setup Node
+        if: steps.verify.outputs.skip != 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install @anthropic-ai/claude-code
+        if: steps.verify.outputs.skip != 'true'
+        run: npm i -g @anthropic-ai/claude-code
+
+      - name: Setup Bun
+        if: steps.verify.outputs.skip != 'true'
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        if: steps.verify.outputs.skip != 'true'
+        run: bun install --frozen-lockfile
+
+      - name: Scaffold spec via claude (spec-tester role)
+        if: steps.verify.outputs.skip != 'true'
+        id: scaffold
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          SPEC_DIR: ${{ steps.verify.outputs.spec_dir }}
+        run: |
+          claude -p \
+            --no-resume \
+            --max-turns 50 \
+            --allowedTools "Bash(git:*),Bash(gh:*),Bash(bun:*),Bash(mkdir:*),Bash(mv:*),Bash(cp:*),Bash(rm:*),Edit,Write,Read,Glob,Grep" \
+            "You are the spec-tester. The alignment mailbox at $SPEC_DIR/alignment.md is frozen with confidence:high. Scaffold the spec at $SPEC_DIR/: write proposal.md (with kind:code, gate path), design.md, tasks.md (DAG with depends_on: and touches: per slice), and the BDD outer gate file referenced by proposal.md's gate: field — in RED form. Use specs/_template/ as a reference. Read .claude/skills/do/SKILL.md and .claude/agents/spec-tester.md for the contract."
+
+      - name: Commit scaffold artifacts
+        if: steps.verify.outputs.skip != 'true'
+        env:
+          SPEC_DIR: ${{ steps.verify.outputs.spec_dir }}
+        run: |
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          SPEC_ID=$(basename "$SPEC_DIR" | cut -d- -f1)
+          git add "$SPEC_DIR" || true
+          # Also stage the outer gate file (path declared in proposal.md gate:)
+          git add tests/ || true
+          if git diff --cached --quiet; then
+            echo "No scaffold changes to commit."
+          else
+            git commit -m "spec($SPEC_ID): scaffold via spec.yml"
+            git push
+          fi
+
+      - name: Comment on issue (success)
+        if: steps.verify.outputs.skip != 'true' && success()
+        run: |
+          ISSUE_NUM=$(echo "${{ github.ref_name }}" | grep -oE '^auto/[0-9]+' | grep -oE '[0-9]+')
+          if [ -n "$ISSUE_NUM" ]; then
+            gh issue comment "$ISSUE_NUM" --body "✅ Spec scaffold landed on \`${{ github.ref_name }}\`. Controller will pick up tasks.md within ~2 minutes and start dispatching slices."
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Comment on issue (failure)
+        if: failure()
+        run: |
+          ISSUE_NUM=$(echo "${{ github.ref_name }}" | grep -oE '^auto/[0-9]+' | grep -oE '[0-9]+')
+          if [ -n "$ISSUE_NUM" ]; then
+            gh issue comment "$ISSUE_NUM" --body "❌ Spec scaffold failed for \`${{ github.ref_name }}\`. See run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,8 +1,8 @@
 /**
- * Slice 5 gate: bootstrap.yml — issue→branch→aligner→spec
+ * Slice 5 gate: align.yml — issue→branch→aligner→spec
  *
- * Tests that `.github/workflows/bootstrap.yml` encodes the correct contract:
- *   1. File exists at .github/workflows/bootstrap.yml
+ * Tests that `.github/workflows/align.yml` encodes the correct contract:
+ *   1. File exists at .github/workflows/align.yml
  *   2. Triggers on issues.opened, issues.edited, issue_comment.created — NO label filter
  *   3. Permissions block: contents:write, pull-requests:write, issues:write
  *   4. Job creates branch named auto/<issue-number>-<slug> from main
@@ -19,7 +19,7 @@
  * string-grep cannot enforce (trigger types location, if: guard presence,
  * mutual exclusivity of high/low paths).
  *
- * These tests are intentionally RED until bootstrap.yml is implemented (slice 5).
+ * These tests are intentionally RED until align.yml is implemented (slice 5).
  */
 
 import { describe, expect, test } from "bun:test";
@@ -28,7 +28,7 @@ import { join } from "node:path";
 import { parse as parseYaml } from "yaml";
 
 const REPO_ROOT = join(import.meta.dir, "../..");
-const WORKFLOW_PATH = join(REPO_ROOT, ".github", "workflows", "bootstrap.yml");
+const WORKFLOW_PATH = join(REPO_ROOT, ".github", "workflows", "align.yml");
 
 type WorkflowDoc = {
 	on?: Record<string, unknown>;
@@ -49,7 +49,7 @@ type Step = {
 
 function readWorkflowRaw(): string {
 	if (!existsSync(WORKFLOW_PATH)) {
-		throw new Error("bootstrap.yml not found at .github/workflows/bootstrap.yml");
+		throw new Error("align.yml not found at .github/workflows/align.yml");
 	}
 	return readFileSync(WORKFLOW_PATH, "utf-8");
 }
@@ -68,8 +68,8 @@ function allSteps(wf: WorkflowDoc): Step[] {
 // 1. File existence
 // ---------------------------------------------------------------------------
 
-describe("bootstrap.yml: file existence", () => {
-	test("exists at .github/workflows/bootstrap.yml", () => {
+describe("align.yml: file existence", () => {
+	test("exists at .github/workflows/align.yml", () => {
 		expect(existsSync(WORKFLOW_PATH)).toBe(true);
 	});
 });
@@ -78,7 +78,7 @@ describe("bootstrap.yml: file existence", () => {
 // 2. Trigger events — structural YAML assertions
 // ---------------------------------------------------------------------------
 
-describe("bootstrap.yml: trigger events (structural)", () => {
+describe("align.yml: trigger events (structural)", () => {
 	test("on.issues.types contains 'opened'", () => {
 		const wf = parseWorkflow();
 		const on = wf.on as Record<string, { types?: string[] } | undefined>;
@@ -118,7 +118,7 @@ describe("bootstrap.yml: trigger events (structural)", () => {
 // 3. Permissions block
 // ---------------------------------------------------------------------------
 
-describe("bootstrap.yml: permissions block", () => {
+describe("align.yml: permissions block", () => {
 	test("has a top-level permissions block", () => {
 		const wf = parseWorkflow();
 		expect(wf.permissions).toBeDefined();
@@ -144,7 +144,7 @@ describe("bootstrap.yml: permissions block", () => {
 // 4. Branch creation — auto/<issue-number>-<slug>
 // ---------------------------------------------------------------------------
 
-describe("bootstrap.yml: branch creation", () => {
+describe("align.yml: branch creation", () => {
 	test("a step creates a branch prefixed with 'auto/'", () => {
 		const wf = parseWorkflow();
 		const steps = allSteps(wf);
@@ -217,7 +217,7 @@ describe("bootstrap.yml: branch creation", () => {
 // 5. Draft PR creation linked to the issue
 // ---------------------------------------------------------------------------
 
-describe("bootstrap.yml: draft PR creation", () => {
+describe("align.yml: draft PR creation", () => {
 	test("opens a draft PR via gh pr create --draft", () => {
 		const wf = parseWorkflow();
 		const steps = allSteps(wf);
@@ -246,7 +246,7 @@ describe("bootstrap.yml: draft PR creation", () => {
 // 6. Claude invocation with /do-auto and CLAUDE_CODE_OAUTH_TOKEN
 // ---------------------------------------------------------------------------
 
-describe("bootstrap.yml: claude /do-auto invocation", () => {
+describe("align.yml: claude /do-auto invocation", () => {
 	test("invokes claude with -p flag", () => {
 		const wf = parseWorkflow();
 		const steps = allSteps(wf);
@@ -254,11 +254,21 @@ describe("bootstrap.yml: claude /do-auto invocation", () => {
 		expect(claudeStep).toBeDefined();
 	});
 
-	test("passes /do-auto as the prompt or command", () => {
+	test("invokes the auto-aligner (writes alignment mailbox only)", () => {
 		const wf = parseWorkflow();
 		const steps = allSteps(wf);
-		const doAutoStep = steps.find((s) => s.run?.includes("/do-auto"));
-		expect(doAutoStep).toBeDefined();
+		// align.yml is the alignment-only phase. The prompt or command must reference
+		// the aligner. Accept either /do-auto (legacy) or "auto-aligner"/"alignment".
+		const alignerStep = steps.find((s) => {
+			const inRun = s.run?.match(/\/do-auto|auto-aligner|alignment/i);
+			const withProps = (s as { with?: Record<string, unknown> }).with;
+			const inPrompt =
+				withProps && typeof withProps.prompt === "string"
+					? withProps.prompt.match(/\/do-auto|auto-aligner|alignment/i)
+					: null;
+			return Boolean(inRun || inPrompt);
+		});
+		expect(alignerStep).toBeDefined();
 	});
 
 	test("uses CLAUDE_CODE_OAUTH_TOKEN secret (no API key)", () => {
@@ -284,7 +294,7 @@ describe("bootstrap.yml: claude /do-auto invocation", () => {
 // 7. Confidence-gated alignment commit / issue comment — structural
 // ---------------------------------------------------------------------------
 
-describe("bootstrap.yml: confidence gate (structural)", () => {
+describe("align.yml: confidence gate (structural)", () => {
 	test("a step reads .agentic/last-alignment.md after claude runs", () => {
 		const wf = parseWorkflow();
 		const steps = allSteps(wf);
@@ -381,7 +391,7 @@ describe("bootstrap.yml: confidence gate (structural)", () => {
 // 8. Concurrency group
 // ---------------------------------------------------------------------------
 
-describe("bootstrap.yml: concurrency group", () => {
+describe("align.yml: concurrency group", () => {
 	test("has a top-level concurrency block", () => {
 		const wf = parseWorkflow();
 		expect(wf.concurrency).toBeDefined();
@@ -403,7 +413,7 @@ describe("bootstrap.yml: concurrency group", () => {
 // 9. Runner
 // ---------------------------------------------------------------------------
 
-describe("bootstrap.yml: runner", () => {
+describe("align.yml: runner", () => {
 	test("uses runs-on: ubuntu-latest", () => {
 		const wf = parseWorkflow();
 		const jobs = Object.values(wf.jobs ?? {});
@@ -416,7 +426,7 @@ describe("bootstrap.yml: runner", () => {
 // 10. Checkout step
 // ---------------------------------------------------------------------------
 
-describe("bootstrap.yml: checkout step", () => {
+describe("align.yml: checkout step", () => {
 	test("uses actions/checkout@v4", () => {
 		const wf = parseWorkflow();
 		const steps = allSteps(wf);
