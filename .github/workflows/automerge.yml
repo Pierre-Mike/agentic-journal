@@ -233,6 +233,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
 
       - name: Squash merge PR (auto-update branch if behind)
+        id: squash
         if: steps.dag_done.outputs.dag_done == 'true' && steps.preview_check.outputs.preview_ok == 'true' && steps.early_green.outputs.spec_gap != 'true'
         run: |
           PR_NUMBER="${{ steps.meta.outputs.pr_number }}"
@@ -240,6 +241,7 @@ jobs:
           # merged into main since the PR branched.
           if gh pr merge --squash --delete-branch "${PR_NUMBER}"; then
             echo "Squash-merged ${PR_NUMBER}."
+            echo "merged=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
@@ -249,27 +251,36 @@ jobs:
             gh pr ready "${PR_NUMBER}" || true
             if gh pr merge --squash --delete-branch "${PR_NUMBER}"; then
               echo "Squash-merged ${PR_NUMBER} after ready-promote."
+              echo "merged=true" >> "$GITHUB_OUTPUT"
               exit 0
             fi
           fi
 
           # If the head is behind main, update the branch and let the
           # resulting CI cascade re-trigger automerge. Exit 0 so this
-          # run records as success — the next workflow_run will close it.
+          # run records as success; the next workflow_run will close it.
+          # The downstream `gh pr update-branch` is invoked with GH_PAT
+          # (if configured) so the resulting merge commit triggers
+          # `pull_request:synchronize` and preview.yml fires.
           MERGE_STATE=$(gh pr view "${PR_NUMBER}" --json mergeStateStatus -q '.mergeStateStatus' 2>/dev/null || echo "")
           if [ "${MERGE_STATE}" = "BEHIND" ]; then
             echo "Branch behind main; updating and yielding to next CI cascade."
-            gh pr update-branch "${PR_NUMBER}" || true
+            GH_TOKEN="${UPDATE_TOKEN}" gh pr update-branch "${PR_NUMBER}" || true
+            echo "merged=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
           echo "Squash-merge failed and reason was not draft/behind. mergeState=${MERGE_STATE}"
+          echo "merged=false" >> "$GITHUB_OUTPUT"
           exit 1
         env:
           GH_TOKEN: ${{ github.token }}
+          # Override token for `gh pr update-branch` only — when GH_PAT
+          # is set, the resulting merge commit fires synchronize events.
+          UPDATE_TOKEN: ${{ secrets.GH_PAT || github.token }}
 
       - name: Close linked issue after merge
-        if: steps.dag_done.outputs.dag_done == 'true' && steps.preview_check.outputs.preview_ok == 'true' && steps.early_green.outputs.spec_gap != 'true'
+        if: steps.squash.outputs.merged == 'true'
         run: |
           ISSUE_NUMBER="${{ steps.meta.outputs.issue_number }}"
           if [ -n "${ISSUE_NUMBER}" ]; then
@@ -279,7 +290,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
 
       - name: Archive spec
-        if: steps.dag_done.outputs.dag_done == 'true' && steps.preview_check.outputs.preview_ok == 'true' && steps.early_green.outputs.spec_gap != 'true'
+        if: steps.squash.outputs.merged == 'true'
         run: |
           export PATH="$HOME/.bun/bin:$PATH"
           # Tolerate the runner being checked out on a tree without
