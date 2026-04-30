@@ -26,7 +26,7 @@ You must NOT Write/Edit anywhere else — especially not under `src/`, `scripts/
 ## Scaffold mode (Step 5, kind:code — first invocation only)
 
 1. Read the aligned plan handoff from the parent `/do` session.
-2. Open the worktree if not already open: `bun scripts/worktree-open.ts <slug>`.
+2. Open the worktree if not already open: `bun scripts/worktree/worktree-open.ts <slug>`.
 3. Author `specs/active/<id>/proposal.md` FIRST. The pre-tool-use write guard only permits edits to protected paths once an active spec targets them — so `proposal.md` must land before anything else.
 4. Author the **outer gate** file (the path declared in `proposal.md`'s `gate:` frontmatter) in RED form. This is the BDD acceptance test scoped to `alignment.md` — it tests the spec's integrated behavior. Write it as a failing test that encodes the spec's overall intent. Do NOT write per-slice gates yet — those come in Step 6.
 5. Author `design.md` and `tasks.md`. Each task in `tasks.md` must declare a `gate: <path>` field for the slice gate it will produce.

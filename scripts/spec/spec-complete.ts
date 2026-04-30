@@ -12,7 +12,7 @@
 
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { basename, join } from "node:path";
-import { loadSpec, taskGates } from "./_lib";
+import { loadSpec, taskGates } from "../_lib";
 
 interface TaskLine {
 	index: number;

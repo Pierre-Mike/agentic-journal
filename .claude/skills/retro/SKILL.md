@@ -29,7 +29,7 @@ Default: last 7 days. Respect `--since <duration>` if provided (e.g. `7d`, `30d`
 Run:
 
 ```bash
-bun scripts/retro-preflight.ts
+bun scripts/agentic/retro-preflight.ts
 ```
 
 If the output is non-empty, print it verbatim at the top of the retrospective report under the `Dormant in-flight specs:` header **before proceeding to findings**.

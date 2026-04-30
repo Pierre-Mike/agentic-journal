@@ -21,7 +21,7 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import { gateEntries } from "./_lib.ts";
+import { gateEntries } from "../_lib.ts";
 import { validateBoundary, validateTaskSchema } from "./spec-lint.ts";
 
 // spec-033: detectDuplicateIds does not exist yet — import will resolve at
@@ -426,7 +426,7 @@ function registerTests(): void {
 
 		const templateTasksPath = require("node:path").join(
 			require("node:path").dirname(require.resolve("./spec-lint.ts")),
-			"../specs/_template/tasks.md",
+			"../../specs/_template/tasks.md",
 		) as string;
 
 		test("every task in _template/tasks.md declares depends_on:", () => {
