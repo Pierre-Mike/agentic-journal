@@ -111,6 +111,14 @@ jobs:
           git commit -m "chore: add alignment.md for issue #${{ github.event.issue.number }}" || true
           git push
 
+      - name: Trigger spec.yml on alignment commit
+        if: steps.align.outputs.confidence == 'high'
+        run: |
+          BRANCH="auto/${{ github.event.issue.number }}-${{ steps.slug.outputs.value }}"
+          gh workflow run spec.yml --ref "$BRANCH" --field branch="$BRANCH"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Comment on low confidence
         if: steps.align.outputs.confidence != 'high'
         run: |
