@@ -1,17 +1,18 @@
 ---
 id: 120-use-issue-number-as-spec-id-to-eliminate-allocation-race
 title: Use issue number as spec id to eliminate allocation race
-status: active
+status: archived
 kind: code
 gate:
   - path: tests/workflows/intent.test.ts
     level: unit
   - path: tests/workflows/issue-number-spec-id.test.ts
     level: integration
-created: 2026-04-30
+created: 2026-04-30T00:00:00.000Z
 owner: main
 depends_on: []
 supersedes: null
+archived: '2026-04-30'
 ---
 
 ## Intent
