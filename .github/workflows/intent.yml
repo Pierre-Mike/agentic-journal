@@ -103,11 +103,12 @@ jobs:
         id: guard
         run: |
           BRANCH="${{ steps.branch.outputs.name }}"
-          # Look at the branch tree for an existing proposal.md. If present,
-          # alignment already crossed the high-confidence bar and the spec
-          # has been scaffolded. New comments after that point are not
-          # alignment refinements — they belong elsewhere.
-          if git ls-tree -r "origin/$BRANCH" --name-only 2>/dev/null \
+          # Look for a proposal.md *added by this branch* (not inherited
+          # from main). A whole-tree grep would also match leftover specs
+          # main carries forward when archiving lags the merge — that
+          # would falsely suppress scaffolding for the new issue.
+          git fetch origin main "$BRANCH" >/dev/null 2>&1 || true
+          if git diff --name-only "origin/main...origin/$BRANCH" 2>/dev/null \
               | grep -qE '^specs/active/.+/proposal\.md$'; then
             echo "Spec already scaffolded on $BRANCH; skipping alignment."
             echo "already_scaffolded=true" >> "$GITHUB_OUTPUT"
