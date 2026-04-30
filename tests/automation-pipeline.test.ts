@@ -40,47 +40,52 @@ function readFile(rel: string): string {
 }
 
 // ---------------------------------------------------------------------------
-// align.yml
+// intent.yml (consolidates the old align.yml + spec.yml)
 // ---------------------------------------------------------------------------
 
-describe("align.yml contract", () => {
-	test("file exists at .github/workflows/align.yml", () => {
-		expect(existsSync(join(REPO_ROOT, ".github/workflows/align.yml"))).toBe(true);
+describe("intent.yml contract", () => {
+	test("file exists at .github/workflows/intent.yml", () => {
+		expect(existsSync(join(REPO_ROOT, ".github/workflows/intent.yml"))).toBe(true);
 	});
 
 	test("listens to issues.opened and issues.edited events", () => {
-		const wf = readWorkflow("align.yml");
+		const wf = readWorkflow("intent.yml");
 		expect(wf).toMatch(/issues/);
 		expect(wf).toMatch(/opened/);
 		expect(wf).toMatch(/edited/);
 	});
 
-	test("listens to issue_comment.created event", () => {
-		const wf = readWorkflow("align.yml");
+	test("listens to issue_comment.created event (2-way Q&A surface)", () => {
+		const wf = readWorkflow("intent.yml");
 		expect(wf).toMatch(/issue_comment/);
 		expect(wf).toMatch(/created/);
 	});
 
 	test("creates branch with auto/<issue#>-<slug> naming pattern", () => {
-		const wf = readWorkflow("align.yml");
+		const wf = readWorkflow("intent.yml");
 		expect(wf).toMatch(/auto\//);
 	});
 
 	test("opens a draft PR", () => {
-		const wf = readWorkflow("align.yml");
+		const wf = readWorkflow("intent.yml");
 		expect(wf).toMatch(/draft/);
 	});
 
-	test("invokes the auto-aligner (alignment-only phase)", () => {
-		const wf = readWorkflow("align.yml");
-		// Accept legacy /do-auto wording or explicit auto-aligner / alignment reference.
-		expect(wf).toMatch(/\/do-auto|auto-aligner|alignment/i);
+	test("invokes the auto-aligner", () => {
+		const wf = readWorkflow("intent.yml");
+		expect(wf).toMatch(/auto-aligner|alignment/i);
 	});
 
 	test("commits alignment.md only on confidence: high", () => {
-		const wf = readWorkflow("align.yml");
+		const wf = readWorkflow("intent.yml");
 		expect(wf).toMatch(/alignment\.md/);
 		expect(wf).toMatch(/confidence.*high|high.*confidence/i);
+	});
+
+	test("has a scaffold job that runs spec-tester after high confidence", () => {
+		const wf = readWorkflow("intent.yml");
+		expect(wf).toMatch(/scaffold:/);
+		expect(wf).toMatch(/spec-tester/);
 	});
 });
 
@@ -422,7 +427,7 @@ describe("RED-until-last-slice invariant", () => {
 	 */
 
 	const REQUIRED_DELIVERABLES = [
-		".github/workflows/align.yml",
+		".github/workflows/intent.yml",
 		".github/workflows/controller.yml",
 		".github/workflows/slice.yml",
 		".github/workflows/preview.yml",
