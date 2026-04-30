@@ -57,12 +57,19 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          set -euo pipefail
-          AUTO_BRANCHES=$(git for-each-ref --format='%(refname:short)' 'refs/remotes/origin/auto/*' | sed 's|^origin/||' || true)
-          if [ -z "$AUTO_BRANCHES" ]; then
-            echo "No auto/* branches found."
+          # NOTE: deliberately not using `set -e` — empty grep matches and
+          # missing optional inputs are normal and must not abort the loop.
+
+          # Restrict to auto/* branches that have an OPEN PR. Skips stale
+          # refs left over from merged-and-not-deleted branches.
+          ACTIVE_BRANCHES=$(gh pr list --state open --limit 100 --json headRefName \
+            --jq '.[] | .headRefName | select(startswith("auto/"))' 2>/dev/null || true)
+          if [ -z "$ACTIVE_BRANCHES" ]; then
+            echo "No auto/* branches with open PRs."
             exit 0
           fi
+          echo "Active branches:"
+          echo "$ACTIVE_BRANCHES"
 
           while IFS= read -r BRANCH; do
             [ -z "$BRANCH" ] && continue
@@ -70,7 +77,9 @@ jobs:
 
             # Locate tasks.md on the branch (single-spec assumption per branch)
             TASKS_PATH=$(git ls-tree -r --name-only "origin/$BRANCH" 2>/dev/null \
-              | grep -E '^specs/active/[^/]+/tasks\.md$' | head -1 || true)
+              | grep -E '^specs/active/[^/]+/tasks\.md$' \
+              | head -1 \
+              || true)
             if [ -z "$TASKS_PATH" ]; then
               echo "no tasks.md, skipping"
               echo "::endgroup::"
@@ -79,29 +88,38 @@ jobs:
 
             # Materialise tasks.md content for the CLI
             TMP_TASKS=$(mktemp)
-            git show "origin/$BRANCH:$TASKS_PATH" > "$TMP_TASKS"
+            if ! git show "origin/$BRANCH:$TASKS_PATH" > "$TMP_TASKS" 2>/dev/null; then
+              echo "git show failed for $TASKS_PATH on $BRANCH, skipping"
+              rm -f "$TMP_TASKS"
+              echo "::endgroup::"
+              continue
+            fi
 
-            # spec_id is the spec dir basename (e.g. "051-intent-status-…")
             SPEC_ID=$(dirname "$TASKS_PATH" | xargs basename)
 
-            # Completed = GREEN commits on the branch ahead of main
-            COMPLETED=$(git log "origin/main..origin/$BRANCH" --oneline 2>/dev/null \
-              | grep -oP 'GREEN\s+[—-]+\s+slice\s+\K\d+' \
-              | sort -un | tr '\n' ',' | sed 's/,$//')
+            # Completed = GREEN commits on the branch ahead of main.
+            # grep -P returns 1 on no-match; we tolerate it via `|| true`.
+            COMPLETED=$(
+              { git log "origin/main..origin/$BRANCH" --oneline 2>/dev/null \
+                  | grep -oP 'GREEN\s+[—-]+\s+slice\s+\K\d+' \
+                  | sort -un \
+                  | tr '\n' ',' \
+                  | sed 's/,$//'; } || true
+            )
 
-            # In-flight = slice.yml runs queued/in_progress, scoped to this branch
+            # In-flight slice.yml runs scoped to this branch
             IN_FLIGHT_QUEUED=$(gh run list --workflow=slice.yml --status=queued \
               --branch="$BRANCH" --json databaseId,name 2>/dev/null || echo "[]")
             IN_FLIGHT_RUNNING=$(gh run list --workflow=slice.yml --status=in_progress \
               --branch="$BRANCH" --json databaseId,name 2>/dev/null || echo "[]")
-            IN_FLIGHT=$(jq -s 'add // []' <(echo "$IN_FLIGHT_QUEUED") <(echo "$IN_FLIGHT_RUNNING"))
+            IN_FLIGHT=$(jq -s 'add // []' <(echo "$IN_FLIGHT_QUEUED") <(echo "$IN_FLIGHT_RUNNING") 2>/dev/null || echo "[]")
 
             # Compute dispatchable
-            DISPATCHABLE=$(bun scripts/dag-controller.ts "$TMP_TASKS" "$COMPLETED" "$IN_FLIGHT")
+            DISPATCHABLE=$(bun scripts/dag-controller.ts "$TMP_TASKS" "$COMPLETED" "$IN_FLIGHT" 2>/dev/null || echo "[]")
             echo "spec=$SPEC_ID completed=[$COMPLETED] dispatchable=$DISPATCHABLE"
 
             # Dispatch each ready slice
-            ISSUE_NUMBER=$(echo "$BRANCH" | grep -oE '^auto/[0-9]+' | grep -oE '[0-9]+' || true)
+            ISSUE_NUMBER=$(echo "$BRANCH" | grep -oE '^auto/[0-9]+' | grep -oE '[0-9]+' | head -1 || true)
             for slice_id in $(echo "$DISPATCHABLE" | tr -d '[]' | tr ',' ' '); do
               [ -z "$slice_id" ] && continue
               gh workflow run slice.yml \
@@ -109,10 +127,11 @@ jobs:
                 --field slice_id="$slice_id" \
                 --field spec_id="$SPEC_ID" \
                 --field branch="$BRANCH" \
-                --field issue_number="$ISSUE_NUMBER"
-              echo "dispatched slice_id=$slice_id"
+                --field issue_number="$ISSUE_NUMBER" \
+                && echo "dispatched slice_id=$slice_id" \
+                || echo "dispatch failed for slice_id=$slice_id"
             done
 
             rm -f "$TMP_TASKS"
             echo "::endgroup::"
-          done <<< "$AUTO_BRANCHES"
+          done <<< "$ACTIVE_BRANCHES"
