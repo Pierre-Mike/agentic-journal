@@ -1,14 +1,15 @@
 ---
 id: 054-upload-ci-claude-traces-as-artifacts
 title: Upload CI Claude traces as GitHub Actions artifacts
-status: active
+status: archived
 kind: workflow
 gate: scripts/smoke-ci-traces-upload.ts
-created: 2026-04-30
+created: 2026-04-30T00:00:00.000Z
 owner: main
 depends_on:
   - 005-trace-scan
 supersedes: null
+archived: '2026-04-30'
 ---
 
 ## Intent

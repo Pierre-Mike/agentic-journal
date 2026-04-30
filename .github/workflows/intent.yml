@@ -41,7 +41,14 @@ concurrency:
 jobs:
   align:
     # Skip bot comments — only humans drive the loop.
-    if: github.event_name != 'issue_comment' || github.event.comment.user.type != 'Bot'
+    # Skip PR comments — `issue_comment` fires for both issues and PRs;
+    # event.issue.pull_request is non-null only for PR comments. Without
+    # this guard, commenting on an auto/<n>-<slug> PR (eg. to close it)
+    # recursively spawns a new auto/<pr-number>-... pipeline using the
+    # PR title as the new issue title.
+    if: |
+      (github.event_name != 'issue_comment' || github.event.comment.user.type != 'Bot')
+      && (github.event_name != 'issue_comment' || github.event.issue.pull_request == null)
     runs-on: ubuntu-latest
     outputs:
       confidence: ${{ steps.align.outputs.confidence }}
