@@ -1,18 +1,18 @@
 ---
 id: 123-slice-runner-self-validation-loop-foundation
 title: Slice runner self-validation loop foundation
-status: active
+status: archived
 kind: code
-# kind:code — outer gates written at scaffold; per-task gates in tasks.md.
 gate:
   - path: tests/workflows/slice-runner-loop-deliverables.test.ts
     level: unit
   - path: tests/workflows/slice-runner-validation-loop.test.ts
     level: e2e
-created: 2026-04-30
+created: 2026-04-30T00:00:00.000Z
 owner: main
 depends_on: []
 supersedes: null
+archived: '2026-04-30'
 ---
 
 ## Intent
