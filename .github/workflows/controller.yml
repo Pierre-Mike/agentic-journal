@@ -1,5 +1,24 @@
 name: Slice Controller
 
+# Iterates over all `auto/*` branches that hold a scaffolded spec and
+# dispatches the next wave of ready slices for each. Idempotent — safe to
+# call as often as needed.
+#
+# Triggers:
+#   - cron every 2 min (safety net)
+#   - workflow_dispatch (manual)
+#   - repository_dispatch (legacy)
+#   - called from intent.yml after scaffold lands (instant first-wave dispatch)
+#   - called from slice.yml after each GREEN push (instant next-wave dispatch)
+#
+# Logic:
+#   for each remote branch matching `auto/*`:
+#     find specs/active/<spec>/tasks.md on that branch
+#     COMPLETED = slice IDs from `git log origin/main..origin/<branch>` GREEN commits
+#     IN_FLIGHT = slice.yml runs queued/in_progress for that branch
+#     DISPATCHABLE = bun scripts/dag-controller.ts <tasks.md> <COMPLETED> <IN_FLIGHT>
+#     for each id in DISPATCHABLE: gh workflow run slice.yml --field …
+
 on:
   schedule:
     - cron: "*/2 * * * *"
@@ -19,64 +38,112 @@ jobs:
   controller:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout main
         uses: actions/checkout@v4
         with:
+          ref: main
           fetch-depth: 0
+
+      - name: Fetch all auto/* branches
+        run: |
+          git fetch origin '+refs/heads/auto/*:refs/remotes/origin/auto/*' --prune || true
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
 
-      - name: Detect completed slices from git log (GREEN commits)
-        id: completed
-        run: |
-          # Match commits like "code(049): GREEN — slice 3"
-          COMPLETED=$(git log --oneline | grep -oP 'GREEN\s+[—-]+\s+slice\s+\K\d+' | sort -un | tr '\n' ',' | sed 's/,$//')
-          echo "ids=${COMPLETED}" >> "$GITHUB_OUTPUT"
-
-      - name: Detect in-flight slice.yml runs
-        id: inflight
-        run: |
-          IN_FLIGHT=$(gh run list --workflow=slice.yml --status=in_progress --json databaseId,name 2>/dev/null || echo "[]")
-          echo "json=${IN_FLIGHT}" >> "$GITHUB_OUTPUT"
+      - name: Discover and dispatch per branch
         env:
           GH_TOKEN: ${{ github.token }}
-
-      - name: Compute dispatchable slices via dag-controller.ts
-        id: dag
         run: |
-          TASKS_MD=$(find specs/active -name "tasks.md" | head -1)
-          if [ -z "$TASKS_MD" ]; then
-            echo "dispatchable=[]" >> "$GITHUB_OUTPUT"
-            echo "spec_id=" >> "$GITHUB_OUTPUT"
+          # NOTE: deliberately not using `set -e` — empty grep matches and
+          # missing optional inputs are normal and must not abort the loop.
+
+          # Restrict to auto/* branches that have an OPEN PR. Skips stale
+          # refs left over from merged-and-not-deleted branches.
+          ACTIVE_BRANCHES=$(gh pr list --state open --limit 100 --json headRefName \
+            --jq '.[] | .headRefName | select(startswith("auto/"))' 2>/dev/null || true)
+          if [ -z "$ACTIVE_BRANCHES" ]; then
+            echo "No auto/* branches with open PRs."
             exit 0
           fi
-          SPEC_DIR=$(dirname "$TASKS_MD")
-          SPEC_ID=$(basename "$SPEC_DIR")
-          DISPATCHABLE=$(bun scripts/dag-controller.ts "$TASKS_MD" \
-            "${{ steps.completed.outputs.ids }}" \
-            '${{ steps.inflight.outputs.json }}')
-          echo "dispatchable=${DISPATCHABLE}" >> "$GITHUB_OUTPUT"
-          echo "spec_id=${SPEC_ID}" >> "$GITHUB_OUTPUT"
-        env:
-          GH_TOKEN: ${{ github.token }}
+          echo "Active branches:"
+          echo "$ACTIVE_BRANCHES"
 
-      - name: Dispatch ready slices via gh workflow run slice.yml
-        if: steps.dag.outputs.dispatchable != '[]' && steps.dag.outputs.dispatchable != ''
-        run: |
-          DISPATCHABLE='${{ steps.dag.outputs.dispatchable }}'
-          SPEC_ID='${{ steps.dag.outputs.spec_id }}'
-          BRANCH='${{ github.ref_name }}'
-          # Iterate over slice IDs and dispatch each via gh api dispatches
-          for slice_id in $(echo "$DISPATCHABLE" | tr -d '[]' | tr ',' ' '); do
-            gh workflow run slice.yml \
-              --ref "$BRANCH" \
-              --field slice_id="${slice_id}" \
-              --field spec_id="${SPEC_ID}" \
-              --field branch="${BRANCH}"
-            echo "Dispatched slice_id=${slice_id} spec_id=${SPEC_ID} branch=${BRANCH}"
-          done
-        env:
-          GH_TOKEN: ${{ github.token }}
+          while IFS= read -r BRANCH; do
+            [ -z "$BRANCH" ] && continue
+            echo "::group::branch=$BRANCH"
+
+            # Locate tasks.md on the branch (single-spec assumption per branch)
+            TASKS_PATH=$(git ls-tree -r --name-only "origin/$BRANCH" 2>/dev/null \
+              | grep -E '^specs/active/[^/]+/tasks\.md$' \
+              | head -1 \
+              || true)
+            if [ -z "$TASKS_PATH" ]; then
+              echo "no tasks.md, skipping"
+              echo "::endgroup::"
+              continue
+            fi
+
+            # Materialise tasks.md content for the CLI
+            TMP_TASKS=$(mktemp)
+            if ! git show "origin/$BRANCH:$TASKS_PATH" > "$TMP_TASKS" 2>/dev/null; then
+              echo "git show failed for $TASKS_PATH on $BRANCH, skipping"
+              rm -f "$TMP_TASKS"
+              echo "::endgroup::"
+              continue
+            fi
+
+            SPEC_ID=$(dirname "$TASKS_PATH" | xargs basename)
+
+            # Completed = GREEN commits on the branch ahead of main.
+            # grep -P returns 1 on no-match; we tolerate it via `|| true`.
+            COMPLETED=$(
+              { git log "origin/main..origin/$BRANCH" --oneline 2>/dev/null \
+                  | grep -oP 'GREEN\s+[—-]+\s+slice\s+\K\d+' \
+                  | sort -un \
+                  | tr '\n' ',' \
+                  | sed 's/,$//'; } || true
+            )
+
+            # In-flight slice.yml runs.
+            #
+            # slice.yml's `gh workflow run --ref main --field branch=...`
+            # invocation produces runs with headBranch=main (since the
+            # workflow file lives on main). The auto/* branch is just an
+            # input. To filter by branch, we parse the run-name string
+            # (which embeds slice/spec/branch — see slice.yml top-of-file).
+            IN_FLIGHT_QUEUED=$(gh run list --workflow=slice.yml --status=queued \
+              --json databaseId,displayTitle 2>/dev/null || echo "[]")
+            IN_FLIGHT_RUNNING=$(gh run list --workflow=slice.yml --status=in_progress \
+              --json databaseId,displayTitle 2>/dev/null || echo "[]")
+            IN_FLIGHT_ALL=$(jq -s 'add // []' <(echo "$IN_FLIGHT_QUEUED") <(echo "$IN_FLIGHT_RUNNING") 2>/dev/null || echo "[]")
+            # Keep only runs whose displayTitle mentions THIS branch and
+            # rewrite into the {name: "slice_id=N"} shape dag-controller's
+            # CLI parses (see scripts/dag-controller.ts CLI block).
+            IN_FLIGHT=$(echo "$IN_FLIGHT_ALL" | jq --arg branch "$BRANCH" \
+              '[.[] | select(.displayTitle | contains($branch)) | {name: ("slice_id=" + ((.displayTitle | capture("slice (?<id>[0-9]+)").id) // "0"))}]' \
+              2>/dev/null || echo "[]")
+
+            # Compute dispatchable
+            DISPATCHABLE=$(bun scripts/dag-controller.ts "$TMP_TASKS" "$COMPLETED" "$IN_FLIGHT" 2>/dev/null || echo "[]")
+            echo "spec=$SPEC_ID completed=[$COMPLETED] dispatchable=$DISPATCHABLE"
+
+            # Dispatch each ready slice
+            ISSUE_NUMBER=$(echo "$BRANCH" | grep -oE '^auto/[0-9]+' | grep -oE '[0-9]+' | head -1 || true)
+            for slice_id in $(echo "$DISPATCHABLE" | tr -d '[]' | tr ',' ' '); do
+              [ -z "$slice_id" ] && continue
+              gh workflow run slice.yml \
+                --ref main \
+                --field slice_id="$slice_id" \
+                --field spec_id="$SPEC_ID" \
+                --field branch="$BRANCH" \
+                --field issue_number="$ISSUE_NUMBER" \
+                && echo "dispatched slice_id=$slice_id" \
+                || echo "dispatch failed for slice_id=$slice_id"
+            done
+
+            rm -f "$TMP_TASKS"
+            echo "::endgroup::"
+          done <<< "$ACTIVE_BRANCHES"

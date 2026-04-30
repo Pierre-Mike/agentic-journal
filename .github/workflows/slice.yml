@@ -1,5 +1,10 @@
 name: Slice Runner
 
+# run-name embeds slice/spec/branch identifiers so the controller can parse
+# them from `gh run list --json name` to detect duplicates without needing
+# per-run API calls.
+run-name: "slice ${{ inputs.slice_id || github.event.client_payload.slice_id }} of ${{ inputs.spec_id || github.event.client_payload.spec_id }} on ${{ inputs.branch || github.event.client_payload.branch }}"
+
 on:
   repository_dispatch:
     types: [slice-ready]
@@ -84,21 +89,28 @@ jobs:
           claude -p \
             --no-session-persistence \
             --max-turns 50 \
-            --skill expertise \
             --allowedTools "Bash(git:*),Bash(gh:*),Bash(bun:*),Bash(mkdir:*),Bash(mv:*),Bash(cp:*),Bash(rm:*),Edit,Write,Read,Glob,Grep" \
             <<EOF
-          You are the spec-implementer. Make slice ${SLICE_ID} of spec ${SPEC_ID} GREEN. Read the frozen gate and implement only the file_targets declared in task ${SLICE_ID}. Run bun run tasks:verify. When GREEN, run a refactor pass scoped to the task's file_targets. Do not push — only commit.
+          You are the spec-implementer. Make slice ${SLICE_ID} of spec ${SPEC_ID} GREEN. Read the frozen gate and implement only the file_targets declared in task ${SLICE_ID}. Run bun run tasks:verify. When GREEN, run a refactor pass scoped to the task's file_targets. Do not push — only commit. Use the expertise skill at .claude/skills/expertise/ if relevant patterns apply.
           EOF
         env:
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           GH_TOKEN: ${{ github.token }}
 
-      - name: Commit implemented slice files
+      - name: Ensure GREEN marker commit exists
         run: |
           SLICE_ID="${{ steps.norm.outputs.slice_id }}"
           SPEC_ID="${{ steps.norm.outputs.spec_id }}"
-          git add .github/workflows/slice.yml
-          git diff --cached --quiet || git commit -m "code(${SPEC_ID}): GREEN — slice ${SLICE_ID} — implemented by slice runner"
+          # The spec-implementer may have already committed its work with
+          # any message format. The controller's COMPLETED detection greps
+          # for `GREEN — slice N` in commit subjects, so we always lay
+          # down a marker commit (empty if the implementer already
+          # committed everything) right after the implementer step.
+          if ! git log -1 --pretty=%s | grep -qE "GREEN[[:space:]]+[—-]+[[:space:]]+slice[[:space:]]+${SLICE_ID}\b"; then
+            git commit --allow-empty -m "code(${SPEC_ID}): GREEN — slice ${SLICE_ID} — implemented by slice runner"
+          else
+            echo "GREEN marker for slice ${SLICE_ID} already on HEAD; skipping."
+          fi
 
       - name: Push with retry on non-fast-forward
         id: push
@@ -121,19 +133,30 @@ jobs:
           exit 1
 
       - name: Invoke spec-replanner after GREEN commits
+        # Replanner is informational: it inspects tasks.md and may patch
+        # the DAG. A failure here must NOT fail the slice (the GREEN
+        # commit has already landed and is what the controller cares
+        # about). Bumped max-turns from 10 → 30 so it has room to think.
+        continue-on-error: true
         run: |
           SLICE_ID="${{ steps.norm.outputs.slice_id }}"
           SPEC_ID="${{ steps.norm.outputs.spec_id }}"
           BRANCH="${{ steps.norm.outputs.branch }}"
           claude -p \
             --no-session-persistence \
-            --max-turns 10 \
+            --max-turns 30 \
             --allowedTools "Bash(git:*),Bash(bun:*),Edit,Write,Read,Glob,Grep" \
             <<EOF
-          You are the spec-replanner. Slice ${SLICE_ID} of spec ${SPEC_ID} is now GREEN on branch ${BRANCH}. Review tasks.md and update the plan: check which slices are unblocked, update depends_on status, and commit any changes to tasks.md.
+          You are the spec-replanner. Slice ${SLICE_ID} of spec ${SPEC_ID} is now GREEN on branch ${BRANCH}. Review tasks.md and update the plan: check which slices are unblocked, update depends_on status, and commit any changes to tasks.md. Be concise — if no replanning is needed, exit immediately.
           EOF
         env:
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Trigger controller for instant next-wave dispatch
+        if: success()
+        run: gh workflow run controller.yml --ref main
+        env:
           GH_TOKEN: ${{ github.token }}
 
       - name: Failure escalation — post menu on issue
@@ -146,7 +169,10 @@ jobs:
             echo "No issue_number provided; skipping gh issue comment"
             exit 0
           fi
-          MENU=$(bun scripts/issue-options.ts "${SPEC_ID}" "${SLICE_ID}" 2>/dev/null || echo "Slice ${SLICE_ID} failed after 3 retries.")
+          MENU=$(bun scripts/issue-options.ts "${SPEC_ID}" "${SLICE_ID}" 2>/dev/null || true)
+          if [ -z "${MENU}" ]; then
+            MENU="Slice ${SLICE_ID} of spec \`${SPEC_ID}\` failed. Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          fi
           gh issue comment "${ISSUE_NUMBER}" --body "${MENU}"
         env:
           GH_TOKEN: ${{ github.token }}

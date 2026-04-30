@@ -223,3 +223,58 @@ export function dispatchable(
 		return true;
 	});
 }
+
+// ---------------------------------------------------------------------------
+// CLI entrypoint
+// ---------------------------------------------------------------------------
+//
+// Usage: bun scripts/dag-controller.ts <tasks.md path> [completed-csv] [inflight-json]
+//
+//   tasks.md path    — required. Path to the spec's tasks.md.
+//   completed-csv    — comma-separated slice IDs already GREEN (e.g. "1,3").
+//                      Empty or missing = none.
+//   inflight-json    — JSON array from `gh run list --json databaseId,name`.
+//                      Names are matched against /slice[_\s]+id[=:]\s*(\d+)/i to
+//                      extract the in-flight slice IDs. Empty or "[]" = none.
+//
+// Prints a JSON array of dispatchable slice IDs to stdout, e.g. "[1,2]".
+// Exits 2 on usage error, 0 otherwise (including empty result).
+
+if (import.meta.main) {
+	const [tasksMdPath, completedArg = "", inFlightArg = "[]"] = process.argv.slice(2);
+	if (!tasksMdPath) {
+		console.error("usage: dag-controller.ts <tasks.md path> [completed-csv] [inflight-json]");
+		process.exit(2);
+	}
+	const raw = await Bun.file(tasksMdPath).text();
+	const tasks = parseTasksDag(raw);
+	const completed = new Set(
+		completedArg
+			? completedArg
+					.split(",")
+					.map((s) => s.trim())
+					.filter(Boolean)
+					.map(Number)
+					.filter((n) => Number.isFinite(n))
+			: [],
+	);
+	const taskById = new Map(tasks.map((t) => [t.id, t]));
+	let inFlight: InFlightEntry[] = [];
+	try {
+		const parsed = JSON.parse(inFlightArg);
+		if (Array.isArray(parsed)) {
+			inFlight = parsed
+				.map((r): InFlightEntry | null => {
+					const m = String(r.name ?? "").match(/slice[_\s]+id[=:]\s*(\d+)/i);
+					const id = m ? Number(m[1]) : Number.NaN;
+					const task = taskById.get(id);
+					return task ? { sliceId: id, touches: task.touches } : null;
+				})
+				.filter((e): e is InFlightEntry => e !== null);
+		}
+	} catch {
+		inFlight = [];
+	}
+	const ids = findDispatchable({ tasks, completed, inFlight });
+	console.log(JSON.stringify(ids));
+}
