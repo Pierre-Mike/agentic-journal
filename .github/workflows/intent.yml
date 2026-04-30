@@ -1,0 +1,298 @@
+name: Intent — issue to scaffolded spec
+
+# Single workflow that replaces align.yml + spec.yml.
+#
+# Flow:
+#   1. align job   — read issue body + all human comments, run auto-aligner.
+#                    high confidence → commit alignment.md to auto/<n>-<slug>.
+#                    low confidence  → post questions as issue comment, stop.
+#                    The issue thread is the 2-way Q&A surface — the human
+#                    replies in a comment, this workflow re-runs on that
+#                    comment, the aligner sees the fuller intent and tries
+#                    again.
+#   2. scaffold    — needs align with confidence:high. Authors proposal /
+#                    design / tasks (DAG) / RED outer gate, commits to the
+#                    auto branch.
+#
+# After scaffold lands, controller.yml (cron, every 2 min) picks up tasks.md
+# and starts dispatching slices via slice.yml — that fan-out logic is shared
+# with mid-run unblocking after each GREEN commit, so we don't duplicate it
+# here.
+#
+# Idempotency: every step checks "already done?" before doing it. Re-running
+# on a new comment after the spec is already scaffolded is a no-op.
+
+on:
+  issues:
+    types: [opened, edited]
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  actions: write
+
+concurrency:
+  group: intent-${{ github.event.issue.number }}
+  cancel-in-progress: true
+
+jobs:
+  align:
+    # Skip bot comments — only humans drive the loop.
+    if: github.event_name != 'issue_comment' || github.event.comment.user.type != 'Bot'
+    runs-on: ubuntu-latest
+    outputs:
+      confidence: ${{ steps.align.outputs.confidence }}
+      branch: ${{ steps.branch.outputs.name }}
+      already_scaffolded: ${{ steps.guard.outputs.already_scaffolded }}
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Derive branch name from issue
+        id: branch
+        run: |
+          SLUG=$(echo "${{ github.event.issue.title }}" \
+            | tr '[:upper:]' '[:lower:]' \
+            | sed 's/[^a-z0-9]/-/g' \
+            | sed 's/-\+/-/g' \
+            | sed 's/^-//;s/-$//' \
+            | cut -c1-50)
+          echo "name=auto/${{ github.event.issue.number }}-${SLUG}" >> "$GITHUB_OUTPUT"
+
+      - name: Create or reuse branch (idempotent)
+        run: |
+          BRANCH="${{ steps.branch.outputs.name }}"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          if git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null 2>&1; then
+            git fetch origin "$BRANCH"
+            git checkout -B "$BRANCH" "origin/$BRANCH"
+          else
+            git checkout -b "$BRANCH"
+            git commit --allow-empty -m "bootstrap: open PR for issue #${{ github.event.issue.number }}"
+            git push -u origin "$BRANCH"
+          fi
+
+      - name: Open or reuse draft PR (idempotent)
+        run: |
+          BRANCH="${{ steps.branch.outputs.name }}"
+          if gh pr view "$BRANCH" --json number >/dev/null 2>&1; then
+            echo "PR for $BRANCH already exists — reusing"
+          else
+            gh pr create \
+              --draft \
+              --title "auto: issue #${{ github.event.issue.number }} — ${{ github.event.issue.title }}" \
+              --body "Closes #${{ github.event.issue.number }}"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Guard — skip if spec already scaffolded
+        id: guard
+        run: |
+          BRANCH="${{ steps.branch.outputs.name }}"
+          # Look at the branch tree for an existing proposal.md. If present,
+          # alignment already crossed the high-confidence bar and the spec
+          # has been scaffolded. New comments after that point are not
+          # alignment refinements — they belong elsewhere.
+          if git ls-tree -r "origin/$BRANCH" --name-only 2>/dev/null \
+              | grep -qE '^specs/active/.+/proposal\.md$'; then
+            echo "Spec already scaffolded on $BRANCH; skipping alignment."
+            echo "already_scaffolded=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "already_scaffolded=false" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node
+        if: steps.guard.outputs.already_scaffolded != 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install @anthropic-ai/claude-code
+        if: steps.guard.outputs.already_scaffolded != 'true'
+        run: npm i -g @anthropic-ai/claude-code
+
+      - name: Assemble cumulative intent (issue body + human comments)
+        if: steps.guard.outputs.already_scaffolded != 'true'
+        run: |
+          mkdir -p .agentic
+          ISSUE_NUMBER="${{ github.event.issue.number }}"
+          {
+            echo "# Issue #${ISSUE_NUMBER}: ${{ github.event.issue.title }}"
+            echo ""
+            echo "## Original intent"
+            echo ""
+            gh issue view "$ISSUE_NUMBER" --json body -q '.body'
+            echo ""
+            COMMENTS=$(gh api "repos/${{ github.repository }}/issues/${ISSUE_NUMBER}/comments" \
+              --jq '[.[] | select(.user.type != "Bot")] | length')
+            if [ "${COMMENTS:-0}" -gt 0 ]; then
+              echo ""
+              echo "## Human follow-ups (in order)"
+              echo ""
+              gh api "repos/${{ github.repository }}/issues/${ISSUE_NUMBER}/comments" \
+                --jq '.[] | select(.user.type != "Bot") | "---\nComment by @" + .user.login + " (" + .created_at + "):\n\n" + .body + "\n"'
+            fi
+          } > .agentic/last-intent.txt
+          echo "--- Assembled intent ---"
+          cat .agentic/last-intent.txt
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run auto-aligner subagent
+        id: align
+        if: steps.guard.outputs.already_scaffolded != 'true'
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          claude -p \
+            --no-session-persistence \
+            --max-turns 30 \
+            --allowedTools "Bash(git:*),Bash(gh:*),Bash(bun:*),Bash(mkdir:*),Bash(mv:*),Bash(cp:*),Bash(rm:*),Bash(cat:*),Bash(shasum:*),Bash(date:*),Edit,Write,Read,Glob,Grep" \
+            <<EOF || true
+          Run the auto-aligner subagent. The intent is in .agentic/last-intent.txt (issue body + cumulative human comments — treat the most recent comments as the strongest disambiguating signal). Write .agentic/last-alignment.md AND copy it to specs/active/<next-id>-<slug>/alignment.md (allocate a new spec id, kebab-slug from the issue title). DO NOT scaffold proposal.md, design.md, tasks.md, or any gate file — those belong to the scaffold job. Stop after the alignment files are written.
+          EOF
+          if [ -f .agentic/last-alignment.md ]; then
+            CONF=$(grep -E '^confidence:' .agentic/last-alignment.md | awk '{print $2}')
+          else
+            CONF="low"
+          fi
+          echo "confidence=${CONF}" >> "$GITHUB_OUTPUT"
+
+      - name: Commit alignment.md (high confidence)
+        if: steps.guard.outputs.already_scaffolded != 'true' && steps.align.outputs.confidence == 'high'
+        run: |
+          BRANCH="${{ steps.branch.outputs.name }}"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git add specs/active/*/alignment.md .agentic/last-alignment.md || true
+          if git diff --cached --quiet; then
+            echo "No alignment changes to commit."
+          else
+            git commit -m "chore: add alignment.md for issue #${{ github.event.issue.number }}"
+            git push origin "HEAD:$BRANCH"
+          fi
+
+      - name: Post clarification request to issue (low confidence)
+        if: steps.guard.outputs.already_scaffolded != 'true' && steps.align.outputs.confidence != 'high'
+        run: |
+          if [ ! -f .agentic/last-alignment.md ]; then
+            gh issue comment ${{ github.event.issue.number }} \
+              --body "Aligner failed to produce a mailbox. Re-run the workflow: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            exit 0
+          fi
+          GOAL=$(awk '/^## Goal$/{flag=1; next} /^## /{flag=0} flag' .agentic/last-alignment.md | sed '/^[[:space:]]*$/d')
+          QUESTIONS=$(awk '/^## Straightforward Details$/{flag=1; next} /^## /{flag=0} flag' .agentic/last-alignment.md | sed '/^[[:space:]]*$/d')
+          BODY=$(cat <<EOF
+          **Need clarification before scaffolding.** The aligner returned \`confidence: low\` — your intent maps to multiple plausible specs, or names decisions you didn't specify.
+
+          **What I understood (Goal):**
+          ${GOAL:-_(aligner did not produce a Goal section)_}
+
+          **Questions to disambiguate:**
+          ${QUESTIONS:-_(aligner did not produce questions — re-run the workflow manually)_}
+
+          Reply in this issue with answers; I'll re-run alignment on your comment.
+          EOF
+          )
+          gh issue comment ${{ github.event.issue.number }} --body "$BODY"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  scaffold:
+    needs: align
+    if: needs.align.outputs.confidence == 'high' && needs.align.outputs.already_scaffolded != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout auto branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.align.outputs.branch }}
+          fetch-depth: 0
+
+      - name: Verify alignment.md present and confidence:high
+        id: verify
+        run: |
+          ALIGN_FILE=$(find specs/active -name alignment.md -type f | head -1)
+          if [ -z "$ALIGN_FILE" ]; then
+            echo "No alignment.md found — alignment commit may not have landed yet."
+            exit 1
+          fi
+          CONF=$(grep -E '^confidence:' "$ALIGN_FILE" | awk '{print $2}')
+          if [ "$CONF" != "high" ]; then
+            echo "alignment.md confidence is '$CONF', expected 'high'."
+            exit 1
+          fi
+          SPEC_DIR=$(dirname "$ALIGN_FILE")
+          echo "spec_dir=$SPEC_DIR" >> "$GITHUB_OUTPUT"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install @anthropic-ai/claude-code
+        run: npm i -g @anthropic-ai/claude-code
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Scaffold spec via spec-tester
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          SPEC_DIR: ${{ steps.verify.outputs.spec_dir }}
+        run: |
+          claude -p \
+            --no-session-persistence \
+            --max-turns 50 \
+            --allowedTools "Bash(git:*),Bash(gh:*),Bash(bun:*),Bash(mkdir:*),Bash(mv:*),Bash(cp:*),Bash(rm:*),Edit,Write,Read,Glob,Grep" \
+            <<EOF
+          You are the spec-tester. The alignment mailbox at $SPEC_DIR/alignment.md is frozen with confidence:high. Scaffold the spec at $SPEC_DIR/: write proposal.md (with kind:code, gate path), design.md, tasks.md (DAG with depends_on: and touches: per slice), and the BDD outer gate file referenced by proposal.md's gate: field — in RED form. Use specs/_template/ as a reference. Read .claude/skills/do/SKILL.md and .claude/agents/spec-tester.md for the contract.
+          EOF
+
+      - name: Commit and push scaffold artifacts
+        env:
+          SPEC_DIR: ${{ steps.verify.outputs.spec_dir }}
+        run: |
+          BRANCH="${{ needs.align.outputs.branch }}"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          SPEC_ID=$(basename "$SPEC_DIR" | cut -d- -f1)
+          git add "$SPEC_DIR" tests/ || true
+          if git diff --cached --quiet; then
+            echo "Nothing newly staged (claude may have already committed)."
+          else
+            git commit -m "spec($SPEC_ID): scaffold via intent.yml"
+          fi
+          git push origin "HEAD:$BRANCH"
+
+      - name: Comment on issue (scaffold landed)
+        if: success()
+        run: |
+          gh issue comment "${{ github.event.issue.number }}" \
+            --body "Spec scaffold landed on \`${{ needs.align.outputs.branch }}\`. Controller will pick up tasks.md within ~2 minutes and start dispatching slices."
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Comment on issue (failure)
+        if: failure()
+        run: |
+          gh issue comment "${{ github.event.issue.number }}" \
+            --body "Spec scaffold failed on \`${{ needs.align.outputs.branch }}\`. Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
