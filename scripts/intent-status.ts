@@ -28,8 +28,9 @@ export function formatTable(entries: IntentEntry[]): string {
 }
 
 async function main(): Promise<void> {
+	const fmt = "%(refname:short) %(committerdate:unix)";
 	const result =
-		await Bun.$`git for-each-ref refs/remotes/origin/auto/ --format=%(refname:short) %(committerdate:unix) --sort=committerdate`.quiet();
+		await Bun.$`git for-each-ref refs/remotes/origin/auto/ --format=${fmt} --sort=committerdate`.quiet();
 
 	const entries: IntentEntry[] = [];
 	const now = Math.floor(Date.now() / 1000);
