@@ -314,10 +314,11 @@ jobs:
             exit 0
           fi
           SPEC_ID=$(basename "${SPEC_DIR}")
-          # spec-archive.ts handles the date-prefixed rename and the
-          # proposal.md status/archived frontmatter bump. It self-gates
-          # on tasks.md and gate passes — both already satisfied by the
-          # GREEN state on main.
+          # Move specs/active/${SPEC_ID} → specs/archive/<date>-${SPEC_ID}
+          # via spec-archive.ts, which handles the date-prefixed rename
+          # and the proposal.md status/archived frontmatter bump. It
+          # self-gates on tasks.md and gate passes — both already
+          # satisfied by the GREEN state on main.
           bun scripts/spec/spec-archive.ts "${SPEC_ID}"
           git add -A
           git commit -m "chore(${SPEC_ID%%-*}): archive spec ${SPEC_ID}"
