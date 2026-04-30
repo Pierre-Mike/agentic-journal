@@ -31,6 +31,10 @@ permissions:
   contents: write
   pull-requests: write
   issues: write
+  # Needed for `gh workflow run controller.yml` in the trigger-controller
+  # step. Without it the dispatch returns 403 (Resource not accessible by
+  # integration) and the cron has to pick up the slack 2 min later.
+  actions: write
 
 concurrency:
   group: ${{ inputs.spec_id || github.event.client_payload.spec_id }}-${{ inputs.slice_id || github.event.client_payload.slice_id }}

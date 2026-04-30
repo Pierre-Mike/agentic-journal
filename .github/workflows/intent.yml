@@ -79,14 +79,20 @@ jobs:
             git push -u origin "$BRANCH"
           fi
 
-      - name: Open or reuse draft PR (idempotent)
+      - name: Open or reuse PR (idempotent)
         run: |
           BRANCH="${{ steps.branch.outputs.name }}"
-          if gh pr view "$BRANCH" --json number >/dev/null 2>&1; then
+          if gh pr view "$BRANCH" --json number,isDraft -q '"\(.number) draft=\(.isDraft)"' >/dev/null 2>&1; then
             echo "PR for $BRANCH already exists — reusing"
+            # If it's still a draft (legacy), promote to ready so automerge
+            # can squash without manual intervention.
+            if [ "$(gh pr view "$BRANCH" --json isDraft -q '.isDraft')" = "true" ]; then
+              gh pr ready "$BRANCH" || true
+            fi
           else
+            # Open as ready (not draft) so automerge can pick up the squash
+            # the moment all slice gates are GREEN + CI is clean.
             gh pr create \
-              --draft \
               --title "auto: issue #${{ github.event.issue.number }} — ${{ github.event.issue.title }}" \
               --body "Closes #${{ github.event.issue.number }}"
           fi
