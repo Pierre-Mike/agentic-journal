@@ -1,18 +1,18 @@
 ---
 id: 052-auto-status-script-in-flight-auto-branches
-title: Add auto:status script summarizing in-flight auto branches
-status: active
+title: 'Add auto:status script summarizing in-flight auto branches'
+status: archived
 kind: code
-# per-task gates declared in tasks.md; listed here for readability
 gate:
   - path: scripts/auto-status.test.ts
     level: unit
   - path: tests/auto-status-bdd.test.ts
     level: integration
-created: 2026-04-30
+created: 2026-04-30T00:00:00.000Z
 owner: main
 depends_on: []
 supersedes: null
+archived: '2026-04-30'
 ---
 
 ## Intent
