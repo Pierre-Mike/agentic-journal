@@ -1,5 +1,10 @@
 name: Slice Runner
 
+# run-name embeds slice/spec/branch identifiers so the controller can parse
+# them from `gh run list --json name` to detect duplicates without needing
+# per-run API calls.
+run-name: "slice ${{ inputs.slice_id || github.event.client_payload.slice_id }} of ${{ inputs.spec_id || github.event.client_payload.spec_id }} on ${{ inputs.branch || github.event.client_payload.branch }}"
+
 on:
   repository_dispatch:
     types: [slice-ready]
