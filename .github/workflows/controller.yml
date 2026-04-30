@@ -1,5 +1,24 @@
 name: Slice Controller
 
+# Iterates over all `auto/*` branches that hold a scaffolded spec and
+# dispatches the next wave of ready slices for each. Idempotent — safe to
+# call as often as needed.
+#
+# Triggers:
+#   - cron every 2 min (safety net)
+#   - workflow_dispatch (manual)
+#   - repository_dispatch (legacy)
+#   - called from intent.yml after scaffold lands (instant first-wave dispatch)
+#   - called from slice.yml after each GREEN push (instant next-wave dispatch)
+#
+# Logic:
+#   for each remote branch matching `auto/*`:
+#     find specs/active/<spec>/tasks.md on that branch
+#     COMPLETED = slice IDs from `git log origin/main..origin/<branch>` GREEN commits
+#     IN_FLIGHT = slice.yml runs queued/in_progress for that branch
+#     DISPATCHABLE = bun scripts/dag-controller.ts <tasks.md> <COMPLETED> <IN_FLIGHT>
+#     for each id in DISPATCHABLE: gh workflow run slice.yml --field …
+
 on:
   schedule:
     - cron: "*/2 * * * *"
@@ -19,64 +38,81 @@ jobs:
   controller:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout main
         uses: actions/checkout@v4
         with:
+          ref: main
           fetch-depth: 0
+
+      - name: Fetch all auto/* branches
+        run: |
+          git fetch origin '+refs/heads/auto/*:refs/remotes/origin/auto/*' --prune || true
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
 
-      - name: Detect completed slices from git log (GREEN commits)
-        id: completed
-        run: |
-          # Match commits like "code(049): GREEN — slice 3"
-          COMPLETED=$(git log --oneline | grep -oP 'GREEN\s+[—-]+\s+slice\s+\K\d+' | sort -un | tr '\n' ',' | sed 's/,$//')
-          echo "ids=${COMPLETED}" >> "$GITHUB_OUTPUT"
-
-      - name: Detect in-flight slice.yml runs
-        id: inflight
-        run: |
-          IN_FLIGHT=$(gh run list --workflow=slice.yml --status=in_progress --json databaseId,name 2>/dev/null || echo "[]")
-          echo "json=${IN_FLIGHT}" >> "$GITHUB_OUTPUT"
+      - name: Discover and dispatch per branch
         env:
           GH_TOKEN: ${{ github.token }}
-
-      - name: Compute dispatchable slices via dag-controller.ts
-        id: dag
         run: |
-          TASKS_MD=$(find specs/active -name "tasks.md" | head -1)
-          if [ -z "$TASKS_MD" ]; then
-            echo "dispatchable=[]" >> "$GITHUB_OUTPUT"
-            echo "spec_id=" >> "$GITHUB_OUTPUT"
+          set -euo pipefail
+          AUTO_BRANCHES=$(git for-each-ref --format='%(refname:short)' 'refs/remotes/origin/auto/*' | sed 's|^origin/||' || true)
+          if [ -z "$AUTO_BRANCHES" ]; then
+            echo "No auto/* branches found."
             exit 0
           fi
-          SPEC_DIR=$(dirname "$TASKS_MD")
-          SPEC_ID=$(basename "$SPEC_DIR")
-          DISPATCHABLE=$(bun scripts/dag-controller.ts "$TASKS_MD" \
-            "${{ steps.completed.outputs.ids }}" \
-            '${{ steps.inflight.outputs.json }}')
-          echo "dispatchable=${DISPATCHABLE}" >> "$GITHUB_OUTPUT"
-          echo "spec_id=${SPEC_ID}" >> "$GITHUB_OUTPUT"
-        env:
-          GH_TOKEN: ${{ github.token }}
 
-      - name: Dispatch ready slices via gh workflow run slice.yml
-        if: steps.dag.outputs.dispatchable != '[]' && steps.dag.outputs.dispatchable != ''
-        run: |
-          DISPATCHABLE='${{ steps.dag.outputs.dispatchable }}'
-          SPEC_ID='${{ steps.dag.outputs.spec_id }}'
-          BRANCH='${{ github.ref_name }}'
-          # Iterate over slice IDs and dispatch each via gh api dispatches
-          for slice_id in $(echo "$DISPATCHABLE" | tr -d '[]' | tr ',' ' '); do
-            gh workflow run slice.yml \
-              --ref "$BRANCH" \
-              --field slice_id="${slice_id}" \
-              --field spec_id="${SPEC_ID}" \
-              --field branch="${BRANCH}"
-            echo "Dispatched slice_id=${slice_id} spec_id=${SPEC_ID} branch=${BRANCH}"
-          done
-        env:
-          GH_TOKEN: ${{ github.token }}
+          while IFS= read -r BRANCH; do
+            [ -z "$BRANCH" ] && continue
+            echo "::group::branch=$BRANCH"
+
+            # Locate tasks.md on the branch (single-spec assumption per branch)
+            TASKS_PATH=$(git ls-tree -r --name-only "origin/$BRANCH" 2>/dev/null \
+              | grep -E '^specs/active/[^/]+/tasks\.md$' | head -1 || true)
+            if [ -z "$TASKS_PATH" ]; then
+              echo "no tasks.md, skipping"
+              echo "::endgroup::"
+              continue
+            fi
+
+            # Materialise tasks.md content for the CLI
+            TMP_TASKS=$(mktemp)
+            git show "origin/$BRANCH:$TASKS_PATH" > "$TMP_TASKS"
+
+            # spec_id is the spec dir basename (e.g. "051-intent-status-…")
+            SPEC_ID=$(dirname "$TASKS_PATH" | xargs basename)
+
+            # Completed = GREEN commits on the branch ahead of main
+            COMPLETED=$(git log "origin/main..origin/$BRANCH" --oneline 2>/dev/null \
+              | grep -oP 'GREEN\s+[—-]+\s+slice\s+\K\d+' \
+              | sort -un | tr '\n' ',' | sed 's/,$//')
+
+            # In-flight = slice.yml runs queued/in_progress, scoped to this branch
+            IN_FLIGHT_QUEUED=$(gh run list --workflow=slice.yml --status=queued \
+              --branch="$BRANCH" --json databaseId,name 2>/dev/null || echo "[]")
+            IN_FLIGHT_RUNNING=$(gh run list --workflow=slice.yml --status=in_progress \
+              --branch="$BRANCH" --json databaseId,name 2>/dev/null || echo "[]")
+            IN_FLIGHT=$(jq -s 'add // []' <(echo "$IN_FLIGHT_QUEUED") <(echo "$IN_FLIGHT_RUNNING"))
+
+            # Compute dispatchable
+            DISPATCHABLE=$(bun scripts/dag-controller.ts "$TMP_TASKS" "$COMPLETED" "$IN_FLIGHT")
+            echo "spec=$SPEC_ID completed=[$COMPLETED] dispatchable=$DISPATCHABLE"
+
+            # Dispatch each ready slice
+            ISSUE_NUMBER=$(echo "$BRANCH" | grep -oE '^auto/[0-9]+' | grep -oE '[0-9]+' || true)
+            for slice_id in $(echo "$DISPATCHABLE" | tr -d '[]' | tr ',' ' '); do
+              [ -z "$slice_id" ] && continue
+              gh workflow run slice.yml \
+                --ref main \
+                --field slice_id="$slice_id" \
+                --field spec_id="$SPEC_ID" \
+                --field branch="$BRANCH" \
+                --field issue_number="$ISSUE_NUMBER"
+              echo "dispatched slice_id=$slice_id"
+            done
+
+            rm -f "$TMP_TASKS"
+            echo "::endgroup::"
+          done <<< "$AUTO_BRANCHES"

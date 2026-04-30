@@ -136,6 +136,12 @@ jobs:
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           GH_TOKEN: ${{ github.token }}
 
+      - name: Trigger controller for instant next-wave dispatch
+        if: success()
+        run: gh workflow run controller.yml --ref main
+        env:
+          GH_TOKEN: ${{ github.token }}
+
       - name: Failure escalation — post menu on issue
         if: failure() || steps.push.outputs.attempt == '3'
         run: |
