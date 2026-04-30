@@ -55,7 +55,7 @@ jobs:
           if [ -z "${ISSUE_NUMBER}" ]; then
             # Fallback: parse from branch name spec/<slug> → look up linked issue
             BRANCH=$(gh pr view "${PR_NUMBER}" --json headRefName -q '.headRefName' 2>/dev/null || echo "")
-            ISSUE_NUMBER=$(echo "${BRANCH}" | grep -oP '(?<=issue-)\d+' | head -1)
+            ISSUE_NUMBER=$(echo "${BRANCH}" | grep -oP '^auto/\K[0-9]+' | head -1)
           fi
           echo "issue_number=${ISSUE_NUMBER}" >> "$GITHUB_OUTPUT"
         env:
