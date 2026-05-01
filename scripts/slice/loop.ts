@@ -147,6 +147,45 @@ function makeDefaultRunAgent(sliceId: number, specId: string): () => Promise<voi
 	};
 }
 
+function parseArgs(argv: string[]): { sliceId: number; specId: string; branch: string } {
+	const get = (flag: string): string | undefined => {
+		const i = argv.indexOf(flag);
+		return i !== -1 ? argv[i + 1] : undefined;
+	};
+	const sliceIdStr = get("--slice-id");
+	const specId = get("--spec-id");
+	const branch = get("--branch");
+	if (!sliceIdStr || !specId || !branch) {
+		throw new Error("Usage: bun scripts/slice/loop.ts --slice-id N --spec-id SPEC --branch BRANCH");
+	}
+	return { sliceId: parseInt(sliceIdStr, 10), specId, branch };
+}
+
+function gatePathForSlice(specId: string, sliceId: number): string {
+	const tasksPath = join("specs/active", specId, "tasks.md");
+	if (!existsSync(tasksPath)) return "";
+	const lines = readFileSync(tasksPath, "utf-8").split("\n");
+	let inSlice = false;
+	for (const line of lines) {
+		if (/^\s*-\s+id:\s*/.test(line)) {
+			inSlice = line.includes(`id: ${sliceId}`) || line.trim() === `- id: ${sliceId}`;
+		}
+		if (inSlice) {
+			const m = line.match(/^\s+gate:\s+(\S+)/);
+			if (m?.[1]) return m[1];
+		}
+	}
+	return "";
+}
+
+if (import.meta.main) {
+	const { sliceId, specId, branch } = parseArgs(process.argv.slice(2));
+	const gatePath = gatePathForSlice(specId, sliceId);
+	const slug = specId.replace(/^\d+-/, "");
+	const result = await runLoop({ sliceId, specId, branch, gatePath, slug });
+	process.exit(result.outcome === "green" ? 0 : 0);
+}
+
 export async function runLoop(opts: LoopOpts): Promise<{ outcome: "green" | "red" }> {
 	const {
 		sliceId,
