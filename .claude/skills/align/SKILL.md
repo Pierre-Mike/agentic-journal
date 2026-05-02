@@ -125,9 +125,13 @@ Only after the user confirms the corrected section does the flow continue.
 
 ---
 
-## Final Step — Write Alignment Mailbox
+## Final Step — Persist the Alignment
 
-After all four layers (Goal, Big Picture, Straightforward Details, Non-obvious Decisions) are confirmed, write the alignment to `.agentic/last-alignment.md` in this exact format:
+After all four layers are confirmed, persist the alignment in **two** places:
+
+### Step A — Write the Mailbox (legacy consumers)
+
+Write `.agentic/last-alignment.md` in this exact format:
 
 ```yaml
 ---
@@ -154,11 +158,68 @@ intent_hash: <first 12 hex chars of sha256(original user intent string)>
 <confirmed non-obvious decisions text, including any ASCII diagrams>
 ```
 
-**Compute `intent_hash`**: Take the original user intent string (the first message the user sent to `/align`, before any clarification), hash it with SHA-256, and take the first 12 hex characters.
+**Compute `intent_hash`**: SHA-256 of the original user intent string (the first message), first 12 hex chars.
 
-**File location**: Always write to `.agentic/last-alignment.md` at the repo root. Overwrite any existing file (single-slot mailbox).
+**File location**: `.agentic/last-alignment.md` at repo root. Overwrite (single-slot).
 
-**After writing**: Confirm to the user that the alignment was saved to `.agentic/last-alignment.md`.
+`/do-auto` and `morning-digest` still read this file — keep writing it until they migrate.
+
+### Step B — Open / Update the GitHub Issue (new path)
+
+Pipe a JSON payload to `bun scripts/issue-write.ts` to create (or update) the spec issue.
+
+**Decide create vs update**:
+- If the user invoked `/align` with a numeric arg (e.g., `/align 42`) — they're refining an existing issue. Set `issueNumber: 42` in the payload.
+- Otherwise — new issue. Omit `issueNumber`.
+
+**Build the payload**:
+
+```json
+{
+  "title": "<≤70 chars derived from the confirmed Goal>",
+  "intent": "<original user intent string, verbatim>",
+  "alignment": {
+    "goal": "<confirmed goal>",
+    "bigPicture": "<confirmed big picture, plain text — strip ASCII diagrams to avoid markdown chaos in the issue body>",
+    "straightforward": ["<bullet 1>", "<bullet 2>"],
+    "nonObvious": ["<bullet 1>", "<bullet 2>"],
+    "confidence": "high",
+    "kind": "<code | rule | workflow | writeup>",
+    "dependsOn": []
+  },
+  "issueNumber": 42
+}
+```
+
+**`kind` classification** (you choose, no user prompt):
+- `code` — work involves changing application code (`src/`, `scripts/`, tests, build config).
+- `rule` — adding/changing a CLAUDE.md, AGENTS.md, axiom doc, or convention.
+- `workflow` — adding/changing a `.claude/skill/`, agent, hook, or pipeline.
+- `writeup` — blog post, design doc, retrospective — no code or behavior change.
+
+When in doubt, pick the broader category — issues can be retitled later.
+
+**Run the command**:
+
+```bash
+echo '<the JSON above>' | bun scripts/issue-write.ts
+```
+
+It prints the issue number to stdout. Capture it.
+
+### Step C — Confirm to the User
+
+Tell the user both writes happened, with the issue link. Format:
+
+```
+Saved alignment to:
+- .agentic/last-alignment.md (mailbox)
+- https://github.com/<owner>/<repo>/issues/<N> (label: alignment:proposed)
+
+Tick the approval box on the issue when ready, then run /do <N> to dispatch.
+```
+
+If `gh` is unavailable or `issue-write.ts` fails, fall back to mailbox-only and tell the user the issue write failed with the error message — do not abort the alignment.
 
 ---
 
