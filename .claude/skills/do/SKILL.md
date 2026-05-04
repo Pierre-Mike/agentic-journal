@@ -12,6 +12,16 @@ description: >
 
 One command per change. Main stays clean. Work happens in an isolated worktree on its own branch; the PR is the integration point.
 
+## Invocation modes
+
+`/do` accepts two argument shapes:
+
+1. **`/do <intent>`** — free-text intent. Runs the full alignment interview via the `align` skill, then proceeds to scaffold. Legacy entry path. The mailbox at `.agentic/last-alignment.md` is the canonical alignment record.
+
+2. **`/do <issue#>`** — a bare positive integer (e.g. `/do 49`). Reads the alignment from a GitHub issue body. Skips the inline align interview. Use this when the alignment was authored asynchronously via `/align <intent>` (which opens an issue) and approved by the user via the issue's checkbox.
+
+Detect the mode by trimming the argument and checking `^\d+$`. Mismatch is unambiguous.
+
 ## Preconditions
 
 - Current directory is the repo root
@@ -22,20 +32,56 @@ Refuse with a clear message if any precondition fails.
 
 ## Workflow
 
-### Step 1 — Align
+### Step 0 — Issue intake (issue mode only)
 
-Invoke `align`. Let it interview the user through its four layers (Goal → Big Picture → Details → Decisions).
+Skip this step in intent mode.
+
+For `/do <N>`:
+
+1. Read the issue:
+   ```bash
+   gh issue view <N> --json number,title,body,labels
+   ```
+2. Verify label `alignment:approved` is present in the labels array. If not:
+   ```
+   refuse: issue #<N> is not approved.
+   Current labels: <list>.
+   Tick the "approved" checkbox on the issue (or have the user run /align with a corrected payload), then re-run /do <N>.
+   ```
+3. Synthesize the mailbox from the issue body:
+   ```bash
+   bun scripts/issue-to-mailbox.ts <N>
+   ```
+   This writes `.agentic/last-alignment.md` in the legacy YAML+sections format that the rest of the pipeline expects.
+4. Capture into local variables (used by Step 2 + Step 3):
+   - `issue_number = <N>`
+   - `issue_title = <title>` (used as the spec title — already short by template policy)
+   - `issue_kind = <kind>` (from the body's `**Kind**:` field)
+   - `issue_depends_on = <[]>` (from `**Depends on**:` field — list of `#NN` integers)
+5. Comment on the issue that work is starting:
+   ```bash
+   gh issue comment <N> --body "/do dispatched. Working on branch \`spec/<slug>\`."
+   ```
+   (slug is allocated in Step 3.)
+
+### Step 1 — Align (intent mode only)
+
+Skip in issue mode — Step 0 already wrote the mailbox.
+
+In intent mode: invoke `align`. Let it interview the user through its four layers (Goal → Big Picture → Details → Decisions).
 
 **Override terminal behaviour**: when `align` reaches confirmation at the Decisions layer, do NOT let it begin implementation. Capture the confirmed plan and proceed to Step 2.
 
+`align` now also creates a GitHub issue and prints its number. Capture that number — it becomes `issue_number` for the rest of the run, mirroring issue mode.
+
 ### Step 2 — Extract spec fields
 
-From the aligned plan derive:
+From the aligned plan (intent mode) or the issue body (issue mode) derive:
 
-- `title` — sentence-case goal
-- `kind` — one of `code`, `rule`, `workflow`, `writeup`
-- `gate` — file path(s) proving doneness
-- `depends_on` — archived spec IDs this builds on (must exist in `specs/archive/`)
+- `title` — sentence-case goal (issue mode: use `issue_title` directly)
+- `kind` — one of `code`, `rule`, `workflow`, `writeup` (issue mode: use `issue_kind`)
+- `gate` — file path(s) proving doneness — **always confirmed with the user**, the issue body does not capture this
+- `depends_on` — archived spec IDs this builds on (must exist in `specs/archive/`) (issue mode: from `issue_depends_on`)
 
 Confirm these four fields with the user in a single compact message. If any are unclear, ask — do not guess.
 
@@ -123,9 +169,9 @@ The steps below are executed by the subagents. Step 5 lives in spec-tester; Step
 
 ### Step 3 — Allocate ID and slug
 
-- Scan `specs/active/` and `specs/archive/`
-- Next `NNN` = max existing ID + 1, zero-padded
-- `slug` = kebab-case of the title, ≤ 5 words
+- **Issue mode**: `id = issue_number` (no allocation — the issue number IS the spec id; eliminates the allocation race, see commit `86772bf`).
+- **Intent mode**: scan `specs/active/` and `specs/archive/`; next `id` = max existing ID + 1, zero-padded.
+- `slug` = kebab-case of the title, ≤ 5 words.
 
 ### Step 4 — Open worktree
 
@@ -362,6 +408,24 @@ If the judge rejected 3 tester attempts, see `tester-review.md` inside the spec 
 ```
 
 Stop after printing the report. Do not pull, do not clean up the worktree — those happen on the user's next `git pull` (post-merge hook runs `sync` automatically).
+
+## Issue timeline (issue mode + intent mode that captured an issue)
+
+If you have an `issue_number` (always set in issue mode; set in intent mode after `/align` reports the new issue id), post a comment to the issue at each milestone. These are short, factual — they make the issue thread the timeline of the work without duplicating commit messages.
+
+| When | Comment | Label |
+|---|---|---|
+| Step 0 (issue mode) or after Step 4 (intent mode) | `"/do dispatched. Working on branch \`spec/<slug>\`."` | (none) |
+| Step 5 scaffold commit | `"scaffold posted at <SHA>"` | (none) |
+| Each slice GREEN commit (Step 6) | `"slice <N> green at <SHA>"` | (none) |
+| Step 7 spec-complete | `"spec archived at <SHA>"` | (none) |
+| Step 8 PR open | `"PR opened: <PR_URL>"` | (none) |
+| Step 9 CI green + auto-merged | `"merged at <merge SHA>"` | flip to `done` |
+| Step 9 CI failed / Step 8 draft (judge-rejected) | `"CI failed: <PR_URL>"` or `"draft PR (judge rejected): <PR_URL>"` | add `needs:human` |
+
+Use `gh issue comment <issue_number> --body "<text>"` for comments. Use `gh issue edit <issue_number> --add-label <name>` and `--remove-label <name>` for label flips. The `done` flip removes the prior lifecycle label (`alignment:approved`).
+
+If `gh` calls fail, log the error and continue — issue annotations are advisory, never block the spec pipeline on them.
 
 ## Rules
 
