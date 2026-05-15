@@ -1,0 +1,52 @@
+---
+title: "Templated engineering"
+date: 2026-05-15
+spec_id: 121-templated-engineering
+summary: "The unit of engineering output has shifted from code to the template that produces it. Specs, gates, and scaffolds are the artifact now — code is the derived diff."
+tags: [agentic-engineering, spec-driven-development, templates]
+required_sections: [Intent, Why, What, How]
+---
+
+## Intent
+
+The unit of engineering output has changed. For most of the last fifty years, the artifact a programmer produced was code. The act of engineering was the act of writing functions, classes, modules — keystroke by keystroke, by a human, into a file. Code was the primary thing, and everything around it — specs, tickets, tests, comments — orbited that primary thing.
+
+That ordering is no longer load-bearing. The artifact a working engineer produces today is the template: the spec, the gate, the scaffold, the harness that surrounds the agent. The code is downstream. The agent fills the mold; the mold is what the human authors.
+
+The shift is easy to miss because the file extensions look the same. The diffs still land in `.ts` and `.mdx` and `.py`. What changed is upstream of the diff. The unit of human authorship moved one level up — from the function to the shape the function has to take. Templated engineering is the practice that names this. The template is the artifact; the code is the receipt.
+
+## Why
+
+Without a template, capable agents drift. The failure modes are well-catalogued by now: scope creep, where the agent solves the asked problem plus three unasked ones; locally-correct but architecturally-misguided diffs, where every line is fine and the architecture is wrong; vague intent producing vague code, where the model interpolated whatever it could from a sketch and the result reads like a plausible average of the training set. None of these are model failures. They are template failures. A capable agent given an underspecified task will produce underspecified output. This is not a bug to fix in the model — it is the predictable consequence of asking a generator to fill in blanks the human did not draw.
+
+The industry has converged on the fix from many directions at once. GitHub Spec Kit, AWS Kiro, Tessl, OpenSpec, Antigravity, Claude Code's skills system — different vendors, different surfaces, all the same shape: Constitution → Specify → Plan → Tasks → Implement. The names rotate; the structure does not. Each tool is in effect a template for templates. Each tool has noticed the same thing: if you let the agent author the structure of its own output, the output is whatever the model happened to interpolate. If you author the structure first, the output is a derived diff against a shape you chose.
+
+Martin Fowler has named three flavors of how this scales. *Spec-first*: the spec guides the initial run, then is discarded. *Spec-anchored*: the spec persists and evolves alongside the code, so future changes start from a structured reference instead of a stale comment. *Spec-as-source*: the spec is the primary source file, humans only edit the spec, the code is regenerated from it. The three points form a trajectory more than a menu. The further along that trajectory a team moves, the more its work resembles authoring molds rather than authoring instances.
+
+The reason this is a shift and not a fashion is that it survives a strong test. Even in February 2026, swapping the harness while holding the model constant moved scores by seventeen issues out of seven hundred and thirty-one. The architecture around the model is doing real work, independent of the model. That is the empirical signature of a load-bearing layer. The template is that layer.
+
+## What
+
+This blog is the proof. Every post is a spec. The MDX file you are reading right now is the gate of a `kind: writeup` spec — `121-templated-engineering` — and it does not exist as a publishable document until the gate turns GREEN. The gate is not a metaphor: it is a check that runs against the file, fails if the four required sections are not present as H2 headings, and blocks the merge until they are.
+
+The rest of the repository works the same way. Code changes go through `kind: code` specs with per-slice gates and a separate outer gate at the spec level. Lint rules go through `kind: rule` specs whose gate is a failing fixture. Cron and CI changes go through `kind: workflow` specs whose gate is an exit-code check. There is no path to merge that bypasses a gate. Every file write that lands in `main` was first the GREEN side of a template that was once RED.
+
+The harness has its own templates above the spec layer. `/do` is the template for "produce one change." Its frontmatter — `align → scaffold → slice loop → close → push → PR` — is the shape every change has to take. The `align` skill is a template for shared understanding. The `retro` skill is a template for changing the harness itself. Skills are templates for templates; the constitution is the template for the skills. The whole stack is recursive: every layer is a mold that the layer above it filled.
+
+The MDX file you are reading was templated before a single word was written. The spec was scaffolded in RED. The frontmatter was filled in from the alignment record. The four section headings were declared in the proposal. Only then did the prose go in. The post is the diff between RED and GREEN, against a shape the human authored once and the agent filled in. That is templated engineering in miniature.
+
+## How
+
+The discipline is not in writing more templates. It is in writing fewer, better ones.
+
+The first failure mode is the curse of instructions. A template thick with directives starts to feel safer the longer it gets; in practice the model loses focus. Past a certain density, every additional rule has a chance of canceling the rules around it. The fix is not to delete instructions reflexively, but to ask of each line whether the gate would catch its absence. If the gate would catch it, the instruction is redundant — keep the gate. If the gate would not catch it, the instruction is decoration — write a sharper gate instead.
+
+The second failure mode is forgetting that out-of-scope matters as much as in-scope. A template that says only what to build leaves the agent to guess what *not* to build, and capable agents guess generously. Every spec in this repo has an `Out of scope` section in its design. It is not ceremony. The agent reads it. The diff that follows is bounded by it.
+
+The third failure mode is templates that describe what without describing why. A spec that lists files and behaviors will produce code that matches each line and fits the surrounding architecture badly. The reason is structural: the agent can match a shape but cannot infer the constraint that gave the shape its form. The fix is to write the constraint, not the shape that follows from it. "The diff must not introduce a new module" beats "edit these four existing modules" — the second is downstream of the first, but only the first survives a refactor.
+
+The deepest discipline is the loop that trims the templates. A template that nobody is willing to delete becomes scar tissue. The retro is what keeps the stack lean: every friction observed in real runs is one finding, one spec, one merged change to the harness itself. Templates are evergreen only when something has the authority to remove them. Without that, the curse of instructions wins by accumulation.
+
+The template is not a document. It is a contract that the gate enforces. The gate is what makes the template real. A template without a gate is decoration; a gate that cannot fail is theater. If you cannot describe the condition under which the work is wrong, you have not written a template — you have written a wish.
+
+The shift to templated engineering does not feel like writing less code. It feels like writing fewer things that change daily and more things that change rarely. The function is now ephemeral. The template is what persists.
