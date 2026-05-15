@@ -1,13 +1,14 @@
 ---
 id: 121-templated-engineering
 title: Templated engineering
-status: active
+status: archived
 kind: writeup
 gate: content/posts/templated-engineering.mdx
-created: 2026-05-15
+created: 2026-05-15T00:00:00.000Z
 owner: main
 depends_on: []
 supersedes: null
+archived: '2026-05-15'
 ---
 
 ## Intent
