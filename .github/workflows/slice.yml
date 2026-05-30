@@ -94,62 +94,22 @@ jobs:
           export PATH="$HOME/.bun/bin:$PATH"
           bun install --frozen-lockfile
 
-      - name: Implement slice via Claude (spec-implementer)
-        id: claude-work
+      - name: Run slice self-validation loop
+        id: loop
         run: |
+          export PATH="$HOME/.bun/bin:$PATH"
           SLICE_ID="${{ steps.norm.outputs.slice_id }}"
           SPEC_ID="${{ steps.norm.outputs.spec_id }}"
-          claude -p \
-            --no-session-persistence \
-            --max-turns 50 \
-            --allowedTools "Bash(git:*),Bash(gh:*),Bash(bun:*),Bash(mkdir:*),Bash(mv:*),Bash(cp:*),Bash(rm:*),Edit,Write,Read,Glob,Grep" \
-            <<EOF
-          You are the spec-implementer. Make slice ${SLICE_ID} of spec ${SPEC_ID} GREEN. Read the frozen gate and implement only the file_targets declared in task ${SLICE_ID}. Run bun run tasks:verify. When GREEN, run a refactor pass scoped to the task's file_targets. Do not push — only commit. Use the expertise skill at .claude/skills/expertise/ if relevant patterns apply.
-          EOF
+          BRANCH="${{ steps.norm.outputs.branch }}"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          bun scripts/slice/loop.ts \
+            --slice-id "${SLICE_ID}" \
+            --spec-id "${SPEC_ID}" \
+            --branch "${BRANCH}"
         env:
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           GH_TOKEN: ${{ github.token }}
-
-      - name: Ensure GREEN marker commit exists
-        run: |
-          SLICE_ID="${{ steps.norm.outputs.slice_id }}"
-          SPEC_ID="${{ steps.norm.outputs.spec_id }}"
-          # Set git identity defensively. Claude sets its own identity
-          # for its commits, but `git commit --allow-empty` here runs in
-          # a fresh shell and inherits nothing — slice 2 of issue #101
-          # crashed with `Author identity unknown` because of this.
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git config user.name "github-actions[bot]"
-          # The spec-implementer may have already committed its work with
-          # any message format. The controller's COMPLETED detection greps
-          # for `GREEN — slice N` in commit subjects, so we always lay
-          # down a marker commit (empty if the implementer already
-          # committed everything) right after the implementer step.
-          if ! git log -1 --pretty=%s | grep -qE "GREEN[[:space:]]+[—-]+[[:space:]]+slice[[:space:]]+${SLICE_ID}\b"; then
-            git commit --allow-empty -m "code(${SPEC_ID}): GREEN — slice ${SLICE_ID} — implemented by slice runner"
-          else
-            echo "GREEN marker for slice ${SLICE_ID} already on HEAD; skipping."
-          fi
-
-      - name: Push with retry on non-fast-forward
-        id: push
-        run: |
-          BRANCH="${{ steps.norm.outputs.branch }}"
-          MAX_RETRIES=3
-          attempt=0
-          while [ $attempt -lt $MAX_RETRIES ]; do
-            attempt=$((attempt + 1))
-            if git push origin "${BRANCH}"; then
-              echo "Push succeeded on attempt ${attempt}"
-              echo "attempt=${attempt}" >> "$GITHUB_OUTPUT"
-              exit 0
-            fi
-            echo "Push failed (attempt ${attempt}/${MAX_RETRIES}), pulling --rebase..."
-            git pull --rebase origin "${BRANCH}"
-          done
-          echo "Push failed after ${MAX_RETRIES} attempts"
-          echo "attempt=${attempt}" >> "$GITHUB_OUTPUT"
-          exit 1
 
       - name: Upload Claude traces as artifact
         if: always()
@@ -188,7 +148,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
 
       - name: Failure escalation — post menu on issue
-        if: failure() || steps.push.outputs.attempt == '3'
+        if: failure()
         run: |
           ISSUE_NUMBER="${{ steps.norm.outputs.issue_number }}"
           SLICE_ID="${{ steps.norm.outputs.slice_id }}"
