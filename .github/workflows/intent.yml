@@ -201,9 +201,9 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: claude-traces-align-${{ github.run_id }}
+          name: traces-intent-${{ github.run_id }}-align
           path: .claude/traces/
-          retention-days: 7
+          retention-days: 30
           if-no-files-found: ignore
 
       - name: Post clarification request to issue (low confidence)
@@ -292,9 +292,9 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: claude-traces-scaffold-${{ github.run_id }}
+          name: traces-intent-${{ github.run_id }}-scaffold
           path: .claude/traces/
-          retention-days: 7
+          retention-days: 30
           if-no-files-found: ignore
 
       - name: Commit and push scaffold artifacts
@@ -312,15 +312,6 @@ jobs:
             git commit -m "spec($SPEC_ID): scaffold via intent.yml"
           fi
           git push origin "HEAD:$BRANCH"
-
-      - name: Upload Claude traces as artifact
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: claude-traces-${{ github.run_id }}
-          path: .claude/traces/
-          retention-days: 7
-          if-no-files-found: ignore
 
       - name: Trigger controller for instant first-wave dispatch
         if: success()
